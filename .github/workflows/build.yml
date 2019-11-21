@@ -1,0 +1,21 @@
+name: Embedded Postgres Build
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Golang
+        uses: actions/setup-go@v1
+      - name: checkout
+        id: go
+        uses: actions/checkout@v1
+        with:
+          go-version: 1.13
+      - name: Test
+        run: go get -v -t -d ./...
+      - name: Build
+        run: go build -v .
