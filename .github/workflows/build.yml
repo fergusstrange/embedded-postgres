@@ -17,12 +17,10 @@ jobs:
           go-version: 1.13
       - name: Test
         run: |
-          go get -v -t ./... && \
           go test -v ./...
       - name: Test Examples
         run: |
           pushd examples && \
-          go get -v -t ./... && \
           go test -v ./... && \
           popd
       - name: Build
