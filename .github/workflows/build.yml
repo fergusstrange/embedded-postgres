@@ -17,6 +17,7 @@ jobs:
           go-version: 1.13
       - name: Test
         run: |
+          go get -v && \
           go test -v ./...
       - name: Test Examples
         run: |
