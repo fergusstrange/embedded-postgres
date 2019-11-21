@@ -1,7 +1,7 @@
 package examples
 
 import (
-	"github.com/fergusstrange/embeddedpostgres"
+	"github.com/fergusstrange/embedded-postgres"
 	"os"
 
 	"github.com/jmoiron/sqlx"

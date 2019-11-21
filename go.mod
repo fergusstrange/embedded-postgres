@@ -1,4 +1,4 @@
-module github.com/fergusstrange/embeddedpostgres
+module github.com/fergusstrange/embedded-postgres
 
 go 1.13
 

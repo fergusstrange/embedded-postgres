@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/fergusstrange/embeddedpostgres"
+	"github.com/fergusstrange/embedded-postgres"
 	"log"
 	"time"
 )
