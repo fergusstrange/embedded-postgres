@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"archive/zip"
 	"bytes"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/mholt/archiver"
@@ -17,7 +18,6 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
-	"time"
 )
 
 type Config struct {
@@ -226,18 +226,36 @@ func (ep *EmbeddedPostgres) startPostgres(binaryExtractLocation string) {
 		log.Fatal(err)
 	}
 
-	healthyCount := 0
 	for {
-		if conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", ep.config.port), 100*time.Millisecond); conn != nil && err == nil {
-			if err := conn.Close(); err != nil {
-				log.Fatal(err)
+		if err := func() (funcErr error) {
+			db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
+				ep.config.port,
+				ep.config.username,
+				ep.config.password,
+				ep.config.database))
+			if err != nil {
+				return err
 			}
-			healthyCount++
+			defer func() {
+				if err := db.Close(); err != nil {
+					funcErr = err
+				}
+			}()
+			rows, err := db.Query("SELECT 1")
+			if err != nil {
+				return err
+			}
+			defer func() {
+				if err := rows.Close(); err != nil {
+					funcErr = err
+				}
+			}()
+			return nil
+		}(); err != nil {
+			continue
 		}
-		if healthyCount > 10 {
-			close(ep.startupHook)
-			break
-		}
+		close(ep.startupHook)
+		break
 	}
 	for shutdown := range ep.shutdownHook {
 		if shutdown {
