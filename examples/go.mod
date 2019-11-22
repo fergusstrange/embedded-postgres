@@ -1,8 +1,8 @@
 module github.com/fergusstrange/embedded-postgres/examples
 
-replace github.com/fergusstrange/embedded-postgres v0.0.0 => ../
-
 go 1.13
+
+replace github.com/fergusstrange/embedded-postgres => ../
 
 require (
 	github.com/fergusstrange/embedded-postgres v0.0.0
