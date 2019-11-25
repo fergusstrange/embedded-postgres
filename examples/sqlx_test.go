@@ -23,7 +23,9 @@ func TestMain(m *testing.M) {
 		panic(errMigration)
 	}
 	exitCode := m.Run()
-	database.Stop()
+	if err := database.Stop(); err != nil {
+		panic(err)
+	}
 	os.Exit(exitCode)
 }
 

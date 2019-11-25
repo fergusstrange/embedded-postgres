@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/fergusstrange/embedded-postgres"
 	"log"
-	"time"
 )
 
 func main() {
@@ -12,8 +11,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("Postgres has started...")
-	time.Sleep(5 * time.Second)
-
-	embeddedPostgres.Stop()
+	defer func() {
+		embeddedPostgres.Stop()
+	}()
 }
