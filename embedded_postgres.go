@@ -256,10 +256,14 @@ func (ep *EmbeddedPostgres) startPostgres(binaryExtractLocation string) {
 
 	go func() {
 		for ctx.Err() == nil {
-			if err := healthCheckDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err == nil {
-				complete <- struct{}{}
-				break
+			if err := healthCheckDatabase(ep.config.port, ep.config.username, ep.config.password); err != nil {
+				continue
 			}
+			if err := createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
+				continue
+			}
+			complete <- struct{}{}
+			break
 		}
 	}()
 
@@ -285,6 +289,30 @@ func (ep *EmbeddedPostgres) startPostgres(binaryExtractLocation string) {
 	}
 }
 
+func createDatabase(port uint32, username, password, database string) (funcErr error) {
+	if database == "postgres" {
+		return nil
+	}
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
+		port,
+		username,
+		password,
+		"postgres"))
+	defer func() {
+		if err := db.Close(); err != nil {
+			funcErr = err
+		}
+	}()
+	if err != nil {
+		return err
+	}
+	if _, err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (ep *EmbeddedPostgres) Stop() error {
 	if ep.startupHook == nil {
 		return errors.New("postgres not yet started")
@@ -295,12 +323,12 @@ func (ep *EmbeddedPostgres) Stop() error {
 	return nil
 }
 
-func healthCheckDatabase(port uint32, username, password, database string) (funcErr error) {
+func healthCheckDatabase(port uint32, username, password string) (funcErr error) {
 	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
 		port,
 		username,
 		password,
-		database))
+		"postgres"))
 	if err != nil {
 		return err
 	}
