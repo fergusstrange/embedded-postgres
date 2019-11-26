@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -19,24 +20,29 @@ import (
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type Config struct {
-	version     PostgresVersion
-	port        uint32
-	database    string
-	username    string
-	password    string
-	runtimePath string
+	version      PostgresVersion
+	port         uint32
+	database     string
+	username     string
+	password     string
+	runtimePath  string
+	startTimeout time.Duration
+	stopTimeout  time.Duration
 }
 
 func DefaultConfig() Config {
 	return Config{
-		version:  V12_1_0,
-		port:     5432,
-		database: "postgres",
-		username: "postgres",
-		password: "postgres",
+		version:      V12_1_0,
+		port:         5432,
+		database:     "postgres",
+		username:     "postgres",
+		password:     "postgres",
+		startTimeout: 15 * time.Second,
+		stopTimeout:  5 * time.Second,
 	}
 }
 
@@ -67,6 +73,16 @@ func (c Config) Password(password string) Config {
 
 func (c Config) RuntimePath(path string) Config {
 	c.runtimePath = path
+	return c
+}
+
+func (c Config) StartTimeout(timeout time.Duration) Config {
+	c.startTimeout = timeout
+	return c
+}
+
+func (c Config) StopTimeout(timeout time.Duration) Config {
+	c.stopTimeout = timeout
 	return c
 }
 
@@ -196,15 +212,15 @@ func (ep *EmbeddedPostgres) Start() error {
 	}
 	binaryExtractLocation := userLocationOrDefault(ep.config.runtimePath, cacheLocation)
 	if err := os.RemoveAll(binaryExtractLocation); err != nil {
-		return err
+		return fmt.Errorf("unable to clean up directory %s with error: %s", binaryExtractLocation, err)
 	}
 	if err := archiver.NewTarXz().Unarchive(cacheLocation, binaryExtractLocation); err != nil {
-		return err
+		return fmt.Errorf("unable to extract postgres archive %s to %s with error: %s", cacheLocation, binaryExtractLocation, err)
 	}
 
 	pwfileLocation := filepath.Join(binaryExtractLocation, "pwfile")
 	if err := ioutil.WriteFile(pwfileLocation, []byte(ep.config.password), 0600); err != nil {
-		return err
+		return fmt.Errorf("unable to write password file with error: %s", err)
 	}
 	postgresInitDbBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
 	postgresInitDbProcess := exec.Command(postgresInitDbBinary,
@@ -213,8 +229,9 @@ func (ep *EmbeddedPostgres) Start() error {
 		"-D", filepath.Join(binaryExtractLocation, "data"),
 		fmt.Sprintf("--pwfile=%s", pwfileLocation))
 	postgresInitDbProcess.Stderr = os.Stderr
+	postgresInitDbProcess.Stdout = os.Stdout
 	if err := postgresInitDbProcess.Run(); err != nil {
-		return err
+		return fmt.Errorf("unable to init database with error: %s", err)
 	}
 	ep.startupHook = make(chan bool, 1)
 	go ep.startPostgres(binaryExtractLocation)
@@ -232,46 +249,36 @@ func (ep *EmbeddedPostgres) startPostgres(binaryExtractLocation string) {
 		close(ep.startupHook)
 		panic(err)
 	}
-	for {
-		if err := func() (funcErr error) {
-			db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
-				ep.config.port,
-				ep.config.username,
-				ep.config.password,
-				ep.config.database))
-			if err != nil {
-				return err
+
+	complete := make(chan struct{})
+	ctx, cancelFunc := context.WithTimeout(context.Background(), ep.config.startTimeout)
+	defer cancelFunc()
+
+	go func() {
+		for ctx.Err() == nil {
+			if err := healthCheckDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err == nil {
+				complete <- struct{}{}
+				break
 			}
-			defer func() {
-				if err := db.Close(); err != nil {
-					funcErr = err
-				}
-			}()
-			rows, err := db.Query("SELECT 1")
-			if err != nil {
-				return err
-			}
-			defer func() {
-				if err := rows.Close(); err != nil {
-					funcErr = err
-				}
-			}()
-			return nil
-		}(); err != nil {
-			continue
 		}
+	}()
+
+	select {
+	case <-complete:
+		close(complete)
 		close(ep.startupHook)
-		break
+	case <-ctx.Done():
+		ep.shutdownHook <- true
+		close(ep.startupHook)
 	}
+
 	for shutdown := range ep.shutdownHook {
 		if shutdown {
 			if err := postgresProcess.Process.Signal(syscall.SIGQUIT); err != nil {
-				close(ep.shutdownHook)
-				panic(err)
+				log.Println(err)
 			}
 			if err := postgresProcess.Wait(); err != nil {
-				close(ep.shutdownHook)
-				panic(err)
+				log.Println(err)
 			}
 			close(ep.shutdownHook)
 		}
@@ -285,6 +292,32 @@ func (ep *EmbeddedPostgres) Stop() error {
 	ep.shutdownHook <- true
 	for range ep.shutdownHook {
 	}
+	return nil
+}
+
+func healthCheckDatabase(port uint32, username, password, database string) (funcErr error) {
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
+		port,
+		username,
+		password,
+		database))
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			funcErr = err
+		}
+	}()
+	rows, err := db.Query("SELECT 1")
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			funcErr = err
+		}
+	}()
 	return nil
 }
 

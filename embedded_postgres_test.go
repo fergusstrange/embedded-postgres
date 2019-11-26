@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func Test_AllMajorVersions(t *testing.T) {
@@ -51,6 +52,35 @@ func Test_AllMajorVersions(t *testing.T) {
 	}
 	if err := os.RemoveAll(tempExtractLocation); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func Test_CustomDatabaseName(t *testing.T) {
+	database := NewDatabaseWithConfig(DefaultConfig().
+		Username("gin").
+		Password("wine").
+		Database("beer").
+		Port(9876).
+		StartTimeout(10 * time.Second))
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=9876 user=gin password=wine dbname=beer sslmode=disable"))
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
 	}
 }
 
