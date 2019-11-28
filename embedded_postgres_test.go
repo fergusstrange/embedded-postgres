@@ -20,7 +20,7 @@ func Test_AllMajorVersions(t *testing.T) {
 
 	for testNumber, version := range allVersions {
 		port := uint32(5555 + testNumber)
-		database := NewDatabaseWithConfig(DefaultConfig().
+		database := NewDatabase(DefaultConfig().
 			Version(version).
 			Port(port).
 			RuntimePath(filepath.Join(tempExtractLocation, strconv.Itoa(testNumber))))
@@ -56,7 +56,7 @@ func Test_AllMajorVersions(t *testing.T) {
 }
 
 func Test_CustomDatabaseName(t *testing.T) {
-	database := NewDatabaseWithConfig(DefaultConfig().
+	database := NewDatabase(DefaultConfig().
 		Username("gin").
 		Password("wine").
 		Database("beer").
@@ -67,6 +67,31 @@ func Test_CustomDatabaseName(t *testing.T) {
 	}
 
 	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=9876 user=gin password=wine dbname=beer sslmode=disable"))
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_TimesOutWhenCannotStart(t *testing.T) {
+	database := NewDatabase(DefaultConfig().
+		StartTimeout(100 * time.Millisecond))
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
