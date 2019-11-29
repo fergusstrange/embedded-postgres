@@ -193,15 +193,16 @@ func createDatabase(port uint32, username, password, database string) error {
 
 func healthCheckDatabaseOrTimeout(config Config) error {
 	healthCheckSignal := make(chan bool)
+	defer close(healthCheckSignal)
 	timeout, cancelFunc := context.WithTimeout(context.Background(), config.startTimeout)
+	defer cancelFunc()
 	go func() {
-		defer cancelFunc()
-		defer close(healthCheckSignal)
 		for timeout.Err() == nil {
 			if err := healthCheckDatabase(config.port, config.username, config.password); err != nil {
 				continue
 			}
 			healthCheckSignal <- true
+			break
 		}
 	}()
 	select {
