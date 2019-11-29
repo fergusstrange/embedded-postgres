@@ -12,6 +12,8 @@ func main() {
 	}
 
 	defer func() {
-		embeddedPostgres.Stop()
+		if err := embeddedPostgres.Stop(); err != nil {
+			log.Fatal(err)
+		}
 	}()
 }

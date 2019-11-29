@@ -1,0 +1,2 @@
+# embedded-postgres
+[![Coverage Status](https://coveralls.io/repos/github/fergusstrange/embedded-postgres/badge.svg?branch=master)](https://coveralls.io/github/fergusstrange/embedded-postgres?branch=master)
