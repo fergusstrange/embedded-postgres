@@ -26,8 +26,6 @@ jobs:
           go test -v ./... && \
           popd
       - name: Upload Coverage Report
-        env:
-           COVERALLS_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
         run: GO111MODULE=off go get github.com/mattn/goveralls && $(go env GOPATH)/bin/goveralls -coverprofile=coverage.out -service=github
       - name: Build
         run: go build -v .
