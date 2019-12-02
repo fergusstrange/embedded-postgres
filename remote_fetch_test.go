@@ -133,7 +133,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing.T) {
 	jarFile, cleanUp := createTempArchive()
 	defer cleanUp()
-	dirBlockingExtract := filepath.Join(filepath.Dir(jarFile), "non_existent_dir")
+	dirBlockingExtract := filepath.Join(filepath.Dir(jarFile), "some_dir")
 	if err := os.MkdirAll(dirBlockingExtract, 0400); err != nil {
 		panic(err)
 	}
@@ -160,6 +160,71 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 	err := remoteFetchStrategy()
 
 	assert.EqualError(t, err, "unable to extract postgres archive to "+dirBlockingExtract)
+}
+
+func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *testing.T) {
+	jarFile, cleanUp := createTempArchive()
+	defer cleanUp()
+	fileBlockingExtractDirectory := filepath.Join(filepath.Dir(jarFile), "a_file_blocking_extract")
+	if _, err := os.Create(fileBlockingExtractDirectory); err != nil {
+		panic(err)
+	}
+	cacheLocation := filepath.Join(fileBlockingExtractDirectory, "cache_file.jar")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bytes, err := ioutil.ReadFile(jarFile)
+		if err != nil {
+			panic(err)
+		}
+		if _, err := w.Write(bytes); err != nil {
+			panic(err)
+		}
+	}))
+	defer server.Close()
+
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+		func() (s string, s2 string, version PostgresVersion) {
+			return "1", "darwin", "123"
+		},
+		func() (s string, b bool) {
+			return cacheLocation, false
+		})
+
+	err := remoteFetchStrategy()
+
+	assert.EqualError(t, err, "unable to extract postgres archive to "+cacheLocation)
+}
+
+func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *testing.T) {
+	jarFile, cleanUp := createTempArchive()
+	defer cleanUp()
+	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_directory", "cache_file.jar")
+	if err := os.MkdirAll(cacheLocation, 0755); err != nil {
+		panic(err)
+	}
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bytes, err := ioutil.ReadFile(jarFile)
+		if err != nil {
+			panic(err)
+		}
+		if _, err := w.Write(bytes); err != nil {
+			panic(err)
+		}
+	}))
+	defer server.Close()
+
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+		func() (s string, s2 string, version PostgresVersion) {
+			return "1", "darwin", "123"
+		},
+		func() (s string, b bool) {
+			return cacheLocation, false
+		})
+
+	err := remoteFetchStrategy()
+
+	assert.EqualError(t, err, "unable to extract postgres archive to "+cacheLocation)
 }
 
 func Test_defaultRemoteFetchStrategy(t *testing.T) {
@@ -207,7 +272,7 @@ func createTempArchive() (string, func()) {
 		panic(err)
 	}
 	jarFile := filepath.Join(tempDir, "remote_fetch_test.zip")
-	if err := archiver.NewZip().Archive([]string{tarFile}, jarFile); err != nil {
+	if err := archiver.NewZip().Archive([]string{tempFile.Name(), tarFile}, jarFile); err != nil {
 		panic(err)
 	}
 	return jarFile, func() {

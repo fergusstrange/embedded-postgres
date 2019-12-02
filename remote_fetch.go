@@ -35,7 +35,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 		}
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				log.Fatal(resp.Body.Close())
+				log.Fatal(err)
 			}
 		}()
 		bodyBytes, err := ioutil.ReadAll(resp.Body)
@@ -85,17 +85,7 @@ func createArchiveFile(archiveLocation string, archiveBytes []byte) error {
 	if err := os.MkdirAll(filepath.Dir(archiveLocation), 0755); err != nil {
 		return err
 	}
-	filesystemArchive, err := os.Create(archiveLocation)
-	defer func() {
-		log.Println(archiveLocation)
-		if err := filesystemArchive.Close(); err != nil {
-			log.Println(err)
-		}
-	}()
-	if err != nil {
-		return err
-	}
-	if err := ioutil.WriteFile(filesystemArchive.Name(), archiveBytes, 0666); err != nil {
+	if err := ioutil.WriteFile(archiveLocation, archiveBytes, 0666); err != nil {
 		return err
 	}
 	return nil
