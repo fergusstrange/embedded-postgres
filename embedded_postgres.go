@@ -34,7 +34,7 @@ func NewDatabase(config ...Config) *EmbeddedPostgres {
 func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 	versionStrategy := defaultVersionStrategy(config)
 	cacheLocator := defaultCacheLocator(versionStrategy)
-	remoteFetchStrategy := defaultRemoteFetchStrategy(versionStrategy, cacheLocator)
+	remoteFetchStrategy := defaultRemoteFetchStrategy("https://repo1.maven.org", versionStrategy, cacheLocator)
 	return &EmbeddedPostgres{
 		config:              config,
 		cacheLocator:        cacheLocator,
