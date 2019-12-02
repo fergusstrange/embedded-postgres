@@ -63,7 +63,7 @@ func (ep *EmbeddedPostgres) Start() error {
 	}
 
 	if err := archiver.NewTarXz().Unarchive(cacheLocation, binaryExtractLocation); err != nil {
-		return fmt.Errorf("unable to extract postgres archive %s to %s with error: %s", cacheLocation, binaryExtractLocation, err)
+		return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, binaryExtractLocation)
 	}
 
 	if err := initDatabase(binaryExtractLocation, ep.config.username, ep.config.password); err != nil {
@@ -151,11 +151,11 @@ func initDatabase(binaryExtractLocation, username, password string) error {
 }
 
 func createPasswordFile(binaryExtractLocation, password string) (string, error) {
-	pwfileLocation := filepath.Join(binaryExtractLocation, "pwfile")
-	if err := ioutil.WriteFile(pwfileLocation, []byte(password), 0600); err != nil {
+	passwordFileLocation := filepath.Join(binaryExtractLocation, "pwfile")
+	if err := ioutil.WriteFile(passwordFileLocation, []byte(password), 0600); err != nil {
 		return "", fmt.Errorf("unable to write password file with error: %s", err)
 	}
-	return pwfileLocation, nil
+	return passwordFileLocation, nil
 }
 
 func ensurePortAvailable(port uint32) error {

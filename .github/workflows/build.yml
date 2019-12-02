@@ -25,6 +25,11 @@ jobs:
           pushd examples && \
           go test -v ./... && \
           popd
+      - name: Platform Tests
+        run: |
+          pushd platform-test && \
+          go test -v ./... && \
+          popd
       - name: Upload Coverage Report
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}

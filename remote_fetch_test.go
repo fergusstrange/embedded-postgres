@@ -233,7 +233,6 @@ func Test_defaultRemoteFetchStrategy(t *testing.T) {
 	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_location", "cache.jar")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		bytes, err := ioutil.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
