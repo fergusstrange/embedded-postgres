@@ -10,10 +10,8 @@ type CacheLocator func() (string, bool)
 
 func defaultCacheLocator(versionStrategy VersionStrategy) CacheLocator {
 	return func() (string, bool) {
-		var cacheDirectory string
-		if userHome, err := os.UserHomeDir(); err != nil {
-			cacheDirectory = ".embedded-postgres-go"
-		} else {
+		cacheDirectory := ".embedded-postgres-go"
+		if userHome, err := os.UserHomeDir(); err == nil {
 			cacheDirectory = filepath.Join(userHome, ".embedded-postgres-go")
 		}
 		operatingSystem, architecture, version := versionStrategy()
