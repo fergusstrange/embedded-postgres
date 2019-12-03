@@ -24,7 +24,7 @@ func defaultInitDatabase(binaryExtractLocation, username, password string) error
 	postgresInitDbProcess.Stderr = os.Stderr
 	postgresInitDbProcess.Stdout = os.Stdout
 	if err := postgresInitDbProcess.Run(); err != nil {
-		return fmt.Errorf("unable to init database with error: %s", err)
+		return fmt.Errorf("unable to init database using: %s", postgresInitDbProcess.String())
 	}
 	return nil
 }
@@ -32,7 +32,7 @@ func defaultInitDatabase(binaryExtractLocation, username, password string) error
 func createPasswordFile(binaryExtractLocation, password string) (string, error) {
 	passwordFileLocation := filepath.Join(binaryExtractLocation, "pwfile")
 	if err := ioutil.WriteFile(passwordFileLocation, []byte(password), 0600); err != nil {
-		return "", fmt.Errorf("unable to write password file with error: %s", err)
+		return "", fmt.Errorf("unable to write password file to %s", passwordFileLocation)
 	}
 	return passwordFileLocation, nil
 }
