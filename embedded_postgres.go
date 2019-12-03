@@ -7,7 +7,6 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/mholt/archiver"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -19,6 +18,7 @@ type EmbeddedPostgres struct {
 	config              Config
 	cacheLocator        CacheLocator
 	remoteFetchStrategy RemoteFetchStrategy
+	initDatabase        InitDatabase
 	startErrors         chan error
 	stopErrors          chan error
 	stopSignal          chan bool
@@ -39,6 +39,7 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 		config:              config,
 		cacheLocator:        cacheLocator,
 		remoteFetchStrategy: remoteFetchStrategy,
+		initDatabase:        defaultInitDatabase,
 		startErrors:         make(chan error, 1),
 		stopErrors:          make(chan error, 1),
 		stopSignal:          make(chan bool, 1),
@@ -66,7 +67,7 @@ func (ep *EmbeddedPostgres) Start() error {
 		return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, binaryExtractLocation)
 	}
 
-	if err := initDatabase(binaryExtractLocation, ep.config.username, ep.config.password); err != nil {
+	if err := ep.initDatabase(binaryExtractLocation, ep.config.username, ep.config.password); err != nil {
 		return err
 	}
 
@@ -107,10 +108,7 @@ func startPostgres(binaryExtractLocation string, config Config, stopSignal chan 
 
 	if err := healthCheckDatabaseOrTimeout(config); err != nil {
 		startErrors <- err
-		close(startErrors)
-		return
 	}
-
 	close(startErrors)
 
 	for range stopSignal {
@@ -129,33 +127,6 @@ func stopPostgres(postgresProcess *exec.Cmd) error {
 		return err
 	}
 	return nil
-}
-
-func initDatabase(binaryExtractLocation, username, password string) error {
-	passwordFile, err := createPasswordFile(binaryExtractLocation, password)
-	if err != nil {
-		return err
-	}
-	postgresInitDbBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
-	postgresInitDbProcess := exec.Command(postgresInitDbBinary,
-		"-A", "password",
-		"-U", username,
-		"-D", filepath.Join(binaryExtractLocation, "data"),
-		fmt.Sprintf("--pwfile=%s", passwordFile))
-	postgresInitDbProcess.Stderr = os.Stderr
-	postgresInitDbProcess.Stdout = os.Stdout
-	if err := postgresInitDbProcess.Run(); err != nil {
-		return fmt.Errorf("unable to init database with error: %s", err)
-	}
-	return nil
-}
-
-func createPasswordFile(binaryExtractLocation, password string) (string, error) {
-	passwordFileLocation := filepath.Join(binaryExtractLocation, "pwfile")
-	if err := ioutil.WriteFile(passwordFileLocation, []byte(password), 0600); err != nil {
-		return "", fmt.Errorf("unable to write password file with error: %s", err)
-	}
-	return passwordFileLocation, nil
 }
 
 func ensurePortAvailable(port uint32) error {

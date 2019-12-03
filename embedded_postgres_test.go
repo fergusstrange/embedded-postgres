@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/fergusstrange/embedded-postgres/testutil"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -69,8 +71,8 @@ func Test_ErrorWhenRemoteFetchError(t *testing.T) {
 	assert.EqualError(t, err, "did not work")
 }
 
-func Test_ErrorWhenUnableToUnArchiveFile(t *testing.T) {
-	jarFile, cleanUp := createTempArchive()
+func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
+	jarFile, cleanUp := testutil.CreateTempZipArchive()
 	defer cleanUp()
 
 	database := NewDatabase(DefaultConfig().
@@ -96,29 +98,54 @@ func Test_ErrorWhenUnableToUnArchiveFile(t *testing.T) {
 	assert.EqualError(t, err, fmt.Sprintf("unable to extract postgres archive %s to path_that_not_exists", jarFile))
 }
 
+func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
+	jarFile, cleanUp := testutil.CreateTempXzArchive()
+	defer cleanUp()
+	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
+	if err != nil {
+		panic(err)
+	}
+
+	database := NewDatabase(DefaultConfig().
+		Username("gin").
+		Password("wine").
+		Database("beer").
+		RuntimePath(extractPath).
+		Port(9876).
+		StartTimeout(10 * time.Second))
+
+	database.cacheLocator = func() (string, bool) {
+		return jarFile, true
+	}
+
+	database.initDatabase = func(binaryExtractLocation, username, password string) error {
+		return errors.New("ah it did not work")
+	}
+
+	err = database.Start()
+
+	if err == nil {
+		if err := database.Stop(); err != nil {
+			panic(err)
+		}
+	}
+
+	assert.EqualError(t, err, "ah it did not work")
+}
+
 func Test_TimesOutWhenCannotStart(t *testing.T) {
 	database := NewDatabase(DefaultConfig().
-		StartTimeout(100 * time.Millisecond))
-	if err := database.Start(); err != nil {
-		shutdownDBAndFail(t, err, database)
+		StartTimeout(100 * time.Nanosecond))
+
+	err := database.Start()
+
+	if err == nil {
+		if err := database.Stop(); err != nil {
+			panic(err)
+		}
 	}
 
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
-	if err != nil {
-		shutdownDBAndFail(t, err, database)
-	}
-
-	if err = db.Ping(); err != nil {
-		shutdownDBAndFail(t, err, database)
-	}
-
-	if err := db.Close(); err != nil {
-		shutdownDBAndFail(t, err, database)
-	}
-
-	if err := database.Stop(); err != nil {
-		shutdownDBAndFail(t, err, database)
-	}
+	assert.EqualError(t, err, "timed out waiting for database to start")
 }
 
 func Test_CustomConfig(t *testing.T) {
