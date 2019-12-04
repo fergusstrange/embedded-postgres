@@ -72,4 +72,4 @@ jobs:
           $stderr = $p.StandardError.ReadToEnd()
           Write-Host "stdout: $stdout"
           Write-Host "stderr: $stderr"
-          Write-Host "exit code: " + $p.ExitCode
+          exit $p.ExitCode
