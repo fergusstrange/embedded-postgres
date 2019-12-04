@@ -34,7 +34,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node: [6, 8, 10]
     runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
