@@ -7,11 +7,11 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/mholt/archiver"
+	"log"
 	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"syscall"
 )
 
 type EmbeddedPostgres struct {
@@ -100,12 +100,15 @@ func (ep *EmbeddedPostgres) Stop() error {
 }
 
 func startPostgres(binaryExtractLocation string, config Config, stopSignal chan bool, startErrors, stopErrors chan error) {
-	postgresBinary := filepath.Join(binaryExtractLocation, "bin/postgres")
-	postgresProcess := exec.Command(postgresBinary, "-p", fmt.Sprintf("%d", config.port), "-h", "localhost", "-D", filepath.Join(binaryExtractLocation, "data"))
+	postgresBinary := filepath.Join(binaryExtractLocation, "bin/pg_ctl")
+	postgresProcess := exec.Command(postgresBinary, "start", "-w",
+		"-D", filepath.Join(binaryExtractLocation, "data"),
+		"-o", fmt.Sprintf(`"-p %d"`, config.port))
+	log.Println(postgresProcess.String())
 	postgresProcess.Stderr = os.Stderr
 	postgresProcess.Stdout = os.Stdout
-	if err := postgresProcess.Start(); err != nil {
-		startErrors <- fmt.Errorf("could not start posgres using %s", postgresProcess.String())
+	if err := postgresProcess.Run(); err != nil {
+		startErrors <- fmt.Errorf("could not start postgres using %s", postgresProcess.String())
 		close(startErrors)
 		return
 	}
@@ -116,21 +119,20 @@ func startPostgres(binaryExtractLocation string, config Config, stopSignal chan 
 	close(startErrors)
 
 	for range stopSignal {
-		if err := stopPostgres(postgresProcess); err != nil {
+		if err := stopPostgres(binaryExtractLocation); err != nil {
 			stopErrors <- err
 		}
 		close(stopErrors)
 	}
 }
 
-func stopPostgres(postgresProcess *exec.Cmd) error {
-	if err := postgresProcess.Process.Signal(syscall.SIGQUIT); err != nil {
-		return err
-	}
-	if err := postgresProcess.Wait(); err != nil {
-		return err
-	}
-	return nil
+func stopPostgres(binaryExtractLocation string) error {
+	postgresBinary := filepath.Join(binaryExtractLocation, "bin/pg_ctl")
+	postgresProcess := exec.Command(postgresBinary, "stop", "-w",
+		"-D", filepath.Join(binaryExtractLocation, "data"))
+	postgresProcess.Stderr = os.Stderr
+	postgresProcess.Stdout = os.Stdout
+	return postgresProcess.Run()
 }
 
 func ensurePortAvailable(port uint32) error {

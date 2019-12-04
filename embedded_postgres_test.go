@@ -80,7 +80,6 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 		Password("wine").
 		Database("beer").
 		RuntimePath("path_that_not_exists").
-		Port(9876).
 		StartTimeout(10 * time.Second))
 
 	database.cacheLocator = func() (string, bool) {
@@ -111,7 +110,6 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		Password("wine").
 		Database("beer").
 		RuntimePath(extractPath).
-		Port(9876).
 		StartTimeout(10 * time.Second))
 
 	database.cacheLocator = func() (string, bool) {
@@ -146,7 +144,6 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 		Password("wine").
 		Database("beer").
 		RuntimePath(extractPath).
-		Port(9876).
 		StartTimeout(10 * time.Second))
 
 	database.createDatabase = func(port uint32, username, password, database string) error {
@@ -166,6 +163,7 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 
 func Test_TimesOutWhenCannotStart(t *testing.T) {
 	database := NewDatabase(DefaultConfig().
+		Port(2222).
 		StartTimeout(100 * time.Nanosecond))
 
 	err := database.Start()
@@ -192,7 +190,7 @@ func Test_ErrorSentToStartChannelWhenCannotStart(t *testing.T) {
 
 	select {
 	case err := <-startErrors:
-		assert.EqualError(t, err, "could not start posgres using dir_not_exists/bin/postgres -p 5432 -h localhost -D dir_not_exists/data")
+		assert.EqualError(t, err, `could not start postgres using dir_not_exists/bin/pg_ctl start -w -D dir_not_exists/data -o "-p 5432"`)
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out test")
 	}
