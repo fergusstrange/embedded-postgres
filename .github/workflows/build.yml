@@ -52,6 +52,6 @@ jobs:
       - name: windows plaltform tests
         if: matrix.os == 'windows-latest'
         run: |
-          Remove-LocalGroupMember -Group "Administrators" -Member whoami
+          Remove-LocalGroupMember -Group "Administrators" -Member $env:UserName
           cd platform-test
           go test -v ./...
