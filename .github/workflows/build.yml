@@ -53,5 +53,19 @@ jobs:
         run: |
           net user postgres "1Lne<4^L77rU8D" /add
           cd platform-test
-          runas /user:postgres go get -v -t ./...
-          runas /user:postgres go test -v ./...
+          $pinfo = New-Object System.Diagnostics.ProcessStartInfo
+          $pinfo.FileName = "go.exe"
+          $pinfo.Arguments = "test", "-v", "./..."
+          $pinfo.Credentials = New-Object System.Management.Automation.PSCredential (postgres, ConvertTo-SecureString "1Lne<4^L77rU8D" -AsPlainText -Force)
+          $pinfo.RedirectStandardError = $true
+          $pinfo.RedirectStandardOutput = $true
+          $pinfo.UseShellExecute = $false
+          $p = New-Object System.Diagnostics.Process
+          $p.StartInfo = $pinfo
+          $p.Start() | Out-Null
+          $p.WaitForExit()
+          $stdout = $p.StandardOutput.ReadToEnd()
+          $stderr = $p.StandardError.ReadToEnd()
+          Write-Host "stdout: $stdout"
+          Write-Host "stderr: $stderr"
+          Write-Host "exit code: " + $p.ExitCode
