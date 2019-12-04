@@ -19,6 +19,7 @@ type EmbeddedPostgres struct {
 	cacheLocator        CacheLocator
 	remoteFetchStrategy RemoteFetchStrategy
 	initDatabase        InitDatabase
+	createDatabase      CreateDatabase
 	startErrors         chan error
 	stopErrors          chan error
 	stopSignal          chan bool
@@ -40,6 +41,7 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 		cacheLocator:        cacheLocator,
 		remoteFetchStrategy: remoteFetchStrategy,
 		initDatabase:        defaultInitDatabase,
+		createDatabase:      defaultCreateDatabase,
 		startErrors:         make(chan error, 1),
 		stopErrors:          make(chan error, 1),
 		stopSignal:          make(chan bool, 1),
@@ -79,7 +81,9 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
-	if err := createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
+	if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
+		ep.stopSignal <- true
+		close(ep.stopSignal)
 		return err
 	}
 
@@ -101,7 +105,7 @@ func startPostgres(binaryExtractLocation string, config Config, stopSignal chan 
 	postgresProcess.Stderr = os.Stderr
 	postgresProcess.Stdout = os.Stdout
 	if err := postgresProcess.Start(); err != nil {
-		startErrors <- err
+		startErrors <- fmt.Errorf("could not start posgres using %s", postgresProcess.String())
 		close(startErrors)
 		return
 	}
@@ -137,28 +141,6 @@ func ensurePortAvailable(port uint32) error {
 	if err := conn.Close(); err != nil {
 		return err
 	}
-	return nil
-}
-
-func createDatabase(port uint32, username, password, database string) error {
-	if database == "postgres" {
-		return nil
-	}
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
-		port,
-		username,
-		password,
-		"postgres"))
-	if err != nil {
-		return err
-	}
-	if _, err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
-		return err
-	}
-	if err := db.Close(); err != nil {
-		return err
-	}
-
 	return nil
 }
 

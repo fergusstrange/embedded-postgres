@@ -133,6 +133,37 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 	assert.EqualError(t, err, "ah it did not work")
 }
 
+func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
+	jarFile, cleanUp := testutil.CreateTempXzArchive()
+	defer cleanUp()
+	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
+	if err != nil {
+		panic(err)
+	}
+
+	database := NewDatabase(DefaultConfig().
+		Username("gin").
+		Password("wine").
+		Database("beer").
+		RuntimePath(extractPath).
+		Port(9876).
+		StartTimeout(10 * time.Second))
+
+	database.createDatabase = func(port uint32, username, password, database string) error {
+		return errors.New("ah noes")
+	}
+
+	err = database.Start()
+
+	if err == nil {
+		if err := database.Stop(); err != nil {
+			panic(err)
+		}
+	}
+
+	assert.EqualError(t, err, "ah noes")
+}
+
 func Test_TimesOutWhenCannotStart(t *testing.T) {
 	database := NewDatabase(DefaultConfig().
 		StartTimeout(100 * time.Nanosecond))
@@ -146,6 +177,25 @@ func Test_TimesOutWhenCannotStart(t *testing.T) {
 	}
 
 	assert.EqualError(t, err, "timed out waiting for database to start")
+}
+
+func Test_ErrorSentToStartChannelWhenCannotStart(t *testing.T) {
+	stopSignal := make(chan bool)
+	startErrors := make(chan error)
+	stopErrors := make(chan error)
+
+	go startPostgres("dir_not_exists",
+		DefaultConfig(),
+		stopSignal,
+		startErrors,
+		stopErrors)
+
+	select {
+	case err := <-startErrors:
+		assert.EqualError(t, err, "could not start posgres using dir_not_exists/bin/postgres -p 5432 -h localhost -D dir_not_exists/data")
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out test")
+	}
 }
 
 func Test_CustomConfig(t *testing.T) {

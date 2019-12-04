@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +10,7 @@ import (
 )
 
 type InitDatabase func(binaryExtractLocation, username, password string) error
+type CreateDatabase func(port uint32, username, password, database string) error
 
 func defaultInitDatabase(binaryExtractLocation, username, password string) error {
 	passwordFile, err := createPasswordFile(binaryExtractLocation, password)
@@ -35,4 +37,26 @@ func createPasswordFile(binaryExtractLocation, password string) (string, error) 
 		return "", fmt.Errorf("unable to write password file to %s", passwordFileLocation)
 	}
 	return passwordFileLocation, nil
+}
+
+func defaultCreateDatabase(port uint32, username, password, database string) error {
+	if database == "postgres" {
+		return nil
+	}
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
+		port,
+		username,
+		password,
+		"postgres"))
+	if err != nil {
+		return err
+	}
+	if _, err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
+		return err
+	}
+	if err := db.Close(); err != nil {
+		return err
+	}
+
+	return nil
 }
