@@ -48,6 +48,5 @@ jobs:
           go get -v -t ./...
       - name: platform tests
         run: |
-          pushd platform-test && \
-          go test -v ./... && \
-          popd
+          cd platform-test
+          go test -v ./...
