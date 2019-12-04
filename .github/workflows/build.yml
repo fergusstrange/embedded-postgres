@@ -52,24 +52,6 @@ jobs:
       - name: windows plaltform tests
         if: matrix.os == 'windows-latest'
         run: |
-          net user postgres "1Lne<4^L77rU8D" /add
+          Remove-LocalGroupMember -Group "Administrators" -Member whoami
           cd platform-test
-          $password = ConvertTo-SecureString "1Lne<4^L77rU8D" -AsPlainText -Force
-          $pinfo = New-Object System.Diagnostics.ProcessStartInfo
-          $pinfo.FileName = "go.exe"
-          $pinfo.Arguments = "test", "-v", "./..."
-          $pinfo.UserName = "postgres"
-          $pinfo.Password = $password
-          $pinfo.CreateNoWindow = true
-          $pinfo.RedirectStandardError = $true
-          $pinfo.RedirectStandardOutput = $true
-          $pinfo.UseShellExecute = $false
-          $p = New-Object System.Diagnostics.Process
-          $p.StartInfo = $pinfo
-          $p.Start() | Out-Null
-          $p.WaitForExit()
-          $stdout = $p.StandardOutput.ReadToEnd()
-          $stderr = $p.StandardError.ReadToEnd()
-          Write-Host "stdout: $stdout"
-          Write-Host "stderr: $stderr"
-          exit $p.ExitCode
+          go test -v ./...
