@@ -4,36 +4,37 @@ on:
     branches:
       - master
 jobs:
-  tests:
-    name: tests
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        id: go
-        uses: actions/checkout@v1
-      - name: set up golang
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-      - name: fetch dependencies
-        run: |
-          go get -v -t ./...
-      - name: test
-        run: go test -v -race -cover -covermode=atomic -coverprofile=coverage.out ./...
-      - name: test examples
-        run: |
-          pushd examples && \
-          go test -v ./... && \
-          popd
-      - name: Upload Coverage Report
-        env:
-          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: GO111MODULE=off go get github.com/mattn/goveralls && $(go env GOPATH)/bin/goveralls -v -coverprofile=coverage.out -service=github
+#  tests:
+#    name: tests
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: checkout
+#        id: go
+#        uses: actions/checkout@v1
+#      - name: set up golang
+#        uses: actions/setup-go@v1
+#        with:
+#          go-version: 1.13
+#      - name: fetch dependencies
+#        run: |
+#          go get -v -t ./...
+#      - name: test
+#        run: go test -v -race -cover -covermode=atomic -coverprofile=coverage.out ./...
+#      - name: test examples
+#        run: |
+#          pushd examples && \
+#          go test -v ./... && \
+#          popd
+#      - name: Upload Coverage Report
+#        env:
+#          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        run: GO111MODULE=off go get github.com/mattn/goveralls && $(go env GOPATH)/bin/goveralls -v -coverprofile=coverage.out -service=github
   platform_tests:
     name: platform tests
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        #os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
@@ -53,10 +54,11 @@ jobs:
         run: |
           net user postgres "1Lne<4^L77rU8D" /add
           cd platform-test
+          $password = ConvertTo-SecureString "1Lne<4^L77rU8D" -AsPlainText -Force
           $pinfo = New-Object System.Diagnostics.ProcessStartInfo
           $pinfo.FileName = "go.exe"
           $pinfo.Arguments = "test", "-v", "./..."
-          $pinfo.Credentials = New-Object System.Management.Automation.PSCredential (postgres, ConvertTo-SecureString "1Lne<4^L77rU8D" -AsPlainText -Force)
+          $pinfo.Credentials = New-Object System.Management.Automation.PSCredential ("postgres", $password)
           $pinfo.RedirectStandardError = $true
           $pinfo.RedirectStandardOutput = $true
           $pinfo.UseShellExecute = $false
