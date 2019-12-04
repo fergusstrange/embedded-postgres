@@ -37,16 +37,21 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: checkout
-        id: go
         uses: actions/checkout@v1
       - name: set up golang
         uses: actions/setup-go@v1
         with:
           go-version: 1.13
-      - name: fetch dependencies
-        run: |
-          go get -v -t ./...
-      - name: platform tests
+      - name: linux/osx platform tests
+        if: matrix.os != 'windows-latest'
         run: |
           cd platform-test
+          go get -v -t ./...
           go test -v ./...
+      - name: windows plaltform tests
+        if: matrix.os == 'windows-latest'
+        run: |
+          net user postgres your_password /add
+          cd platform-test
+          runas /user:postgres go get -v -t ./...
+          runas /user:postgres go test -v ./...
