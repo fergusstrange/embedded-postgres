@@ -58,7 +58,9 @@ jobs:
           $pinfo = New-Object System.Diagnostics.ProcessStartInfo
           $pinfo.FileName = "go.exe"
           $pinfo.Arguments = "test", "-v", "./..."
-          $pinfo.Credentials = New-Object System.Management.Automation.PSCredential ("postgres", $password)
+          $pinfo.UserName = "postgres"
+          $pinfo.Password = $password
+          $pinfo.CreateNoWindow = true
           $pinfo.RedirectStandardError = $true
           $pinfo.RedirectStandardOutput = $true
           $pinfo.UseShellExecute = $false
