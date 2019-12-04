@@ -1,4 +1,4 @@
-name: Embedded Postgres Build
+name: Embedded Postgres
 on:
   push:
     branches:
