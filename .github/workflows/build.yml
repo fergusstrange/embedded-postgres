@@ -51,7 +51,7 @@ jobs:
       - name: windows plaltform tests
         if: matrix.os == 'windows-latest'
         run: |
-          net user postgres your_password /add
+          net user postgres -dh\p]qC=#M%Lne;<4^L77*tjzrU8D+n /add
           cd platform-test
           runas /user:postgres go get -v -t ./...
           runas /user:postgres go test -v ./...
