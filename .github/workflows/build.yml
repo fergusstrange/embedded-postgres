@@ -19,6 +19,10 @@ jobs:
       - name: Fetch Dependencies
         run: |
           go get -v -t ./...
+      - name: Nancy Vulnerability
+        uses: sonatype-nexus-community/nancy-github-action@master
+        with:
+          target: go.sum
       - name: Test
         run: go test -v -race -cover -covermode=atomic -coverprofile=coverage.out ./...
       - name: Test Examples
