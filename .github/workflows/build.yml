@@ -5,22 +5,22 @@ on:
       - master
 jobs:
   tests:
-    name: tests
+    name: Tests
     runs-on: ubuntu-latest
     steps:
-      - name: checkout
+      - name: Checkout
         id: go
         uses: actions/checkout@v1
-      - name: set up golang
+      - name: Set Up Golang
         uses: actions/setup-go@v1
         with:
           go-version: 1.13
-      - name: fetch dependencies
+      - name: Fetch Dependencies
         run: |
           go get -v -t ./...
-      - name: test
+      - name: Test
         run: go test -v -race -cover -covermode=atomic -coverprofile=coverage.out ./...
-      - name: test examples
+      - name: Test Examples
         run: |
           pushd examples && \
           go test -v ./... && \
@@ -30,19 +30,19 @@ jobs:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: GO111MODULE=off go get github.com/mattn/goveralls && $(go env GOPATH)/bin/goveralls -v -coverprofile=coverage.out -service=github
   platform_tests:
-    name: platform tests
+    name: Platform tests
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v1
-      - name: set up golang
+      - name: Set Up Golang
         uses: actions/setup-go@v1
         with:
           go-version: 1.13
-      - name: platform tests
+      - name: Platform Tests
         run: |
           cd platform-test
           go get -v -t ./...
