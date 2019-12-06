@@ -1,8 +1,11 @@
 package embeddedpostgres
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"github.com/lib/pq"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -43,20 +46,62 @@ func defaultCreateDatabase(port uint32, username, password, database string) err
 	if database == "postgres" {
 		return nil
 	}
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
-		port,
-		username,
-		password,
-		"postgres"))
+	conn, err := openDatabaseConnection(port, username, password, "postgres")
 	if err != nil {
-		return err
+		return errorCustomDatabase(database, err)
 	}
-	if _, err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
-		return err
-	}
-	if err := db.Close(); err != nil {
-		return err
+	if _, err := sql.OpenDB(conn).Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
+		return errorCustomDatabase(database, err)
 	}
 
 	return nil
+}
+
+func healthCheckDatabaseOrTimeout(config Config) error {
+	healthCheckSignal := make(chan bool)
+	defer close(healthCheckSignal)
+	timeout, cancelFunc := context.WithTimeout(context.Background(), config.startTimeout)
+	defer cancelFunc()
+	go func() {
+		for timeout.Err() == nil {
+			if err := healthCheckDatabase(config.port, config.database, config.username, config.password); err != nil {
+				continue
+			}
+			healthCheckSignal <- true
+			break
+		}
+	}()
+	select {
+	case <-healthCheckSignal:
+		return nil
+	case <-timeout.Done():
+		return errors.New("timed out waiting for database to become available")
+	}
+}
+
+func healthCheckDatabase(port uint32, database, username, password string) error {
+	conn, err := openDatabaseConnection(port, username, password, database)
+	if err != nil {
+		return err
+	}
+	if _, err := sql.OpenDB(conn).Query("SELECT 1"); err != nil {
+		return err
+	}
+	return nil
+}
+
+func openDatabaseConnection(port uint32, username string, password string, database string) (*pq.Connector, error) {
+	conn, err := pq.NewConnector(fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
+		port,
+		username,
+		password,
+		database))
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
+
+func errorCustomDatabase(database string, err error) error {
+	return fmt.Errorf("unable to connect to create database with custom name %s with the following error: %s", database, err)
 }

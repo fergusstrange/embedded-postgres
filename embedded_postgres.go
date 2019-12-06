@@ -1,11 +1,8 @@
 package embeddedpostgres
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/lib/pq"
 	"github.com/mholt/archiver"
 	"log"
 	"net"
@@ -20,9 +17,7 @@ type EmbeddedPostgres struct {
 	remoteFetchStrategy RemoteFetchStrategy
 	initDatabase        InitDatabase
 	createDatabase      CreateDatabase
-	startErrors         chan error
-	stopErrors          chan error
-	stopSignal          chan bool
+	started             bool
 }
 
 func NewDatabase(config ...Config) *EmbeddedPostgres {
@@ -42,13 +37,15 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 		remoteFetchStrategy: remoteFetchStrategy,
 		initDatabase:        defaultInitDatabase,
 		createDatabase:      defaultCreateDatabase,
-		startErrors:         make(chan error, 1),
-		stopErrors:          make(chan error, 1),
-		stopSignal:          make(chan bool, 1),
+		started:             false,
 	}
 }
 
 func (ep *EmbeddedPostgres) Start() error {
+	if ep.started {
+		return errors.New("server is already started")
+	}
+
 	if err := ensurePortAvailable(ep.config.port); err != nil {
 		return err
 	}
@@ -73,17 +70,23 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
-	go startPostgres(binaryExtractLocation, ep.config, ep.stopSignal, ep.startErrors, ep.stopErrors)
-
-	for err := range ep.startErrors {
-		ep.stopSignal <- true
-		close(ep.stopSignal)
+	if err := startPostgres(binaryExtractLocation, ep.config); err != nil {
 		return err
 	}
 
+	ep.started = true
+
 	if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
-		ep.stopSignal <- true
-		close(ep.stopSignal)
+		if stopErr := stopPostgres(binaryExtractLocation); stopErr != nil {
+			return fmt.Errorf("unable to stop database casused by error %s", err)
+		}
+		return err
+	}
+
+	if err := healthCheckDatabaseOrTimeout(ep.config); err != nil {
+		if stopErr := stopPostgres(binaryExtractLocation); stopErr != nil {
+			return fmt.Errorf("unable to stop database casused by error %s", err)
+		}
 		return err
 	}
 
@@ -91,15 +94,19 @@ func (ep *EmbeddedPostgres) Start() error {
 }
 
 func (ep *EmbeddedPostgres) Stop() error {
-	ep.stopSignal <- true
-	close(ep.stopSignal)
-	for err := range ep.stopErrors {
+	cacheLocation, exists := ep.cacheLocator()
+	if !exists || !ep.started {
+		return errors.New("server has not been started")
+	}
+	binaryExtractLocation := userLocationOrDefault(ep.config.runtimePath, cacheLocation)
+	if err := stopPostgres(binaryExtractLocation); err != nil {
 		return err
 	}
+	ep.started = false
 	return nil
 }
 
-func startPostgres(binaryExtractLocation string, config Config, stopSignal chan bool, startErrors, stopErrors chan error) {
+func startPostgres(binaryExtractLocation string, config Config) error {
 	postgresBinary := filepath.Join(binaryExtractLocation, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "start", "-w",
 		"-D", filepath.Join(binaryExtractLocation, "data"),
@@ -108,22 +115,9 @@ func startPostgres(binaryExtractLocation string, config Config, stopSignal chan 
 	postgresProcess.Stderr = os.Stderr
 	postgresProcess.Stdout = os.Stdout
 	if err := postgresProcess.Run(); err != nil {
-		startErrors <- fmt.Errorf("could not start postgres using %s", postgresProcess.String())
-		close(startErrors)
-		return
+		return fmt.Errorf("could not start postgres using %s", postgresProcess.String())
 	}
-
-	if err := healthCheckDatabaseOrTimeout(config); err != nil {
-		startErrors <- err
-	}
-	close(startErrors)
-
-	for range stopSignal {
-		if err := stopPostgres(binaryExtractLocation); err != nil {
-			stopErrors <- err
-		}
-		close(stopErrors)
-	}
+	return nil
 }
 
 func stopPostgres(binaryExtractLocation string) error {
@@ -141,51 +135,6 @@ func ensurePortAvailable(port uint32) error {
 		return fmt.Errorf("process already listening on port %d", port)
 	}
 	if err := conn.Close(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func healthCheckDatabaseOrTimeout(config Config) error {
-	healthCheckSignal := make(chan bool)
-	defer close(healthCheckSignal)
-	timeout, cancelFunc := context.WithTimeout(context.Background(), config.startTimeout)
-	defer cancelFunc()
-	go func() {
-		for timeout.Err() == nil {
-			if err := healthCheckDatabase(config.port, config.username, config.password); err != nil {
-				continue
-			}
-			healthCheckSignal <- true
-			break
-		}
-	}()
-	select {
-	case <-healthCheckSignal:
-		return nil
-	case <-timeout.Done():
-		return errors.New("timed out waiting for database to start")
-	}
-}
-
-func healthCheckDatabase(port uint32, username, password string) error {
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
-		port,
-		username,
-		password,
-		"postgres"))
-	if err != nil {
-		return err
-	}
-	rows, err := db.Query("SELECT 1")
-	if err != nil {
-		return err
-	}
-	if err := rows.Close(); err != nil {
-		return err
-	}
-
-	if err := db.Close(); err != nil {
 		return err
 	}
 	return nil

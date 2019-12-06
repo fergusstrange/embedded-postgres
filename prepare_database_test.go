@@ -31,3 +31,32 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 		tempDir))
 	assert.FileExists(t, filepath.Join(tempDir, "pwfile"))
 }
+
+func Test_defaultCreateDatabase_ErrorWhenSQLOpenError(t *testing.T) {
+	err := defaultCreateDatabase(1234, "user client_encoding=lol", "password", "database")
+
+	assert.EqualError(t, err, "unable to connect to create database with custom name database with the following error: client_encoding must be absent or 'UTF8'")
+}
+
+func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
+	database := NewDatabase(DefaultConfig().
+		Database("b33r"))
+	if err := database.Start(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := database.Stop(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	err := defaultCreateDatabase(5432, "postgres", "postgres", "b33r")
+
+	assert.EqualError(t, err, `unable to connect to create database with custom name b33r with the following error: pq: database "b33r" already exists`)
+}
+
+func Test_healthCheckDatabase_ErrorWhenSQLConnectingError(t *testing.T) {
+	err := healthCheckDatabase(1234, "tom client_encoding=lol", "more", "b33r")
+
+	assert.EqualError(t, err, "client_encoding must be absent or 'UTF8'")
+}

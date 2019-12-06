@@ -163,37 +163,63 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 
 func Test_TimesOutWhenCannotStart(t *testing.T) {
 	database := NewDatabase(DefaultConfig().
-		Port(2222).
-		StartTimeout(100 * time.Nanosecond))
+		Database("something-fancy").
+		StartTimeout(500 * time.Millisecond))
+
+	database.createDatabase = func(port uint32, username, password, database string) error {
+		return nil
+	}
 
 	err := database.Start()
 
-	if err == nil {
-		if err := database.Stop(); err != nil {
-			panic(err)
-		}
-	}
-
-	assert.EqualError(t, err, "timed out waiting for database to start")
+	assert.EqualError(t, err, "timed out waiting for database to become available")
 }
 
-func Test_ErrorSentToStartChannelWhenCannotStart(t *testing.T) {
-	stopSignal := make(chan bool)
-	startErrors := make(chan error)
-	stopErrors := make(chan error)
+func Test_ErrorWhenStopCalledBeforeStart(t *testing.T) {
+	database := NewDatabase()
 
-	go startPostgres("dir_not_exists",
-		DefaultConfig(),
-		stopSignal,
-		startErrors,
-		stopErrors)
+	err := database.Stop()
 
-	select {
-	case err := <-startErrors:
-		assert.EqualError(t, err, `could not start postgres using dir_not_exists/bin/pg_ctl start -w -D dir_not_exists/data -o "-p 5432"`)
-	case <-time.After(2 * time.Second):
-		t.Fatal("timed out test")
+	assert.EqualError(t, err, "server has not been started")
+}
+
+func Test_ErrorWhenStartCalledWhenAlreadyStarted(t *testing.T) {
+	database := NewDatabase()
+	defer func() {
+		if err := database.Stop(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	err := database.Start()
+	assert.NoError(t, err)
+
+	err = database.Start()
+	assert.EqualError(t, err, "server is already started")
+}
+
+func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
+	jarFile, cleanUp := testutil.CreateTempXzArchive()
+	defer cleanUp()
+	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
+	if err != nil {
+		panic(err)
 	}
+
+	database := NewDatabase(DefaultConfig().
+		RuntimePath(extractPath))
+
+	database.cacheLocator = func() (string, bool) {
+		return jarFile, true
+	}
+
+	database.initDatabase = func(binaryExtractLocation, username, password string) error {
+		return nil
+	}
+
+	err = database.Start()
+
+	assert.EqualError(t, err, fmt.Sprintf(`could not start postgres using %s/bin/pg_ctl start -w -D %s/data -o "-p 5432"`, extractPath, extractPath))
 }
 
 func Test_CustomConfig(t *testing.T) {
@@ -220,6 +246,52 @@ func Test_CustomConfig(t *testing.T) {
 	}
 
 	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=9876 user=gin password=wine dbname=beer sslmode=disable"))
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_CanStartAndStopTwice(t *testing.T) {
+	database := NewDatabase()
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err = sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
