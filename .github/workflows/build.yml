@@ -18,7 +18,7 @@ jobs:
           go-version: 1.13
       - name: Check Dependencies
         run: |
-          for d in . examples platform-test; do
+          for d in "." "examples" "platform-test"; do
             pushd d
             go mod tidy
             if [ ! -z "$(git status --porcelain go.mod)" ]; then
