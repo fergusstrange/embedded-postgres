@@ -17,6 +17,9 @@ func Test_defaultInitDatabase_ErrorWhenCannotCreatePasswordFile(t *testing.T) {
 
 func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "prepare_database_test")
+	if err != nil {
+		panic(err)
+	}
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			panic(err)
