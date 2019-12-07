@@ -38,9 +38,9 @@ jobs:
 #        with:
 #          target: go.sum
       - name: GolangCI Lint
-        uses: docker://reviewdog/action-golangci-lint:v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
+          golangci-lint run
       - name: Test
         run: go test -v -race -cover -covermode=atomic -coverprofile=coverage.out ./...
       - name: Test Examples
