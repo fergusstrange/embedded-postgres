@@ -19,7 +19,7 @@ jobs:
       - name: Check Dependencies
         run: |
           for d in "." "examples" "platform-test"; do
-            pushd d
+            pushd $d
             go mod tidy
             if [ ! -z "$(git status --porcelain go.mod)" ]; then
               printf "go.mod has modifications\n"
