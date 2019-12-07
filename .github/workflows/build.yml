@@ -38,7 +38,7 @@ jobs:
 #        with:
 #          target: go.sum
       - name: GolangCI Lint
-        uses: docker://matoous/golangci-lint-action:v1.1.0
+        uses: docker://reviewdog/action-golangci-lint:v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Test
