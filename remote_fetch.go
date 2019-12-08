@@ -4,21 +4,23 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"github.com/mholt/archiver"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/mholt/archiver"
 )
 
+// RemoteFetchStrategy provides a strategy to fetch a Postgres binary so that it is available for use.
 type RemoteFetchStrategy func() error
 
 func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionStrategy, cacheLocator CacheLocator) RemoteFetchStrategy {
 	return func() error {
 		operatingSystem, architecture, version := versionStrategy()
-		downloadUrl := fmt.Sprintf("%s/maven2/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
+		downloadURL := fmt.Sprintf("%s/maven2/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
 			remoteFetchHost,
 			operatingSystem,
 			architecture,
@@ -26,7 +28,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			operatingSystem,
 			architecture,
 			version)
-		resp, err := http.Get(downloadUrl)
+		resp, err := http.Get(downloadURL)
 		if err != nil {
 			return fmt.Errorf("unable to connect to %s", remoteFetchHost)
 		}
@@ -54,7 +56,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 		for {
 			downloadedArchive, err := zipFile.Read()
 			if err != nil {
-				return errorExtractingBinary(downloadUrl)
+				return errorExtractingBinary(downloadURL)
 			}
 			if header, ok := downloadedArchive.Header.(zip.FileHeader); !ok || !strings.HasSuffix(header.Name, ".txz") {
 				continue
@@ -73,8 +75,8 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 	}
 }
 
-func errorExtractingBinary(downloadUrl string) error {
-	return fmt.Errorf("error fetching postgres: cannot find binary in archive retrieved from %s", downloadUrl)
+func errorExtractingBinary(downloadURL string) error {
+	return fmt.Errorf("error fetching postgres: cannot find binary in archive retrieved from %s", downloadURL)
 }
 
 func errorFetchingPostgres(err error) error {
@@ -85,8 +87,10 @@ func createArchiveFile(archiveLocation string, archiveBytes []byte) error {
 	if err := os.MkdirAll(filepath.Dir(archiveLocation), 0755); err != nil {
 		return err
 	}
+
 	if err := ioutil.WriteFile(archiveLocation, archiveBytes, 0666); err != nil {
 		return err
 	}
+
 	return nil
 }

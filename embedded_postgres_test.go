@@ -4,14 +4,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/fergusstrange/embedded-postgres/testutil"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_DefaultConfig(t *testing.T) {
@@ -43,6 +43,7 @@ func Test_ErrorWhenPortAlreadyTaken(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() {
 		if err := listener.Close(); err != nil {
 			panic(err)
@@ -72,7 +73,7 @@ func Test_ErrorWhenRemoteFetchError(t *testing.T) {
 }
 
 func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
-	jarFile, cleanUp := testutil.CreateTempZipArchive()
+	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
 
 	database := NewDatabase(DefaultConfig().
@@ -98,8 +99,9 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 }
 
 func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
-	jarFile, cleanUp := testutil.CreateTempXzArchive()
+	jarFile, cleanUp := createTempXzArchive()
 	defer cleanUp()
+
 	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
 	if err != nil {
 		panic(err)
@@ -132,9 +134,12 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 }
 
 func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
-	jarFile, cleanUp := testutil.CreateTempXzArchive()
+	jarFile, cleanUp := createTempXzArchive()
+
 	defer cleanUp()
+
 	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
+
 	if err != nil {
 		panic(err)
 	}
@@ -185,6 +190,7 @@ func Test_ErrorWhenStopCalledBeforeStart(t *testing.T) {
 
 func Test_ErrorWhenStartCalledWhenAlreadyStarted(t *testing.T) {
 	database := NewDatabase()
+
 	defer func() {
 		if err := database.Stop(); err != nil {
 			t.Fatal(err)
@@ -199,8 +205,10 @@ func Test_ErrorWhenStartCalledWhenAlreadyStarted(t *testing.T) {
 }
 
 func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
-	jarFile, cleanUp := testutil.CreateTempXzArchive()
+	jarFile, cleanUp := createTempXzArchive()
+
 	defer cleanUp()
+
 	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
 	if err != nil {
 		panic(err)
@@ -227,6 +235,7 @@ func Test_CustomConfig(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			panic(err)
@@ -237,7 +246,7 @@ func Test_CustomConfig(t *testing.T) {
 		Username("gin").
 		Password("wine").
 		Database("beer").
-		Version(V12_1_0).
+		Version(V12).
 		RuntimePath(tempDir).
 		Port(9876).
 		StartTimeout(10 * time.Second))
@@ -307,11 +316,4 @@ func Test_CanStartAndStopTwice(t *testing.T) {
 	if err := database.Stop(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
-}
-
-func shutdownDBAndFail(t *testing.T, err error, db *EmbeddedPostgres) {
-	if err := db.Stop(); err != nil {
-		t.Fatalf("Failed for version %s with error %s", db.config.version, err)
-	}
-	t.Fatalf("Failed for version %s with error %s", db.config.version, err)
 }

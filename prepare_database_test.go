@@ -2,11 +2,12 @@ package embeddedpostgres
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_defaultInitDatabase_ErrorWhenCannotCreatePasswordFile(t *testing.T) {
@@ -20,6 +21,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			panic(err)
@@ -47,6 +49,7 @@ func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
 	}
+
 	defer func() {
 		if err := database.Stop(); err != nil {
 			t.Fatal(err)

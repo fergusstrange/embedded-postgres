@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 )
 
-type CacheLocator func() (string, bool)
+// CacheLocator retrieves the location of the Postgres binary cache returning it to location.
+// The result of whether this cache is present will be returned to exists.
+type CacheLocator func() (location string, exists bool)
 
 func defaultCacheLocator(versionStrategy VersionStrategy) CacheLocator {
 	return func() (string, bool) {

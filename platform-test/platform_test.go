@@ -12,7 +12,7 @@ import (
 )
 
 func Test_AllMajorVersions(t *testing.T) {
-	allVersions := []embeddedpostgres.PostgresVersion{embeddedpostgres.V12_1_0, embeddedpostgres.V11_6_0, embeddedpostgres.V10_11_0, embeddedpostgres.V9_6_16}
+	allVersions := []embeddedpostgres.PostgresVersion{embeddedpostgres.V12, embeddedpostgres.V11, embeddedpostgres.V10, embeddedpostgres.V9}
 	tempExtractLocation, err := ioutil.TempDir("", "embedded_postgres_go_tests")
 	if err != nil {
 		t.Fatal(err)

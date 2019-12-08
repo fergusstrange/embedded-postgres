@@ -1,25 +1,21 @@
 package embeddedpostgres
 
 import (
-	"github.com/fergusstrange/embedded-postgres/testutil"
-	"github.com/mholt/archiver"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/mholt/archiver"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenHttpGet(t *testing.T) {
 	remoteFetchStrategy := defaultRemoteFetchStrategy("http://localhost:1234",
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "", "123"
-		},
-		func() (s string, b bool) {
-			return "", false
-		})
+		testVersionStrategy(),
+		testCacheLocator())
 
 	err := remoteFetchStrategy()
 
@@ -33,12 +29,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenHttpStatusNot200(t *testing.T) {
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "", "123"
-		},
-		func() (s string, b bool) {
-			return "", false
-		})
+		testVersionStrategy(),
+		testCacheLocator())
 
 	err := remoteFetchStrategy()
 
@@ -52,12 +44,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "", "123"
-		},
-		func() (s string, b bool) {
-			return "", false
-		})
+		testVersionStrategy(),
+		testCacheLocator())
 
 	err := remoteFetchStrategy()
 
@@ -71,12 +59,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubfile(t *testing.T) {
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "", "123"
-		},
-		func() (s string, b bool) {
-			return "", false
-		})
+		testVersionStrategy(),
+		testCacheLocator())
 
 	err := remoteFetchStrategy()
 
@@ -92,12 +76,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "", "123"
-		},
-		func() (s string, b bool) {
-			return "", false
-		})
+		testVersionStrategy(),
+		testCacheLocator())
 
 	err := remoteFetchStrategy()
 
@@ -119,12 +99,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "darwin", "123"
-		},
-		func() (s string, b bool) {
-			return "", false
-		})
+		testVersionStrategy(),
+		testCacheLocator())
 
 	err := remoteFetchStrategy()
 
@@ -132,9 +108,11 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing.T) {
-	jarFile, cleanUp := testutil.CreateTempZipArchive()
+	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
+
 	dirBlockingExtract := filepath.Join(filepath.Dir(jarFile), "some_dir")
+
 	if err := os.MkdirAll(dirBlockingExtract, 0400); err != nil {
 		panic(err)
 	}
@@ -151,9 +129,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "darwin", "123"
-		},
+		testVersionStrategy(),
 		func() (s string, b bool) {
 			return dirBlockingExtract, false
 		})
@@ -164,12 +140,15 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *testing.T) {
-	jarFile, cleanUp := testutil.CreateTempZipArchive()
+	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
+
 	fileBlockingExtractDirectory := filepath.Join(filepath.Dir(jarFile), "a_file_blocking_extract")
+
 	if _, err := os.Create(fileBlockingExtractDirectory); err != nil {
 		panic(err)
 	}
+
 	cacheLocation := filepath.Join(fileBlockingExtractDirectory, "cache_file.jar")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -181,12 +160,11 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 			panic(err)
 		}
 	}))
+
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "darwin", "123"
-		},
+		testVersionStrategy(),
 		func() (s string, b bool) {
 			return cacheLocation, false
 		})
@@ -197,9 +175,11 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *testing.T) {
-	jarFile, cleanUp := testutil.CreateTempZipArchive()
+	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
+
 	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_directory", "cache_file.jar")
+
 	if err := os.MkdirAll(cacheLocation, 0755); err != nil {
 		panic(err)
 	}
@@ -216,9 +196,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "darwin", "123"
-		},
+		testVersionStrategy(),
 		func() (s string, b bool) {
 			return cacheLocation, false
 		})
@@ -229,8 +207,9 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 }
 
 func Test_defaultRemoteFetchStrategy(t *testing.T) {
-	jarFile, cleanUp := testutil.CreateTempZipArchive()
+	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
+
 	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_location", "cache.jar")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -245,9 +224,7 @@ func Test_defaultRemoteFetchStrategy(t *testing.T) {
 	defer server.Close()
 
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
-		func() (s string, s2 string, version PostgresVersion) {
-			return "1", "darwin", "123"
-		},
+		testVersionStrategy(),
 		func() (s string, b bool) {
 			return cacheLocation, false
 		})

@@ -1,8 +1,9 @@
 package embeddedpostgres
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_defaultCacheLocator_NotExists(t *testing.T) {
