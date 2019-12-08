@@ -34,7 +34,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenHttpStatusNot200(t *testing.T) {
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "no version found matching 123")
+	assert.EqualError(t, err, "no version found matching 1.2.3")
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
@@ -52,7 +52,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
 	assert.EqualError(t, err, "error fetching postgres: unexpected EOF")
 }
 
-func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubfile(t *testing.T) {
+func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	}))
@@ -104,7 +104,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "error fetching postgres: cannot find binary in archive retrieved from "+server.URL+"/maven2/io/zonky/test/postgres/embedded-postgres-binaries-1-darwin/123/embedded-postgres-binaries-1-darwin-123.jar")
+	assert.EqualError(t, err, "error fetching postgres: cannot find binary in archive retrieved from "+server.URL+"/maven2/io/zonky/test/postgres/embedded-postgres-binaries-darwin-amd64/1.2.3/embedded-postgres-binaries-darwin-amd64-1.2.3.jar")
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing.T) {

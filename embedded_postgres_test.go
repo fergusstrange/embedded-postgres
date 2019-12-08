@@ -80,7 +80,6 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 		Username("gin").
 		Password("wine").
 		Database("beer").
-		RuntimePath("path_that_not_exists").
 		StartTimeout(10 * time.Second))
 
 	database.cacheLocator = func() (string, bool) {
@@ -95,7 +94,7 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 		}
 	}
 
-	assert.EqualError(t, err, fmt.Sprintf("unable to extract postgres archive %s to path_that_not_exists", jarFile))
+	assert.EqualError(t, err, fmt.Sprintf("unable to extract postgres archive %s to %s", jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
 }
 
 func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {

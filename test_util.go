@@ -69,8 +69,8 @@ func shutdownDBAndFail(t *testing.T, err error, db *EmbeddedPostgres) {
 }
 
 func testVersionStrategy() VersionStrategy {
-	return func() (s2 string, s string, version PostgresVersion) {
-		return "1", "", "123"
+	return func() (string, string, PostgresVersion) {
+		return "darwin", "amd64", "1.2.3"
 	}
 }
 
