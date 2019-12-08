@@ -1,11 +1,12 @@
 package embeddedpostgres
 
 import (
-	"github.com/mholt/archiver"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/mholt/archiver"
 )
 
 func createTempXzArchive() (string, func()) {
