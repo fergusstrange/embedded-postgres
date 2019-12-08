@@ -73,9 +73,8 @@ There are a number of realistic representations of how to use this library in [e
 
 ## Credits
 
-[Gopherize Me](https://gopherize.me) - Thanks for the awesome logo template.
-
-[zonkyio/embedded-postgres-binaries](https://github.com/zonkyio/embedded-postgres-binaries) - Without which the precompiled Postgres binaries would not exist for this to work. 
+- [Gopherize Me](https://gopherize.me) Thanks for the awesome logo template.
+- [zonkyio/embedded-postgres-binaries](https://github.com/zonkyio/embedded-postgres-binaries) Without which the precompiled Postgres binaries would not exist for this to work. 
 
 ## Contributing
 
