@@ -64,7 +64,3 @@ func GetBeer(db *sqlx.DB) func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 }
-
-func main() {
-	log.Fatal(NewApp().Start())
-}
