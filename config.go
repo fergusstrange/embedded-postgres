@@ -10,6 +10,7 @@ type Config struct {
 	username     string
 	password     string
 	runtimePath  string
+	locale       string
 	startTimeout time.Duration
 }
 
@@ -65,6 +66,12 @@ func (c Config) Password(password string) Config {
 // RuntimePath sets the path that will be used for the extracted Postgres runtime and data directory.
 func (c Config) RuntimePath(path string) Config {
 	c.runtimePath = path
+	return c
+}
+
+// Locale sets the default locale for initdb
+func (c Config) Locale(locale string) Config {
+	c.locale = locale
 	return c
 }
 

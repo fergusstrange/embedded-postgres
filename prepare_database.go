@@ -13,21 +13,28 @@ import (
 	"github.com/lib/pq"
 )
 
-type initDatabase func(binaryExtractLocation, username, password string) error
+type initDatabase func(binaryExtractLocation, username, password, locale string) error
 type createDatabase func(port uint32, username, password, database string) error
 
-func defaultInitDatabase(binaryExtractLocation, username, password string) error {
+func defaultInitDatabase(binaryExtractLocation, username, password, locale string) error {
 	passwordFile, err := createPasswordFile(binaryExtractLocation, password)
 	if err != nil {
 		return err
 	}
 
-	postgresInitDbBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
-	postgresInitDbProcess := exec.Command(postgresInitDbBinary,
+	args := []string{
 		"-A", "password",
 		"-U", username,
 		"-D", filepath.Join(binaryExtractLocation, "data"),
-		fmt.Sprintf("--pwfile=%s", passwordFile))
+		fmt.Sprintf("--pwfile=%s", passwordFile),
+	}
+
+	if locale != "" {
+		args = append(args, fmt.Sprintf("--locale=%s", locale))
+	}
+
+	postgresInitDbBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
+	postgresInitDbProcess := exec.Command(postgresInitDbBinary, args...)
 	postgresInitDbProcess.Stderr = os.Stderr
 	postgresInitDbProcess.Stdout = os.Stdout
 
