@@ -75,7 +75,7 @@ func (ep *EmbeddedPostgres) Start() error {
 		return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, binaryExtractLocation)
 	}
 
-	if err := ep.initDatabase(binaryExtractLocation, ep.config.username, ep.config.password); err != nil {
+	if err := ep.initDatabase(binaryExtractLocation, ep.config.username, ep.config.password, ep.config.locale); err != nil {
 		return err
 	}
 

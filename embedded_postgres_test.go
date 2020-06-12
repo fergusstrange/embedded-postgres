@@ -117,7 +117,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, username, password string) error {
+	database.initDatabase = func(binaryExtractLocation, username, password, locale string) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -220,7 +220,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, username, password string) error {
+	database.initDatabase = func(binaryExtractLocation, username, password, locale string) error {
 		return nil
 	}
 
@@ -248,12 +248,38 @@ func Test_CustomConfig(t *testing.T) {
 		Version(V12).
 		RuntimePath(tempDir).
 		Port(9876).
-		StartTimeout(10 * time.Second))
+		StartTimeout(10 * time.Second).
+		Locale("C"))
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
 
 	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=9876 user=gin password=wine dbname=beer sslmode=disable"))
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_CustomLocaleConfig(t *testing.T) {
+	// C is the only locale we can guarantee to always work
+	database := NewDatabase(DefaultConfig().Locale("C"))
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
