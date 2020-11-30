@@ -86,8 +86,8 @@ type PostgresVersion string
 
 // Predefined supported Postgres versions.
 const (
-	V12 = PostgresVersion("12.1.0")
-	V11 = PostgresVersion("11.6.0")
-	V10 = PostgresVersion("10.11.0")
-	V9  = PostgresVersion("9.6.16")
+	V12 = PostgresVersion("12.1.0-1")
+	V11 = PostgresVersion("11.6.0-1")
+	V10 = PostgresVersion("10.11.0-1")
+	V9  = PostgresVersion("9.6.16-1")
 )
