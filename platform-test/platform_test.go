@@ -3,16 +3,23 @@ package platform_test
 import (
 	"database/sql"
 	"fmt"
-	"github.com/fergusstrange/embedded-postgres"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
+
+	"github.com/fergusstrange/embedded-postgres"
 )
 
 func Test_AllMajorVersions(t *testing.T) {
-	allVersions := []embeddedpostgres.PostgresVersion{embeddedpostgres.V12, embeddedpostgres.V11, embeddedpostgres.V10, embeddedpostgres.V9}
+	allVersions := []embeddedpostgres.PostgresVersion{
+		embeddedpostgres.V13,
+		embeddedpostgres.V12,
+		embeddedpostgres.V11,
+		embeddedpostgres.V10,
+		embeddedpostgres.V9,
+	}
 	tempExtractLocation, err := ioutil.TempDir("", "embedded_postgres_go_tests")
 	if err != nil {
 		t.Fatal(err)
