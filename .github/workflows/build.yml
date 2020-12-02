@@ -33,10 +33,10 @@ jobs:
             fi
             popd
           done;
-      #      - name: Nancy Vulnerability
-      #        uses: sonatype-nexus-community/nancy-github-action@master
-      #        with:
-      #          target: go.sum
+      - name: Nancy Vulnerability
+        uses: sonatype-nexus-community/nancy-github-action@master
+        with:
+          target: go.sum
       - name: GolangCI Lint
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
