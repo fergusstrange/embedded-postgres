@@ -1,7 +1,6 @@
 package embeddedpostgres
 
 import (
-	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -243,7 +242,6 @@ func Test_CustomConfig(t *testing.T) {
 		}
 	}()
 
-	l := &bytes.Buffer{}
 	database := NewDatabase(DefaultConfig().
 		Username("gin").
 		Password("wine").
@@ -252,8 +250,7 @@ func Test_CustomConfig(t *testing.T) {
 		RuntimePath(tempDir).
 		Port(9876).
 		StartTimeout(10 * time.Second).
-		Locale("C").
-		Logger(l))
+		Locale("C"))
 
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
