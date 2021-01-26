@@ -254,6 +254,7 @@ func Test_CustomConfig(t *testing.T) {
 		StartTimeout(10 * time.Second).
 		Locale("C").
 		Logger(l))
+
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
