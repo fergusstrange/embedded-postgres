@@ -66,6 +66,7 @@ func shutdownDBAndFail(t *testing.T, err error, db *EmbeddedPostgres) {
 			t.Errorf("Failed to shutdown server with error %s", stopErr)
 		}
 	}
+
 	t.Errorf("Failed for version %s with error %s", db.config.version, err)
 }
 
