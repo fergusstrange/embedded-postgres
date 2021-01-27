@@ -61,11 +61,12 @@ func createTempZipArchive() (string, func()) {
 }
 
 func shutdownDBAndFail(t *testing.T, err error, db *EmbeddedPostgres) {
-	if err := db.Stop(); err != nil {
-		t.Fatalf("Failed for version %s with error %s", db.config.version, err)
+	if db.started {
+		if stopErr := db.Stop(); stopErr != nil {
+			t.Errorf("Failed to shutdown server with error %s", stopErr)
+		}
 	}
-
-	t.Fatalf("Failed for version %s with error %s", db.config.version, err)
+	t.Errorf("Failed for version %s with error %s", db.config.version, err)
 }
 
 func testVersionStrategy() VersionStrategy {
