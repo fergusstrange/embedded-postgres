@@ -50,6 +50,7 @@ err := postgres.Stop()
 ```
 or with created with custom configuration
 ```go
+logger := &bytes.Byffer{}
 postgres := NewDatabase(DefaultConfig().
             Username("beer").
             Password("wine").
@@ -57,7 +58,8 @@ postgres := NewDatabase(DefaultConfig().
             Version(V12).
             RuntimePath("/tmp").
             Port(9876).
-            StartTimeout(45 * time.Second))
+            StartTimeout(45 * time.Second).
+            Logger(logger))
 err := postgres.Start()
 
 // Do test logic
