@@ -251,7 +251,7 @@ func Test_CustomConfig(t *testing.T) {
 		Port(9876).
 		StartTimeout(10 * time.Second).
 		Locale("C").
-		Logger(ioutil.Discard))
+		Logger(nil))
 
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
