@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -75,7 +76,7 @@ func (ep *EmbeddedPostgres) Start() error {
 		return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, binaryExtractLocation)
 	}
 
-	if err := ep.initDatabase(binaryExtractLocation, ep.config.username, ep.config.password, ep.config.locale); err != nil {
+	if err := ep.initDatabase(binaryExtractLocation, ep.config.username, ep.config.password, ep.config.locale, ep.config.logger); err != nil {
 		return err
 	}
 
@@ -86,7 +87,7 @@ func (ep *EmbeddedPostgres) Start() error {
 	ep.started = true
 
 	if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
-		if stopErr := stopPostgres(binaryExtractLocation); stopErr != nil {
+		if stopErr := stopPostgres(binaryExtractLocation, ep.config.logger); stopErr != nil {
 			return fmt.Errorf("unable to stop database casused by error %s", err)
 		}
 
@@ -94,7 +95,7 @@ func (ep *EmbeddedPostgres) Start() error {
 	}
 
 	if err := healthCheckDatabaseOrTimeout(ep.config); err != nil {
-		if stopErr := stopPostgres(binaryExtractLocation); stopErr != nil {
+		if stopErr := stopPostgres(binaryExtractLocation, ep.config.logger); stopErr != nil {
 			return fmt.Errorf("unable to stop database casused by error %s", err)
 		}
 
@@ -112,7 +113,7 @@ func (ep *EmbeddedPostgres) Stop() error {
 	}
 
 	binaryExtractLocation := userLocationOrDefault(ep.config.runtimePath, cacheLocation)
-	if err := stopPostgres(binaryExtractLocation); err != nil {
+	if err := stopPostgres(binaryExtractLocation, ep.config.logger); err != nil {
 		return err
 	}
 
@@ -127,8 +128,8 @@ func startPostgres(binaryExtractLocation string, config Config) error {
 		"-D", filepath.Join(binaryExtractLocation, "data"),
 		"-o", fmt.Sprintf(`"-p %d"`, config.port))
 	log.Println(postgresProcess.String())
-	postgresProcess.Stderr = os.Stderr
-	postgresProcess.Stdout = os.Stdout
+	postgresProcess.Stderr = config.logger
+	postgresProcess.Stdout = config.logger
 
 	if err := postgresProcess.Run(); err != nil {
 		return fmt.Errorf("could not start postgres using %s", postgresProcess.String())
@@ -137,12 +138,12 @@ func startPostgres(binaryExtractLocation string, config Config) error {
 	return nil
 }
 
-func stopPostgres(binaryExtractLocation string) error {
+func stopPostgres(binaryExtractLocation string, logger io.Writer) error {
 	postgresBinary := filepath.Join(binaryExtractLocation, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "stop", "-w",
 		"-D", filepath.Join(binaryExtractLocation, "data"))
-	postgresProcess.Stderr = os.Stderr
-	postgresProcess.Stdout = os.Stdout
+	postgresProcess.Stderr = logger
+	postgresProcess.Stdout = logger
 
 	return postgresProcess.Run()
 }

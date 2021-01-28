@@ -5,18 +5,18 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"os"
 	"os/exec"
 	"path/filepath"
 
 	"github.com/lib/pq"
 )
 
-type initDatabase func(binaryExtractLocation, username, password, locale string) error
+type initDatabase func(binaryExtractLocation, username, password, locale string, logger io.Writer) error
 type createDatabase func(port uint32, username, password, database string) error
 
-func defaultInitDatabase(binaryExtractLocation, username, password, locale string) error {
+func defaultInitDatabase(binaryExtractLocation, username, password, locale string, logger io.Writer) error {
 	passwordFile, err := createPasswordFile(binaryExtractLocation, password)
 	if err != nil {
 		return err
@@ -35,8 +35,8 @@ func defaultInitDatabase(binaryExtractLocation, username, password, locale strin
 
 	postgresInitDbBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
 	postgresInitDbProcess := exec.Command(postgresInitDbBinary, args...)
-	postgresInitDbProcess.Stderr = os.Stderr
-	postgresInitDbProcess.Stdout = os.Stdout
+	postgresInitDbProcess.Stderr = logger
+	postgresInitDbProcess.Stdout = logger
 
 	if err := postgresInitDbProcess.Run(); err != nil {
 		return fmt.Errorf("unable to init database using: %s", postgresInitDbProcess.String())

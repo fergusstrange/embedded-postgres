@@ -1,6 +1,10 @@
 package embeddedpostgres
 
-import "time"
+import (
+	"io"
+	"os"
+	"time"
+)
 
 // Config maintains the runtime configuration for the Postgres process to be created.
 type Config struct {
@@ -12,6 +16,7 @@ type Config struct {
 	runtimePath  string
 	locale       string
 	startTimeout time.Duration
+	logger       io.Writer
 }
 
 // DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
@@ -30,6 +35,7 @@ func DefaultConfig() Config {
 		username:     "postgres",
 		password:     "postgres",
 		startTimeout: 15 * time.Second,
+		logger:       os.Stdout,
 	}
 }
 
@@ -78,6 +84,12 @@ func (c Config) Locale(locale string) Config {
 // StartTimeout sets the max timeout that will be used when starting the Postgres process and creating the initial database.
 func (c Config) StartTimeout(timeout time.Duration) Config {
 	c.startTimeout = timeout
+	return c
+}
+
+// Logger sets the logger for postgres output
+func (c Config) Logger(logger io.Writer) Config {
+	c.logger = logger
 	return c
 }
 

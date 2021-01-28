@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"os"
@@ -117,7 +118,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, username, password, locale string) error {
+	database.initDatabase = func(binaryExtractLocation, username, password, locale string, logger io.Writer) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -220,7 +221,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, username, password, locale string) error {
+	database.initDatabase = func(binaryExtractLocation, username, password, locale string, logger io.Writer) error {
 		return nil
 	}
 
@@ -249,7 +250,9 @@ func Test_CustomConfig(t *testing.T) {
 		RuntimePath(tempDir).
 		Port(9876).
 		StartTimeout(10 * time.Second).
-		Locale("C"))
+		Locale("C").
+		Logger(nil))
+
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
