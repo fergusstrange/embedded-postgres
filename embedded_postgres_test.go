@@ -118,7 +118,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, username, password, locale string, logger io.Writer) error {
+	database.initDatabase = func(binaryExtractLocation, dataLocation, username, password, locale string, logger io.Writer) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -221,7 +221,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, username, password, locale string, logger io.Writer) error {
+	database.initDatabase = func(binaryExtractLocation, dataLocation, username, password, locale string, logger io.Writer) error {
 		return nil
 	}
 
