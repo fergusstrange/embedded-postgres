@@ -345,3 +345,79 @@ func Test_CanStartAndStopTwice(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 }
+
+func Test_ReuseData(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	database := NewDatabase(DefaultConfig().DataPath(tempDir))
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if _, err = db.Exec("CREATE TABLE test(id serial, value text, PRIMARY KEY(id))"); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if _, err = db.Exec("INSERT INTO test (value) VALUES ('foobar')"); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	database = NewDatabase(DefaultConfig().DataPath(tempDir))
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err = sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if rows, err := db.Query("SELECT * FROM test"); err != nil {
+		shutdownDBAndFail(t, err, database)
+	} else if !rows.Next() {
+		shutdownDBAndFail(t, errors.New("no row from db"), database)
+	} else {
+		var (
+			id    int64
+			value string
+		)
+		if err := rows.Scan(&id, &value); err != nil {
+			shutdownDBAndFail(t, err, database)
+		}
+		if value != "foobar" {
+			shutdownDBAndFail(t, errors.New("wrong value from db"), database)
+		}
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
