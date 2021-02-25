@@ -14,10 +14,10 @@ import (
 	"github.com/lib/pq"
 )
 
-type initDatabase func(binaryExtractLocation, username, password, locale string, logger io.Writer) error
+type initDatabase func(binaryExtractLocation, pgDataDir, username, password, locale string, logger io.Writer) error
 type createDatabase func(port uint32, username, password, database string) error
 
-func defaultInitDatabase(binaryExtractLocation, username, password, locale string, logger io.Writer) error {
+func defaultInitDatabase(binaryExtractLocation, pgDataDir, username, password, locale string, logger io.Writer) error {
 	passwordFile, err := createPasswordFile(binaryExtractLocation, password)
 	if err != nil {
 		return err
@@ -26,7 +26,7 @@ func defaultInitDatabase(binaryExtractLocation, username, password, locale strin
 	args := []string{
 		"-A", "password",
 		"-U", username,
-		"-D", filepath.Join(binaryExtractLocation, "data"),
+		"-D", pgDataDir,
 		fmt.Sprintf("--pwfile=%s", passwordFile),
 	}
 
