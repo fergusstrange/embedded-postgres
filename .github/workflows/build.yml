@@ -18,6 +18,7 @@ jobs:
           go-version: 1.13
       - name: Check Dependencies
         run: |
+          go list -json -m all > go.list
           for d in "." "examples" "platform-test"; do
             pushd $d
             go mod tidy
@@ -33,12 +34,10 @@ jobs:
             fi
             popd
           done;
-          
       - name: Nancy Vulnerability
-        uses: sonatype-nexus-community/nancy-github-action@latest
+        uses: sonatype-nexus-community/nancy-github-action@main
         with:
-          nancyVersion: v1.0.2
-          nancyCommand: go list -json -m all | nancy sleuth
+          nancyVersion: v1.0.15
       - name: GolangCI Lint
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.21.0
