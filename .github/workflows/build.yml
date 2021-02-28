@@ -34,7 +34,7 @@ jobs:
             popd
           done;
       - name: Nancy Vulnerability
-        uses: sonatype-nexus-community/nancy-github-action@master
+        uses: sonatype-nexus-community/nancy-github-action@1.0.2
         with:
           target: go.sum
       - name: GolangCI Lint
