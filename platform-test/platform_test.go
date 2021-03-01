@@ -7,9 +7,10 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
-	"github.com/fergusstrange/embedded-postgres"
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 )
 
 func Test_AllMajorVersions(t *testing.T) {
@@ -28,10 +29,11 @@ func Test_AllMajorVersions(t *testing.T) {
 	for testNumber, version := range allVersions {
 		t.Run(fmt.Sprintf("MajorVersion_%d", testNumber), func(t *testing.T) {
 			port := uint32(5555 + testNumber)
+			runtimePath := filepath.Join(tempExtractLocation, strconv.Itoa(testNumber))
 			database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
 				Version(version).
 				Port(port).
-				RuntimePath(filepath.Join(tempExtractLocation, strconv.Itoa(testNumber))))
+				RuntimePath(runtimePath))
 
 			if err := database.Start(); err != nil {
 				shutdownDBAndFail(t, err, database, version)
@@ -57,6 +59,10 @@ func Test_AllMajorVersions(t *testing.T) {
 			if err := database.Stop(); err != nil {
 				t.Fatal(err)
 			}
+
+			if err := checkPgVersionFile(filepath.Join(runtimePath, "data"), version); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 	if err := os.RemoveAll(tempExtractLocation); err != nil {
@@ -74,4 +80,21 @@ func shutdownDBAndFail(t *testing.T, err error, db *embeddedpostgres.EmbeddedPos
 func connect(port uint32) (*sql.DB, error) {
 	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=postgres sslmode=disable", port))
 	return db, err
+}
+
+func checkPgVersionFile(dataDir string, version embeddedpostgres.PostgresVersion) error {
+	pgVersion := filepath.Join(dataDir, "PG_VERSION")
+
+	d, err := ioutil.ReadFile(pgVersion)
+	if err != nil {
+		return fmt.Errorf("could not read file %v", pgVersion)
+	}
+
+	v := strings.TrimSuffix(string(d), "\n")
+
+	if strings.HasPrefix(string(version), v) {
+		return nil
+	}
+
+	return fmt.Errorf("version missmatch in PG_VERSION: %v <> %v", string(version), v)
 }
