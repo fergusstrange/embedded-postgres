@@ -57,6 +57,35 @@ func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
 		tempDir))
 }
 
+func Test_defaultInitDatabase_PwFileRemoved(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "prepare_database_test")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	database := NewDatabase(DefaultConfig().RuntimePath(tempDir))
+	if err := database.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := database.Stop(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	pwFile := filepath.Join(tempDir, "pwfile")
+	_, err = os.Stat(pwFile)
+
+	assert.True(t, os.IsNotExist(err), "pwfile (%v) still exists after starting the db", pwFile)
+}
+
 func Test_defaultCreateDatabase_ErrorWhenSQLOpenError(t *testing.T) {
 	err := defaultCreateDatabase(1234, "user client_encoding=lol", "password", "database")
 
