@@ -346,6 +346,7 @@ func Test_CanStartAndStopTwice(t *testing.T) {
 	}
 }
 
+//nolint:funlen
 func Test_ReuseData(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
 	if err != nil {
@@ -398,9 +399,11 @@ func Test_ReuseData(t *testing.T) {
 
 	if rows, err := db.Query("SELECT * FROM test"); err != nil {
 		shutdownDBAndFail(t, err, database)
-	} else if !rows.Next() {
-		shutdownDBAndFail(t, errors.New("no row from db"), database)
 	} else {
+		if !rows.Next() {
+			shutdownDBAndFail(t, errors.New("no row from db"), database)
+		}
+
 		var (
 			id    int64
 			value string

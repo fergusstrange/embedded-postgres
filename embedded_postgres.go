@@ -52,6 +52,7 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 
 // Start will try to start the configured Postgres process returning an error when there were any problems with invocation.
 // If any error occurs Start will try to also Stop the Postgres process in order to not leave any sub-process running.
+//nolint:funlen
 func (ep *EmbeddedPostgres) Start() error {
 	if ep.started {
 		return errors.New("server is already started")
