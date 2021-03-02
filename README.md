@@ -36,8 +36,15 @@ This library aims to require as little configuration as possible, favouring over
 | Database       | postgres                                    |
 | Version        | 12.1.0                                      |
 | RuntimePath    | $USER_HOME/.embedded-postgres-go/extracted  |
+| DataPath       | empty, results in *RuntimePath*/data        |
 | Port           | 5432                                        |
 | StartTimeout   | 15 Seconds                                  |
+
+The *RuntimePath* directory is erased and recreated on each start and therefor not
+suitable for persistent data. If a persistent data location is required, set
+*DataPath* to a directory outside of *RuntimePath*.
+If the *RuntimePath* directory is empty or already initialized but with an incompatible
+postgres version, it gets cleared and reinitialized.
 
 A single Postgres instance can be created, started and stopped as follows
 ```go
