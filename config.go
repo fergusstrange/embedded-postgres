@@ -14,6 +14,7 @@ type Config struct {
 	username     string
 	password     string
 	runtimePath  string
+	dataPath     string
 	locale       string
 	startTimeout time.Duration
 	logger       io.Writer
@@ -69,9 +70,17 @@ func (c Config) Password(password string) Config {
 	return c
 }
 
-// RuntimePath sets the path that will be used for the extracted Postgres runtime and data directory.
+// RuntimePath sets the path that will be used for the extracted Postgres runtime directory.
+// If Postgres data directory is not set with DataPath(), this directory is also used as data directory.
 func (c Config) RuntimePath(path string) Config {
 	c.runtimePath = path
+	return c
+}
+
+// DataPath sets the path that will be used for the Postgres data directory.
+// If this option is set, a previously initialized data directory will be reused if possible.
+func (c Config) DataPath(path string) Config {
+	c.dataPath = path
 	return c
 }
 
