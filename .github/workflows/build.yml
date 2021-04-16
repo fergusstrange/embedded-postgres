@@ -53,6 +53,19 @@ jobs:
         env:
           COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: GO111MODULE=off go get github.com/mattn/goveralls && $(go env GOPATH)/bin/goveralls -v -coverprofile=coverage.out -service=github
+  alpine_tests:
+    name: Alpine Linux Platform Tests
+    runs-on: ubuntu-latest
+    container:
+      image: golang:1.13-alpine
+    steps:
+      - uses: actions/checkout@v1
+      - name: Set Up
+        run: |
+          apk add --upgrade gcc g++ && \
+          adduser testuser -D
+      - name: All Tests
+        run: su - testuser -c 'export PATH=$PATH:/usr/local/go/bin; cd /__w/embedded-postgres/embedded-postgres && go test -v ./... && cd platform-test && go test -v ./...'
   platform_tests:
     name: Platform tests
     strategy:
