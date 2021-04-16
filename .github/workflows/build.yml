@@ -64,7 +64,7 @@ jobs:
           apk add --upgrade gcc g++ && \
           adduser testuser -D && \
           pwd && \
-          su - testuser -c '/usr/local/go/bin/go test -v ./... && cd platform-test && go test -v ./...'
+          su - testuser -c 'cd GITHUB_WORKSPACE && /usr/local/go/bin/go test -v ./... && cd platform-test && go test -v ./...'
   platform_tests:
     name: Platform tests
     strategy:
