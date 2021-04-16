@@ -56,13 +56,14 @@ jobs:
   alpine_tests:
     runs-on: ubuntu-latest
     container:
-      image: golang:1.16-alpine
+      image: golang:1.13-alpine
     steps:
       - uses: actions/checkout@v1
       - name: Set up
         run: |
           apk add --upgrade gcc g++ && \
-          adduser testuser -D &&
+          adduser testuser -D && \
+          pwd && \
           su - testuser -c '/usr/local/go/bin/go test -v ./... && cd platform-test && go test -v ./...'
   platform_tests:
     name: Platform tests
