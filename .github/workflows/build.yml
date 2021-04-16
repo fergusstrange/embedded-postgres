@@ -65,7 +65,7 @@ jobs:
           apk add --upgrade gcc g++ && \
           adduser testuser -D
       - name: All Tests
-        run: go test -v ./... && cd platform-test && go test -v ./...
+        run: ls && go test -v ./... && cd platform-test && go test -v ./...
   platform_tests:
     name: Platform tests
     strategy:
