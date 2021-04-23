@@ -2,7 +2,9 @@ package embeddedpostgres
 
 import (
 	"os"
+	"os/exec"
 	"runtime"
+	"strings"
 )
 
 // VersionStrategy provides a strategy that can be used to determine which version of Postgres should be used based on
@@ -14,8 +16,24 @@ func defaultVersionStrategy(config Config) VersionStrategy {
 		goos := runtime.GOOS
 		arch := runtime.GOARCH
 
-		// use alpine specific build
 		if goos == "linux" {
+			// the zonkyio/embedded-postgres-binaries project produces
+			// arm binaries with the following name schema:
+			// 32bit: arm32v6 / arm32v7
+			// 64bit (aarch64): arm64v8
+			if arch == "arm64" {
+				arch += "v8"
+			} else if arch == "arm" {
+				if out, err := exec.Command("uname", "-m").Output(); err == nil {
+					s := string(out)
+					if strings.HasPrefix(s, "armv7") {
+						arch += "32v7"
+					} else if strings.HasPrefix(s, "armv6") {
+						arch += "32v6"
+					}
+				}
+			}
+			// check alpine specific build
 			if _, err := os.Stat("/etc/alpine-release"); err == nil {
 				arch += "-alpine"
 			}
