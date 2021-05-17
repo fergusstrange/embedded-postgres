@@ -21,6 +21,11 @@ func defaultVersionStrategy(config Config) VersionStrategy {
 			}
 		}
 
+		// at this point, postgres is not available for macos on arm
+		if goos == "darwin" && arch == "arm64" {
+			arch = "amd64"
+		}
+
 		return goos, arch, config.version
 	}
 }
