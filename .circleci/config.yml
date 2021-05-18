@@ -1,9 +1,5 @@
 version: 2.1
 executors:
-  linux:
-    machine:
-      image: ubuntu-2004:202104-01
-    working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
   linux-arm64:
     machine:
       image: ubuntu-2004:202104-01
@@ -34,4 +30,4 @@ workflows:
       - platform_test:
           matrix:
             parameters:
-              executor: [ linux, linux-arm64 ]
+              executor: [ linux-arm64 ]
