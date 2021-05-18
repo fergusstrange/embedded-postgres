@@ -3,12 +3,12 @@ executors:
   linux:
     machine:
       image: ubuntu-2004:202104-01
-    working_directory: /go/src/github.com/fergusstrange/embedded-postgres
+    working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
   linux-arm64:
     machine:
       image: ubuntu-2004:202104-01
     resource_class: arm.medium
-    working_directory: /go/src/github.com/fergusstrange/embedded-postgres
+    working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
 
 jobs:
   platform_test:
@@ -20,12 +20,12 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - embedded-postgres-{{ checksum "/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
+            - embedded-postgres-{{ checksum "/home/circleci/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
       - run: cd platform-test && go test -v -race ./...
       - save_cache:
-          key: embedded-postgres-{{ checksum "/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
+          key: embedded-postgres-{{ checksum "/home/circleci/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
           paths:
-            - /go/pkg
+            - /home/circleci/go/pkg
 
 workflows:
   version: 2
