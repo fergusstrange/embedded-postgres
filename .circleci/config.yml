@@ -9,10 +9,6 @@ executors:
       image: ubuntu-2004:202104-01
     resource_class: arm.medium
     working_directory: /go/src/github.com/fergusstrange/embedded-postgres
-  osx:
-    macos:
-      xcode: 11.4
-    working_directory: /go/src/github.com/fergusstrange/embedded-postgres
 
 jobs:
   platform_test:
@@ -38,4 +34,4 @@ workflows:
       - platform_test:
           matrix:
             parameters:
-              executor: [ linux, linux-arm64, osx ]
+              executor: [ linux, linux-arm64 ]
