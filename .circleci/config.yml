@@ -17,7 +17,7 @@ executors:
 jobs:
   platform_test:
     parameters:
-      os:
+      executor:
         type: executor
     executor: << parameters.executor >>
     steps:
