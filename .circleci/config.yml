@@ -1,35 +1,27 @@
 version: 2.1
 executors:
-  linux:
-    machine:
-      image: ubuntu-2004:202104-01
-    working_directory: /go/src/github.com/fergusstrange/embedded-postgres
   linux-arm64:
     machine:
       image: ubuntu-2004:202104-01
     resource_class: arm.medium
-    working_directory: /go/src/github.com/fergusstrange/embedded-postgres
-  osx:
-    macos:
-      xcode: 11.4
-    working_directory: /go/src/github.com/fergusstrange/embedded-postgres
+    working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
 
 jobs:
   platform_test:
     parameters:
-      os:
+      executor:
         type: executor
     executor: << parameters.executor >>
     steps:
       - checkout
       - restore_cache:
           keys:
-            - embedded-postgres-{{ checksum "/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
+            - embedded-postgres-{{ checksum "/home/circleci/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
       - run: cd platform-test && go test -v -race ./...
       - save_cache:
-          key: embedded-postgres-{{ checksum "/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
+          key: embedded-postgres-{{ checksum "/home/circleci/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
           paths:
-            - /go/pkg
+            - /home/circleci/go/pkg
 
 workflows:
   version: 2
@@ -38,4 +30,4 @@ workflows:
       - platform_test:
           matrix:
             parameters:
-              executor: [ linux, linux-arm64, osx ]
+              executor: [ linux-arm64 ]
