@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/mholt/archiver/v3"
@@ -36,7 +37,13 @@ func NewDatabase(config ...Config) *EmbeddedPostgres {
 }
 
 func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
-	versionStrategy := defaultVersionStrategy(config)
+	versionStrategy := defaultVersionStrategy(
+		config,
+		runtime.GOOS,
+		runtime.GOARCH,
+		linuxMachineName,
+		isAlpineLinux,
+	)
 	cacheLocator := defaultCacheLocator(versionStrategy)
 	remoteFetchStrategy := defaultRemoteFetchStrategy("https://repo1.maven.org", versionStrategy, cacheLocator)
 

@@ -3,7 +3,6 @@ package embeddedpostgres
 import (
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 )
 
@@ -11,11 +10,8 @@ import (
 // the operating system, architecture and desired Postgres version.
 type VersionStrategy func() (operatingSystem string, architecture string, postgresVersion PostgresVersion)
 
-func defaultVersionStrategy(config Config) VersionStrategy {
+func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName func() string, isAlpineLinux func() bool) VersionStrategy {
 	return func() (operatingSystem, architecture string, version PostgresVersion) {
-		goos := runtime.GOOS
-		arch := runtime.GOARCH
-
 		if goos == "linux" {
 			// the zonkyio/embedded-postgres-binaries project produces
 			// arm binaries with the following name schema:
@@ -24,17 +20,16 @@ func defaultVersionStrategy(config Config) VersionStrategy {
 			if arch == "arm64" {
 				arch += "v8"
 			} else if arch == "arm" {
-				if out, err := exec.Command("uname", "-m").Output(); err == nil {
-					s := string(out)
-					if strings.HasPrefix(s, "armv7") {
-						arch += "32v7"
-					} else if strings.HasPrefix(s, "armv6") {
-						arch += "32v6"
-					}
+				machineName := linuxMachineName()
+				if strings.HasPrefix(machineName, "armv7") {
+					arch += "32v7"
+				} else if strings.HasPrefix(machineName, "armv6") {
+					arch += "32v6"
 				}
 			}
+
 			// check alpine specific build
-			if _, err := os.Stat("/etc/alpine-release"); err == nil {
+			if isAlpineLinux() {
 				arch += "-alpine"
 			}
 		}
@@ -46,4 +41,19 @@ func defaultVersionStrategy(config Config) VersionStrategy {
 
 		return goos, arch, config.version
 	}
+}
+
+func linuxMachineName() string {
+	var uname string
+
+	if output, err := exec.Command("uname", "-m").Output(); err == nil {
+		uname = string(output)
+	}
+
+	return uname
+}
+
+func isAlpineLinux() bool {
+	_, err := os.Stat("/etc/alpine-release")
+	return err == nil
 }
