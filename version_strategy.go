@@ -15,6 +15,7 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 	return func() (string, string, PostgresVersion) {
 		goos := goos
 		arch := arch
+
 		if goos == "linux" {
 			// the zonkyio/embedded-postgres-binaries project produces
 			// arm binaries with the following name schema:
