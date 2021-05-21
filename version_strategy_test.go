@@ -113,7 +113,7 @@ func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
 	operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
 		DefaultConfig(),
 		"linux",
-		"linux/amd64",
+		"amd64",
 		func() string {
 			return ""
 		}, func() bool {
