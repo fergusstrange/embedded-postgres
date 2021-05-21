@@ -1,7 +1,6 @@
 package embeddedpostgres
 
 import (
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -42,8 +41,6 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 		if goos == "darwin" && arch == "arm64" {
 			arch = "amd64"
 		}
-
-		log.Println(goos, arch, config.version)
 
 		return goos, arch, config.version
 	}
