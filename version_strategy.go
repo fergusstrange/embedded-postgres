@@ -55,5 +55,5 @@ func linuxMachineName() string {
 
 func isAlpineLinux() bool {
 	_, err := os.Stat("/etc/alpine-release")
-	return err == nil
+	return os.IsNotExist(err)
 }

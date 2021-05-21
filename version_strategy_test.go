@@ -68,7 +68,9 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 				osArch[0],
 				osArch[1],
 				linuxMachineName,
-				isAlpineLinux)()
+				func() bool {
+					return false
+				})()
 
 			assert.Equal(t, expected[0], operatingSystem)
 			assert.Equal(t, expected[1], architecture)
@@ -116,11 +118,19 @@ func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
 		"amd64",
 		func() string {
 			return ""
-		}, func() bool {
+		},
+		func() bool {
 			return true
-		})()
+		},
+	)()
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "amd64-alpine", architecture)
 	assert.Equal(t, PostgresVersion("12.6.0"), postgresVersion)
+}
+
+func Test_DefaultVersionStrategy_IsAlpineLinux(t *testing.T) {
+	assert.NotPanics(t, func() {
+		isAlpineLinux()
+	})
 }
