@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -11,7 +12,9 @@ import (
 type VersionStrategy func() (operatingSystem string, architecture string, postgresVersion PostgresVersion)
 
 func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName func() string, isAlpineLinux func() bool) VersionStrategy {
-	return func() (operatingSystem, architecture string, version PostgresVersion) {
+	return func() (string, string, PostgresVersion) {
+		goos := goos
+		arch := arch
 		if goos == "linux" {
 			// the zonkyio/embedded-postgres-binaries project produces
 			// arm binaries with the following name schema:
@@ -38,6 +41,8 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 		if goos == "darwin" && arch == "arm64" {
 			arch = "amd64"
 		}
+
+		log.Println(goos, arch, config.version)
 
 		return goos, arch, config.version
 	}
