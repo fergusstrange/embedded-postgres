@@ -6,6 +6,7 @@
 <a href="https://godoc.org/github.com/fergusstrange/embedded-postgres"><img src="https://godoc.org/github.com/fergusstrange/embedded-postgres?status.svg" alt="Godoc" /></a>
 <a href='https://coveralls.io/github/fergusstrange/embedded-postgres?branch=master'><img src='https://coveralls.io/repos/github/fergusstrange/embedded-postgres/badge.svg?branch=master' alt='Coverage Status' /></a>
 <a href="https://github.com/fergusstrange/embedded-postgres/actions"><img src="https://github.com/fergusstrange/embedded-postgres/workflows/Embedded%20Postgres/badge.svg" alt="Build Status" /></a>
+<a href="https://app.circleci.com/pipelines/github/fergusstrange/embedded-postgres"><img src="https://circleci.com/gh/fergusstrange/embedded-postgres.svg?style=shield" alt="Build Status" /></a>
 <a href="https://goreportcard.com/report/github.com/fergusstrange/embedded-postgres"><img src="https://goreportcard.com/badge/github.com/fergusstrange/embedded-postgres" alt="Go Report Card" /></a>
 </p>
 
@@ -13,13 +14,19 @@
 
 Run a real Postgres database locally on Linux, OSX or Windows as part of another Go application or test.
 
-When testing this provides a higher level of confidence than using any in memory alternative. It also requires no other external dependencies outside of the Go build ecosystem.
+When testing this provides a higher level of confidence than using any in memory alternative. It also requires no other
+external dependencies outside of the Go build ecosystem.
 
-Heavily inspired by Java projects [zonkyio/embedded-postgres](https://github.com/zonkyio/embedded-postgres) and [opentable/otj-pg-embedded](https://github.com/opentable/otj-pg-embedded) and reliant on the great work being done by [zonkyio/embedded-postgres-binaries](https://github.com/zonkyio/embedded-postgres-binaries) in order to fetch precompiled binaries from [Maven](https://mvnrepository.com/artifact/io.zonky.test.postgres/embedded-postgres-binaries-bom).
+Heavily inspired by Java projects [zonkyio/embedded-postgres](https://github.com/zonkyio/embedded-postgres)
+and [opentable/otj-pg-embedded](https://github.com/opentable/otj-pg-embedded) and reliant on the great work being done
+by [zonkyio/embedded-postgres-binaries](https://github.com/zonkyio/embedded-postgres-binaries) in order to fetch
+precompiled binaries
+from [Maven](https://mvnrepository.com/artifact/io.zonky.test.postgres/embedded-postgres-binaries-bom).
 
 ## Installation
 
-embedded-postgres uses Go modules and as such can be referenced by release version for use as a library. Use the following to add the latest release to your project. 
+embedded-postgres uses Go modules and as such can be referenced by release version for use as a library. Use the
+following to add the latest release to your project.
 
 ```bash
 go get -u github.com/fergusstrange/embedded-postgres
@@ -40,15 +47,15 @@ This library aims to require as little configuration as possible, favouring over
 | Port           | 5432                                            |
 | StartTimeout   | 15 Seconds                                      |
 
-The *RuntimePath* directory is erased and recreated at each `Start()` and therefore not
-suitable for persistent data.
+The *RuntimePath* directory is erased and recreated at each `Start()` and therefore not suitable for persistent data.
 
 If a persistent data location is required, set *DataPath* to a directory outside *RuntimePath*.
 
-If the *RuntimePath* directory is empty or already initialized but with an incompatible postgres version,
-it will be removed and Postgres reinitialized.
+If the *RuntimePath* directory is empty or already initialized but with an incompatible postgres version, it will be
+removed and Postgres reinitialized.
 
 A single Postgres instance can be created, started and stopped as follows
+
 ```go
 postgres := embeddedpostgres.NewDatabase()
 err := postgres.Start()
@@ -57,18 +64,20 @@ err := postgres.Start()
 
 err := postgres.Stop()
 ```
+
 or with created with custom configuration
+
 ```go
 logger := &bytes.Byffer{}
 postgres := NewDatabase(DefaultConfig().
-            Username("beer").
-            Password("wine").
-            Database("gin").
-            Version(V12).
-            RuntimePath("/tmp").
-            Port(9876).
-            StartTimeout(45 * time.Second).
-            Logger(logger))
+Username("beer").
+Password("wine").
+Database("gin").
+Version(V12).
+RuntimePath("/tmp").
+Port(9876).
+StartTimeout(45 * time.Second).
+Logger(logger))
 err := postgres.Start()
 
 // Do test logic
@@ -76,16 +85,19 @@ err := postgres.Start()
 err := postgres.Stop()
 ```
 
-It should be noted that if `postgres.Stop()` is not called then the child Postgres process will not be released and the caller will block.
+It should be noted that if `postgres.Stop()` is not called then the child Postgres process will not be released and the
+caller will block.
 
 ## Examples
 
-There are a number of realistic representations of how to use this library in [examples](https://github.com/fergusstrange/embedded-postgres/tree/master/examples). 
+There are a number of realistic representations of how to use this library
+in [examples](https://github.com/fergusstrange/embedded-postgres/tree/master/examples).
 
 ## Credits
 
 - [Gopherize Me](https://gopherize.me) Thanks for the awesome logo template.
-- [zonkyio/embedded-postgres-binaries](https://github.com/zonkyio/embedded-postgres-binaries) Without which the precompiled Postgres binaries would not exist for this to work. 
+- [zonkyio/embedded-postgres-binaries](https://github.com/zonkyio/embedded-postgres-binaries) Without which the
+  precompiled Postgres binaries would not exist for this to work.
 
 ## Contributing
 
