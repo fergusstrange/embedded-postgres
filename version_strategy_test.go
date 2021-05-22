@@ -129,8 +129,8 @@ func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
 	assert.Equal(t, PostgresVersion("12.6.0"), postgresVersion)
 }
 
-func Test_DefaultVersionStrategy_IsAlpineLinux(t *testing.T) {
+func Test_DefaultVersionStrategy_shouldUseAlpineLinuxBuild(t *testing.T) {
 	assert.NotPanics(t, func() {
-		isAlpineLinux()
+		shouldUseAlpineLinuxBuild()
 	})
 }

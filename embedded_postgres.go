@@ -42,7 +42,7 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 		runtime.GOOS,
 		runtime.GOARCH,
 		linuxMachineName,
-		isAlpineLinux,
+		shouldUseAlpineLinuxBuild,
 	)
 	cacheLocator := defaultCacheLocator(versionStrategy)
 	remoteFetchStrategy := defaultRemoteFetchStrategy("https://repo1.maven.org", versionStrategy, cacheLocator)

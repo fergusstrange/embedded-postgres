@@ -10,7 +10,7 @@ import (
 // the operating system, architecture and desired Postgres version.
 type VersionStrategy func() (operatingSystem string, architecture string, postgresVersion PostgresVersion)
 
-func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName func() string, isAlpineLinux func() bool) VersionStrategy {
+func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName func() string, shouldUseAlpineLinuxBuild func() bool) VersionStrategy {
 	return func() (string, string, PostgresVersion) {
 		goos := goos
 		arch := arch
@@ -31,8 +31,7 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 				}
 			}
 
-			// check alpine specific build
-			if isAlpineLinux() {
+			if shouldUseAlpineLinuxBuild() {
 				arch += "-alpine"
 			}
 		}
@@ -56,7 +55,7 @@ func linuxMachineName() string {
 	return uname
 }
 
-func isAlpineLinux() bool {
+func shouldUseAlpineLinuxBuild() bool {
 	_, err := os.Stat("/etc/alpine-release")
 	return err == nil
 }
