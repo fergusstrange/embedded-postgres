@@ -21,7 +21,7 @@ func Test_DefaultConfig(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
@@ -257,7 +257,7 @@ func Test_CustomConfig(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=9876 user=gin password=wine dbname=beer sslmode=disable"))
+	db, err := sql.Open("postgres", "host=localhost port=9876 user=gin password=wine dbname=beer sslmode=disable")
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
@@ -282,7 +282,7 @@ func Test_CustomLocaleConfig(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
@@ -307,7 +307,7 @@ func Test_CanStartAndStopTwice(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
@@ -328,7 +328,7 @@ func Test_CanStartAndStopTwice(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
-	db, err = sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	db, err = sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
@@ -365,7 +365,7 @@ func Test_ReuseData(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
-	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
@@ -392,7 +392,7 @@ func Test_ReuseData(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
-	db, err = sql.Open("postgres", fmt.Sprintf("host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable"))
+	db, err = sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
 	if err != nil {
 		shutdownDBAndFail(t, err, database)
 	}

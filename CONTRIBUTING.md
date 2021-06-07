@@ -1,10 +1,13 @@
 # Contributing to embedded-postgres
 
-Thank you for taking the time to contribute. These are mostly guidelines, not rules. Use your best judgment, and feel free to propose changes to this document in a pull request.
+Thank you for taking the time to contribute. These are mostly guidelines, not rules. Use your best judgment, and feel
+free to propose changes to this document in a pull request.
 
 # Working with forked go repos
 
-If you haven't worked with forked go repos before, take a look at this blog post for some excellent advice about [contributing to go open source git repositories](https://splice.com/blog/contributing-open-source-git-repositories-go/).
+If you haven't worked with forked go repos before, take a look at this blog post for some excellent advice
+about [contributing to go open source git repositories](https://splice.com/blog/contributing-open-source-git-repositories-go/)
+.
 
 # PRs
 
@@ -15,4 +18,5 @@ If you haven't worked with forked go repos before, take a look at this blog post
 
 # Documentation
 
-For simple typo fixes and documentation improvements feel free to raise a PR without raising an issue in github. For anything more complicated please file an issue.
+For simple typo fixes and documentation improvements feel free to raise a PR without raising an issue in github. For
+anything more complicated please file an issue.

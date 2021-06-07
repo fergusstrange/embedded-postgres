@@ -34,13 +34,13 @@ func defaultInitDatabase(binaryExtractLocation, pgDataDir, username, password, l
 		args = append(args, fmt.Sprintf("--locale=%s", locale))
 	}
 
-	postgresInitDbBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
-	postgresInitDbProcess := exec.Command(postgresInitDbBinary, args...)
-	postgresInitDbProcess.Stderr = logger
-	postgresInitDbProcess.Stdout = logger
+	postgresInitDBBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
+	postgresInitDBProcess := exec.Command(postgresInitDBBinary, args...)
+	postgresInitDBProcess.Stderr = logger
+	postgresInitDBProcess.Stdout = logger
 
-	if err := postgresInitDbProcess.Run(); err != nil {
-		return fmt.Errorf("unable to init database using: %s", postgresInitDbProcess.String())
+	if err := postgresInitDBProcess.Run(); err != nil {
+		return fmt.Errorf("unable to init database using: %s", postgresInitDBProcess.String())
 	}
 
 	if err = os.Remove(passwordFile); err != nil {
@@ -91,6 +91,7 @@ func healthCheckDatabaseOrTimeout(config Config) error {
 				continue
 			}
 			healthCheckSignal <- true
+
 			break
 		}
 	}()
