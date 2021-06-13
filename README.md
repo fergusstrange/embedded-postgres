@@ -68,7 +68,7 @@ err := postgres.Stop()
 or with created with custom configuration
 
 ```go
-logger := &bytes.Byffer{}
+logger := &bytes.Buffer{}
 postgres := NewDatabase(DefaultConfig().
 Username("beer").
 Password("wine").
