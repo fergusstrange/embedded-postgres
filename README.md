@@ -65,7 +65,7 @@ err := postgres.Start()
 err := postgres.Stop()
 ```
 
-or with created with custom configuration
+or created with custom configuration
 
 ```go
 logger := &bytes.Buffer{}
