@@ -27,7 +27,7 @@ func Test_AllMajorVersions(t *testing.T) {
 	}
 
 	for testNumber, version := range allVersions {
-		t.Run(fmt.Sprintf("MajorVersion_%d", testNumber), func(t *testing.T) {
+		t.Run(fmt.Sprintf("MajorVersion_%s", version), func(t *testing.T) {
 			port := uint32(5555 + testNumber)
 			runtimePath := filepath.Join(tempExtractLocation, strconv.Itoa(testNumber))
 			database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
