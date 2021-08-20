@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -148,7 +147,6 @@ func startPostgres(binaryExtractLocation string, config Config) error {
 	postgresProcess := exec.Command(postgresBinary, "start", "-w",
 		"-D", userDataPathOrDefault(config.dataPath, binaryExtractLocation),
 		"-o", fmt.Sprintf(`"-p %d"`, config.port))
-	log.Println(postgresProcess.String())
 	postgresProcess.Stderr = config.logger
 	postgresProcess.Stdout = config.logger
 
