@@ -44,6 +44,7 @@ This library aims to require as little configuration as possible, favouring over
 | Version        | 12.1.0                                          |
 | RuntimePath    | $USER_HOME/.embedded-postgres-go/extracted      |
 | DataPath       | $USER_HOME/.embedded-postgres-go/extracted/data |
+| BinariesPath   | $USER_HOME/.embedded-postgres-go/extracted      |
 | Port           | 5432                                            |
 | StartTimeout   | 15 Seconds                                      |
 
@@ -53,6 +54,12 @@ If a persistent data location is required, set *DataPath* to a directory outside
 
 If the *RuntimePath* directory is empty or already initialized but with an incompatible postgres version, it will be
 removed and Postgres reinitialized.
+
+Postgres binaries will be downloaded and placed in *BinaryPath* if `BinaryPath/bin` doesn't exist.
+If the directory does exist, whatever binary version is placed there will be used (no version check
+is done).  
+If your test need to run multiple different versions of Postgres for different tests, make sure
+*BinaryPath* is a subdirectory of *RuntimePath*.
 
 A single Postgres instance can be created, started and stopped as follows
 
