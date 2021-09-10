@@ -97,7 +97,7 @@ func (ep *EmbeddedPostgres) Start() error {
 			return fmt.Errorf("unable to clean up data directory %s with error: %s", ep.config.dataPath, err)
 		}
 
-		if err := ep.initDatabase(ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.config.logger); err != nil {
+		if err := ep.initDatabase(ep.config.runtimePath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.config.logger); err != nil {
 			return err
 		}
 	}

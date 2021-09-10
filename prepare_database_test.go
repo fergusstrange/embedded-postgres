@@ -11,30 +11,37 @@ import (
 )
 
 func Test_defaultInitDatabase_ErrorWhenCannotCreatePasswordFile(t *testing.T) {
-	err := defaultInitDatabase("path_not_exists", "path_not_exists", "Tom", "Beer", "", os.Stderr)
+	err := defaultInitDatabase("path_not_exists", "path_not_exists", "path_not_exists", "Tom", "Beer", "", os.Stderr)
 
 	assert.EqualError(t, err, "unable to write password file to path_not_exists/pwfile")
 }
 
 func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "prepare_database_test")
+	binTempDir, err := ioutil.TempDir("", "prepare_database_test_bin")
+	if err != nil {
+		panic(err)
+	}
+	runtimeTempDir, err := ioutil.TempDir("", "prepare_database_test_runtime")
 	if err != nil {
 		panic(err)
 	}
 
 	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
+		if err := os.RemoveAll(binTempDir); err != nil {
+			panic(err)
+		}
+		if err := os.RemoveAll(runtimeTempDir); err != nil {
 			panic(err)
 		}
 	}()
 
-	err = defaultInitDatabase(tempDir, filepath.Join(tempDir, "data"), "Tom", "Beer", "", os.Stderr)
+	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", os.Stderr)
 
 	assert.EqualError(t, err, fmt.Sprintf("unable to init database using: %s/bin/initdb -A password -U Tom -D %s/data --pwfile=%s/pwfile",
-		tempDir,
-		tempDir,
-		tempDir))
-	assert.FileExists(t, filepath.Join(tempDir, "pwfile"))
+		binTempDir,
+		runtimeTempDir,
+		runtimeTempDir))
+	assert.FileExists(t, filepath.Join(runtimeTempDir, "pwfile"))
 }
 
 func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
@@ -49,7 +56,7 @@ func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
 		}
 	}()
 
-	err = defaultInitDatabase(tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "en_XY", os.Stderr)
+	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "en_XY", os.Stderr)
 
 	assert.EqualError(t, err, fmt.Sprintf("unable to init database using: %s/bin/initdb -A password -U postgres -D %s/data --pwfile=%s/pwfile --locale=en_XY",
 		tempDir,
