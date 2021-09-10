@@ -68,12 +68,7 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
-	cacheLocation, exists := ep.cacheLocator()
-	if !exists {
-		if err := ep.remoteFetchStrategy(); err != nil {
-			return err
-		}
-	}
+	cacheLocation, cacheExists := ep.cacheLocator()
 
 	if ep.config.runtimePath == "" {
 		ep.config.runtimePath = filepath.Join(filepath.Dir(cacheLocation), "extracted")
@@ -85,9 +80,24 @@ func (ep *EmbeddedPostgres) Start() error {
 	if err := os.RemoveAll(ep.config.runtimePath); err != nil {
 		return fmt.Errorf("unable to clean up runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
+	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
+		return fmt.Errorf("unable to create runtime directory %s with error: %s", ep.config.runtimePath, err)
+	}
 
-	if err := archiver.NewTarXz().Unarchive(cacheLocation, ep.config.runtimePath); err != nil {
-		return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, ep.config.runtimePath)
+	if ep.config.binariesPath == "" {
+		ep.config.binariesPath = ep.config.runtimePath
+	}
+	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin"))
+	if os.IsNotExist(binDirErr) {
+		if !cacheExists {
+			if err := ep.remoteFetchStrategy(); err != nil {
+				return err
+			}
+		}
+
+		if err := archiver.NewTarXz().Unarchive(cacheLocation, ep.config.binariesPath); err != nil {
+			return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, ep.config.binariesPath)
+		}
 	}
 
 	reuseData := dataDirIsValid(ep.config.dataPath, ep.config.version)
@@ -97,7 +107,7 @@ func (ep *EmbeddedPostgres) Start() error {
 			return fmt.Errorf("unable to clean up data directory %s with error: %s", ep.config.dataPath, err)
 		}
 
-		if err := ep.initDatabase(ep.config.runtimePath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.config.logger); err != nil {
+		if err := ep.initDatabase(ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.config.logger); err != nil {
 			return err
 		}
 	}
@@ -145,7 +155,7 @@ func (ep *EmbeddedPostgres) Stop() error {
 }
 
 func startPostgres(config Config) error {
-	postgresBinary := filepath.Join(config.runtimePath, "bin/pg_ctl")
+	postgresBinary := filepath.Join(config.binariesPath, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "start", "-w",
 		"-D", config.dataPath,
 		"-o", fmt.Sprintf(`"-p %d"`, config.port))
@@ -160,7 +170,7 @@ func startPostgres(config Config) error {
 }
 
 func stopPostgres(config Config) error {
-	postgresBinary := filepath.Join(config.runtimePath, "bin/pg_ctl")
+	postgresBinary := filepath.Join(config.binariesPath, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "stop", "-w",
 		"-D", config.dataPath)
 	postgresProcess.Stderr = config.logger

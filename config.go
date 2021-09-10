@@ -15,6 +15,7 @@ type Config struct {
 	password     string
 	runtimePath  string
 	dataPath     string
+	binariesPath string
 	locale       string
 	startTimeout time.Duration
 	logger       io.Writer
@@ -81,6 +82,13 @@ func (c Config) RuntimePath(path string) Config {
 // If this option is set, a previously initialized data directory will be reused if possible.
 func (c Config) DataPath(path string) Config {
 	c.dataPath = path
+	return c
+}
+
+// BinariesPath sets the path of the pre-downloaded postgres binaries.
+// If this option is left unset, the binaries will be downloaded.
+func (c Config) BinariesPath(path string) Config {
+	c.binariesPath = path
 	return c
 }
 
