@@ -75,30 +75,34 @@ func (ep *EmbeddedPostgres) Start() error {
 		}
 	}
 
-	binaryExtractLocation := userRuntimePathOrDefault(ep.config.runtimePath, cacheLocation)
-	if err := os.RemoveAll(binaryExtractLocation); err != nil {
-		return fmt.Errorf("unable to clean up runtime directory %s with error: %s", binaryExtractLocation, err)
+	if ep.config.runtimePath == "" {
+		ep.config.runtimePath = filepath.Join(filepath.Dir(cacheLocation), "extracted")
+	}
+	if ep.config.dataPath == "" {
+		ep.config.dataPath = filepath.Join(ep.config.runtimePath, "data")
 	}
 
-	if err := archiver.NewTarXz().Unarchive(cacheLocation, binaryExtractLocation); err != nil {
-		return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, binaryExtractLocation)
+	if err := os.RemoveAll(ep.config.runtimePath); err != nil {
+		return fmt.Errorf("unable to clean up runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
 
-	dataLocation := userDataPathOrDefault(ep.config.dataPath, binaryExtractLocation)
+	if err := archiver.NewTarXz().Unarchive(cacheLocation, ep.config.runtimePath); err != nil {
+		return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, ep.config.runtimePath)
+	}
 
-	reuseData := ep.config.dataPath != "" && dataDirIsValid(dataLocation, ep.config.version)
+	reuseData := dataDirIsValid(ep.config.dataPath, ep.config.version)
 
 	if !reuseData {
-		if err := os.RemoveAll(dataLocation); err != nil {
-			return fmt.Errorf("unable to clean up data directory %s with error: %s", dataLocation, err)
+		if err := os.RemoveAll(ep.config.dataPath); err != nil {
+			return fmt.Errorf("unable to clean up data directory %s with error: %s", ep.config.dataPath, err)
 		}
 
-		if err := ep.initDatabase(binaryExtractLocation, dataLocation, ep.config.username, ep.config.password, ep.config.locale, ep.config.logger); err != nil {
+		if err := ep.initDatabase(ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.config.logger); err != nil {
 			return err
 		}
 	}
 
-	if err := startPostgres(binaryExtractLocation, ep.config); err != nil {
+	if err := startPostgres(ep.config); err != nil {
 		return err
 	}
 
@@ -106,7 +110,7 @@ func (ep *EmbeddedPostgres) Start() error {
 
 	if !reuseData {
 		if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
-			if stopErr := stopPostgres(binaryExtractLocation, ep.config); stopErr != nil {
+			if stopErr := stopPostgres(ep.config); stopErr != nil {
 				return fmt.Errorf("unable to stop database casused by error %s", err)
 			}
 
@@ -115,7 +119,7 @@ func (ep *EmbeddedPostgres) Start() error {
 	}
 
 	if err := healthCheckDatabaseOrTimeout(ep.config); err != nil {
-		if stopErr := stopPostgres(binaryExtractLocation, ep.config); stopErr != nil {
+		if stopErr := stopPostgres(ep.config); stopErr != nil {
 			return fmt.Errorf("unable to stop database casused by error %s", err)
 		}
 
@@ -127,13 +131,11 @@ func (ep *EmbeddedPostgres) Start() error {
 
 // Stop will try to stop the Postgres process gracefully returning an error when there were any problems.
 func (ep *EmbeddedPostgres) Stop() error {
-	cacheLocation, exists := ep.cacheLocator()
-	if !exists || !ep.started {
+	if !ep.started {
 		return errors.New("server has not been started")
 	}
 
-	binaryExtractLocation := userRuntimePathOrDefault(ep.config.runtimePath, cacheLocation)
-	if err := stopPostgres(binaryExtractLocation, ep.config); err != nil {
+	if err := stopPostgres(ep.config); err != nil {
 		return err
 	}
 
@@ -142,10 +144,10 @@ func (ep *EmbeddedPostgres) Stop() error {
 	return nil
 }
 
-func startPostgres(binaryExtractLocation string, config Config) error {
-	postgresBinary := filepath.Join(binaryExtractLocation, "bin/pg_ctl")
+func startPostgres(config Config) error {
+	postgresBinary := filepath.Join(config.runtimePath, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "start", "-w",
-		"-D", userDataPathOrDefault(config.dataPath, binaryExtractLocation),
+		"-D", config.dataPath,
 		"-o", fmt.Sprintf(`"-p %d"`, config.port))
 	postgresProcess.Stderr = config.logger
 	postgresProcess.Stdout = config.logger
@@ -157,10 +159,10 @@ func startPostgres(binaryExtractLocation string, config Config) error {
 	return nil
 }
 
-func stopPostgres(binaryExtractLocation string, config Config) error {
-	postgresBinary := filepath.Join(binaryExtractLocation, "bin/pg_ctl")
+func stopPostgres(config Config) error {
+	postgresBinary := filepath.Join(config.runtimePath, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "stop", "-w",
-		"-D", userDataPathOrDefault(config.dataPath, binaryExtractLocation))
+		"-D", config.dataPath)
 	postgresProcess.Stderr = config.logger
 	postgresProcess.Stdout = config.logger
 
@@ -178,22 +180,6 @@ func ensurePortAvailable(port uint32) error {
 	}
 
 	return nil
-}
-
-func userRuntimePathOrDefault(userLocation, cacheLocation string) string {
-	if userLocation != "" {
-		return userLocation
-	}
-
-	return filepath.Join(filepath.Dir(cacheLocation), "extracted")
-}
-
-func userDataPathOrDefault(userLocation, runtimeLocation string) string {
-	if userLocation != "" {
-		return userLocation
-	}
-
-	return filepath.Join(runtimeLocation, "data")
 }
 
 func dataDirIsValid(dataDir string, version PostgresVersion) bool {
