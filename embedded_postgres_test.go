@@ -465,18 +465,29 @@ func Test_CustomBinariesLocation(t *testing.T) {
 }
 
 func Test_PrefetchedBinaries(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "prepare_database_test")
+	binTempDir, err := ioutil.TempDir("", "prepare_database_test_bin")
+	if err != nil {
+		panic(err)
+	}
+
+	runtimeTempDir, err := ioutil.TempDir("", "prepare_database_test_runtime")
 	if err != nil {
 		panic(err)
 	}
 
 	defer func() {
-		if err := os.RemoveAll(tempDir); err != nil {
+		if err := os.RemoveAll(binTempDir); err != nil {
+			panic(err)
+		}
+
+		if err := os.RemoveAll(runtimeTempDir); err != nil {
 			panic(err)
 		}
 	}()
 
-	database := NewDatabase(DefaultConfig().BinariesPath(tempDir))
+	database := NewDatabase(DefaultConfig().
+		BinariesPath(binTempDir).
+		RuntimePath(runtimeTempDir))
 
 	// Download and unarchive postgres into the bindir.
 	if err := database.remoteFetchStrategy(); err != nil {
@@ -484,7 +495,7 @@ func Test_PrefetchedBinaries(t *testing.T) {
 	}
 
 	cacheLocation, _ := database.cacheLocator()
-	if err := archiver.NewTarXz().Unarchive(cacheLocation, tempDir); err != nil {
+	if err := archiver.NewTarXz().Unarchive(cacheLocation, binTempDir); err != nil {
 		panic(err)
 	}
 
