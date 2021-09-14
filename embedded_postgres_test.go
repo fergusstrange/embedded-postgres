@@ -488,7 +488,7 @@ func Test_PrefetchedBinaries(t *testing.T) {
 		panic(err)
 	}
 
-	// Expect everything to work without cacheLocator and/orr remoteFetch abilities.
+	// Expect everything to work without cacheLocator and/or remoteFetch abilities.
 	database.cacheLocator = func() (string, bool) {
 		return "", false
 	}
