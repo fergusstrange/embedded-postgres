@@ -73,6 +73,7 @@ func (ep *EmbeddedPostgres) Start() error {
 	if ep.config.runtimePath == "" {
 		ep.config.runtimePath = filepath.Join(filepath.Dir(cacheLocation), "extracted")
 	}
+
 	if ep.config.dataPath == "" {
 		ep.config.dataPath = filepath.Join(ep.config.runtimePath, "data")
 	}
@@ -80,6 +81,7 @@ func (ep *EmbeddedPostgres) Start() error {
 	if err := os.RemoveAll(ep.config.runtimePath); err != nil {
 		return fmt.Errorf("unable to clean up runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
+
 	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
 		return fmt.Errorf("unable to create runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
@@ -87,6 +89,7 @@ func (ep *EmbeddedPostgres) Start() error {
 	if ep.config.binariesPath == "" {
 		ep.config.binariesPath = ep.config.runtimePath
 	}
+
 	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin"))
 	if os.IsNotExist(binDirErr) {
 		if !cacheExists {

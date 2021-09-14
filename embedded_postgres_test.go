@@ -482,6 +482,7 @@ func Test_PrefetchedBinaries(t *testing.T) {
 	if err := database.remoteFetchStrategy(); err != nil {
 		panic(err)
 	}
+
 	cacheLocation, _ := database.cacheLocator()
 	if err := archiver.NewTarXz().Unarchive(cacheLocation, tempDir); err != nil {
 		panic(err)

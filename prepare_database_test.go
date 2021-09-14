@@ -21,6 +21,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+
 	runtimeTempDir, err := ioutil.TempDir("", "prepare_database_test_runtime")
 	if err != nil {
 		panic(err)
@@ -30,6 +31,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 		if err := os.RemoveAll(binTempDir); err != nil {
 			panic(err)
 		}
+
 		if err := os.RemoveAll(runtimeTempDir); err != nil {
 			panic(err)
 		}
