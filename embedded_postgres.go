@@ -82,10 +82,6 @@ func (ep *EmbeddedPostgres) Start() error {
 		return fmt.Errorf("unable to clean up runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
 
-	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
-		return fmt.Errorf("unable to create runtime directory %s with error: %s", ep.config.runtimePath, err)
-	}
-
 	if ep.config.binariesPath == "" {
 		ep.config.binariesPath = ep.config.runtimePath
 	}
@@ -101,6 +97,10 @@ func (ep *EmbeddedPostgres) Start() error {
 		if err := archiver.NewTarXz().Unarchive(cacheLocation, ep.config.binariesPath); err != nil {
 			return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, ep.config.binariesPath)
 		}
+	}
+
+	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
+		return fmt.Errorf("unable to create runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
 
 	reuseData := dataDirIsValid(ep.config.dataPath, ep.config.version)
