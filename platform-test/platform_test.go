@@ -4,11 +4,10 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"log"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 )
@@ -22,14 +21,20 @@ func Test_AllMajorVersions(t *testing.T) {
 		embeddedpostgres.V9,
 	}
 
-	tempExtractLocation := os.TempDir()
+	tempExtractLocation, err := ioutil.TempDir("", "embedded_postgres_tests_*")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	for i, v := range allVersions {
 		testNumber := i
 		version := v
 		t.Run(fmt.Sprintf("MajorVersion_%s", version), func(t *testing.T) {
 			port := uint32(5555 + testNumber)
-			runtimePath := filepath.Join(tempExtractLocation, "embedded_postgres_tests", time.Now().Format(time.RFC3339), string(version))
+			runtimePath := filepath.Join(tempExtractLocation, string(version))
+
+			log.Printf("testing database using port: %d from directory: %s", port, runtimePath)
+
 			database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
 				Version(version).
 				Port(port).
