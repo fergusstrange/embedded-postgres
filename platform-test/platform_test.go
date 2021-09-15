@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -77,8 +78,10 @@ func Test_AllMajorVersions(t *testing.T) {
 
 func purgeTestDataOrWait(tempExtractLocation string, attempts int) error {
 	if err := os.RemoveAll(tempExtractLocation); err != nil {
-		if attempts < 10 {
+		if attempts < 30 {
+			log.Println("waiting for tests to clean up...")
 			time.Sleep(1 * time.Second)
+
 			return purgeTestDataOrWait(tempExtractLocation, attempts+1)
 		}
 
