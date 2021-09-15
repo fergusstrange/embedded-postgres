@@ -22,12 +22,15 @@ func Test_AllMajorVersions(t *testing.T) {
 		embeddedpostgres.V10,
 		embeddedpostgres.V9,
 	}
+
 	tempExtractLocation, err := ioutil.TempDir("", "embedded_postgres_go_tests")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for testNumber, version := range allVersions {
+	for i, v := range allVersions {
+		testNumber := i
+		version := v
 		t.Run(fmt.Sprintf("MajorVersion_%s", version), func(t *testing.T) {
 			port := uint32(5555 + testNumber)
 			runtimePath := filepath.Join(tempExtractLocation, strconv.Itoa(testNumber))
@@ -75,7 +78,7 @@ func Test_AllMajorVersions(t *testing.T) {
 func purgeTestDataOrWait(tempExtractLocation string, attempts int) error {
 	if err := os.RemoveAll(tempExtractLocation); err != nil {
 		if attempts < 10 {
-			time.Sleep(1)
+			time.Sleep(1 * time.Second)
 			return purgeTestDataOrWait(tempExtractLocation, attempts+1)
 		}
 
@@ -89,6 +92,7 @@ func shutdownDBAndFail(t *testing.T, err error, db *embeddedpostgres.EmbeddedPos
 	if err := db.Stop(); err != nil {
 		t.Fatalf("Failed for version %s with error %s", version, err)
 	}
+
 	t.Fatalf("Failed for version %s with error %s", version, err)
 }
 
