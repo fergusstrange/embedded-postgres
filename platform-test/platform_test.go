@@ -24,55 +24,55 @@ func Test_AllMajorVersions(t *testing.T) {
 		embeddedpostgres.V13,
 	}
 
+	tempExtractLocation, err := ioutil.TempDir("", "embedded_postgres_go_tests")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for i, v := range allVersions {
 		testNumber := i
 		version := v
-		t.Run(fmt.Sprintf("MajorVersion_%s", version), func(t *testing.T) {
-			tempExtractLocation, err := ioutil.TempDir("", fmt.Sprintf("embedded_postgres_go_tests_%s", version))
-			if err != nil {
-				t.Fatal(err)
-			}
 
-			port := uint32(5555 + testNumber)
-			runtimePath := filepath.Join(tempExtractLocation, strconv.Itoa(testNumber))
-			database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
-				Version(version).
-				Port(port).
-				RuntimePath(runtimePath))
+		port := uint32(5555 + testNumber)
+		runtimePath := filepath.Join(tempExtractLocation, strconv.Itoa(testNumber))
+		database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
+			Version(version).
+			Port(port).
+			RuntimePath(runtimePath))
 
-			if err := database.Start(); err != nil {
-				shutdownDBAndFail(t, err, database, version)
-			}
+		if err := database.Start(); err != nil {
+			shutdownDBAndFail(t, err, database, version)
+		}
 
-			db, err := connect(port)
-			if err != nil {
-				shutdownDBAndFail(t, err, database, version)
-			}
+		db, err := connect(port)
+		if err != nil {
+			shutdownDBAndFail(t, err, database, version)
+		}
 
-			rows, err := db.Query("SELECT 1")
-			if err != nil {
-				shutdownDBAndFail(t, err, database, version)
-			}
-			if err := rows.Close(); err != nil {
-				shutdownDBAndFail(t, err, database, version)
-			}
+		rows, err := db.Query("SELECT 1")
+		if err != nil {
+			shutdownDBAndFail(t, err, database, version)
+		}
 
-			if err := db.Close(); err != nil {
-				shutdownDBAndFail(t, err, database, version)
-			}
+		if err := rows.Close(); err != nil {
+			shutdownDBAndFail(t, err, database, version)
+		}
 
-			if err := database.Stop(); err != nil {
-				t.Fatal(err)
-			}
+		if err := db.Close(); err != nil {
+			shutdownDBAndFail(t, err, database, version)
+		}
 
-			if err := checkPgVersionFile(filepath.Join(runtimePath, "data"), version); err != nil {
-				t.Fatal(err)
-			}
+		if err := database.Stop(); err != nil {
+			t.Fatal(err)
+		}
 
-			if err := purgeTestDataOrWait(tempExtractLocation, 0); err != nil {
-				t.Fatal(err)
-			}
-		})
+		if err := checkPgVersionFile(filepath.Join(runtimePath, "data"), version); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := purgeTestDataOrWait(tempExtractLocation, 0); err != nil {
+		t.Fatal(err)
 	}
 }
 
