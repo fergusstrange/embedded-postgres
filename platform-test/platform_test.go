@@ -21,7 +21,7 @@ func Test_AllMajorVersions(t *testing.T) {
 		embeddedpostgres.V9,
 	}
 
-	tempExtractLocation, err := ioutil.TempDir("", "embedded_postgres_tests_*")
+	tempExtractLocation, err := ioutil.TempDir("", "embedded_postgres_tests")
 	if err != nil {
 		t.Fatal(err)
 	}
