@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -32,8 +31,6 @@ func Test_AllMajorVersions(t *testing.T) {
 		t.Run(fmt.Sprintf("MajorVersion_%s", version), func(t *testing.T) {
 			port := uint32(5555 + testNumber)
 			runtimePath := filepath.Join(tempExtractLocation, string(version))
-
-			log.Printf("testing database using port: %d from directory: %s", port, runtimePath)
 
 			database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
 				Version(version).
