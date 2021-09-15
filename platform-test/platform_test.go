@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 )
@@ -65,9 +66,23 @@ func Test_AllMajorVersions(t *testing.T) {
 			}
 		})
 	}
-	if err := os.RemoveAll(tempExtractLocation); err != nil {
+
+	if err := purgeTestDataOrWait(tempExtractLocation, 0); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func purgeTestDataOrWait(tempExtractLocation string, attempts int) error {
+	if err := os.RemoveAll(tempExtractLocation); err != nil {
+		if attempts < 10 {
+			time.Sleep(1)
+			return purgeTestDataOrWait(tempExtractLocation, attempts+1)
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func shutdownDBAndFail(t *testing.T, err error, db *embeddedpostgres.EmbeddedPostgres, version embeddedpostgres.PostgresVersion) {
