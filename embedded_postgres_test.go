@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -118,7 +119,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, dataLocation, username, password, locale string, logger io.Writer) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger io.Writer) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -221,7 +222,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, dataLocation, username, password, locale string, logger io.Writer) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger io.Writer) error {
 		return nil
 	}
 
@@ -417,6 +418,96 @@ func Test_ReuseData(t *testing.T) {
 	}
 
 	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_CustomBinariesLocation(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "prepare_database_test")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	database := NewDatabase(DefaultConfig().
+		BinariesPath(tempDir))
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	// Delete cache to make sure unarchive doesn't happen again.
+	cacheLocation, _ := database.cacheLocator()
+	if err := os.RemoveAll(cacheLocation); err != nil {
+		panic(err)
+	}
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_PrefetchedBinaries(t *testing.T) {
+	binTempDir, err := ioutil.TempDir("", "prepare_database_test_bin")
+	if err != nil {
+		panic(err)
+	}
+
+	runtimeTempDir, err := ioutil.TempDir("", "prepare_database_test_runtime")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(binTempDir); err != nil {
+			panic(err)
+		}
+
+		if err := os.RemoveAll(runtimeTempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	database := NewDatabase(DefaultConfig().
+		BinariesPath(binTempDir).
+		RuntimePath(runtimeTempDir))
+
+	// Download and unarchive postgres into the bindir.
+	if err := database.remoteFetchStrategy(); err != nil {
+		panic(err)
+	}
+
+	cacheLocation, _ := database.cacheLocator()
+	if err := archiver.NewTarXz().Unarchive(cacheLocation, binTempDir); err != nil {
+		panic(err)
+	}
+
+	// Expect everything to work without cacheLocator and/or remoteFetch abilities.
+	database.cacheLocator = func() (string, bool) {
+		return "", false
+	}
+	database.remoteFetchStrategy = func() error {
+		return errors.New("did not work")
+	}
+
+	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
 

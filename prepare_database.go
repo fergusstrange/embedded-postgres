@@ -14,11 +14,11 @@ import (
 	"github.com/lib/pq"
 )
 
-type initDatabase func(binaryExtractLocation, pgDataDir, username, password, locale string, logger io.Writer) error
+type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger io.Writer) error
 type createDatabase func(port uint32, username, password, database string) error
 
-func defaultInitDatabase(binaryExtractLocation, pgDataDir, username, password, locale string, logger io.Writer) error {
-	passwordFile, err := createPasswordFile(binaryExtractLocation, password)
+func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger io.Writer) error {
+	passwordFile, err := createPasswordFile(runtimePath, password)
 	if err != nil {
 		return err
 	}
@@ -50,8 +50,8 @@ func defaultInitDatabase(binaryExtractLocation, pgDataDir, username, password, l
 	return nil
 }
 
-func createPasswordFile(binaryExtractLocation, password string) (string, error) {
-	passwordFileLocation := filepath.Join(binaryExtractLocation, "pwfile")
+func createPasswordFile(runtimePath, password string) (string, error) {
+	passwordFileLocation := filepath.Join(runtimePath, "pwfile")
 	if err := ioutil.WriteFile(passwordFileLocation, []byte(password), 0600); err != nil {
 		return "", fmt.Errorf("unable to write password file to %s", passwordFileLocation)
 	}
