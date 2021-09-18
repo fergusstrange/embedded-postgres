@@ -34,12 +34,12 @@ func newSyncedLogger(logger io.Writer) (*syncedLogger, error) {
 func syncLogFileAndCustomWriter(file *os.File, logger io.Writer) {
 	offset := int64(0)
 
-	fileToCopy, err := os.Open(file.Name())
-	if err != nil {
-		log.Print(err)
-	}
-
 	for {
+		fileToCopy, err := os.Open(file.Name())
+		if err != nil {
+			log.Print(err)
+		}
+
 		if _, err := fileToCopy.Seek(offset, io.SeekStart); err != nil {
 			log.Print(err)
 		}
@@ -61,6 +61,10 @@ func syncLogFileAndCustomWriter(file *os.File, logger io.Writer) {
 			if _, writeErr := logger.Write(line); writeErr != nil {
 				log.Print(err)
 			}
+		}
+
+		if err := fileToCopy.Close(); err != nil {
+			log.Print(err)
 		}
 	}
 }
