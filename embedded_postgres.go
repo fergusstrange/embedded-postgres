@@ -22,6 +22,7 @@ type EmbeddedPostgres struct {
 	initDatabase        initDatabase
 	createDatabase      createDatabase
 	started             bool
+	syncedLogger        *syncedLogger
 }
 
 // NewDatabase creates a new EmbeddedPostgres struct that can be used to start and stop a Postgres process.
@@ -68,6 +69,13 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
+	logger, err := newSyncedLogger(ep.config.logger)
+	if err != nil {
+		return errors.New("unable to create logger")
+	}
+
+	ep.syncedLogger = logger
+
 	cacheLocation, cacheExists := ep.cacheLocator()
 
 	if ep.config.runtimePath == "" {
@@ -106,16 +114,12 @@ func (ep *EmbeddedPostgres) Start() error {
 	reuseData := dataDirIsValid(ep.config.dataPath, ep.config.version)
 
 	if !reuseData {
-		if err := os.RemoveAll(ep.config.dataPath); err != nil {
-			return fmt.Errorf("unable to clean up data directory %s with error: %s", ep.config.dataPath, err)
-		}
-
-		if err := ep.initDatabase(ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.config.logger); err != nil {
+		if err := ep.cleanDataDirectoryAndInit(); err != nil {
 			return err
 		}
 	}
 
-	if err := startPostgres(ep.config); err != nil {
+	if err := startPostgres(ep); err != nil {
 		return err
 	}
 
@@ -123,7 +127,7 @@ func (ep *EmbeddedPostgres) Start() error {
 
 	if !reuseData {
 		if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
-			if stopErr := stopPostgres(ep.config); stopErr != nil {
+			if stopErr := stopPostgres(ep); stopErr != nil {
 				return fmt.Errorf("unable to stop database casused by error %s", err)
 			}
 
@@ -132,10 +136,22 @@ func (ep *EmbeddedPostgres) Start() error {
 	}
 
 	if err := healthCheckDatabaseOrTimeout(ep.config); err != nil {
-		if stopErr := stopPostgres(ep.config); stopErr != nil {
+		if stopErr := stopPostgres(ep); stopErr != nil {
 			return fmt.Errorf("unable to stop database casused by error %s", err)
 		}
 
+		return err
+	}
+
+	return nil
+}
+
+func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
+	if err := os.RemoveAll(ep.config.dataPath); err != nil {
+		return fmt.Errorf("unable to clean up data directory %s with error: %s", ep.config.dataPath, err)
+	}
+
+	if err := ep.initDatabase(ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.syncedLogger.file); err != nil {
 		return err
 	}
 
@@ -148,7 +164,7 @@ func (ep *EmbeddedPostgres) Stop() error {
 		return errors.New("server has not been started")
 	}
 
-	if err := stopPostgres(ep.config); err != nil {
+	if err := stopPostgres(ep); err != nil {
 		return err
 	}
 
@@ -157,13 +173,13 @@ func (ep *EmbeddedPostgres) Stop() error {
 	return nil
 }
 
-func startPostgres(config Config) error {
-	postgresBinary := filepath.Join(config.binariesPath, "bin/pg_ctl")
+func startPostgres(ep *EmbeddedPostgres) error {
+	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "start", "-w",
-		"-D", config.dataPath,
-		"-o", fmt.Sprintf(`"-p %d"`, config.port))
-	postgresProcess.Stderr = config.logger
-	postgresProcess.Stdout = config.logger
+		"-D", ep.config.dataPath,
+		"-o", fmt.Sprintf(`"-p %d"`, ep.config.port))
+	postgresProcess.Stdout = ep.syncedLogger.file
+	postgresProcess.Stderr = ep.syncedLogger.file
 
 	if err := postgresProcess.Run(); err != nil {
 		return fmt.Errorf("could not start postgres using %s", postgresProcess.String())
@@ -172,14 +188,18 @@ func startPostgres(config Config) error {
 	return nil
 }
 
-func stopPostgres(config Config) error {
-	postgresBinary := filepath.Join(config.binariesPath, "bin/pg_ctl")
+func stopPostgres(ep *EmbeddedPostgres) error {
+	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "stop", "-w",
-		"-D", config.dataPath)
-	postgresProcess.Stderr = config.logger
-	postgresProcess.Stdout = config.logger
+		"-D", ep.config.dataPath)
+	postgresProcess.Stderr = ep.syncedLogger.file
+	postgresProcess.Stdout = ep.syncedLogger.file
 
-	return postgresProcess.Run()
+	if err := postgresProcess.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func ensurePortAvailable(port uint32) error {

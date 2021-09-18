@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	"os"
+	"os/user"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -119,7 +120,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger io.Writer) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -222,7 +223,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger io.Writer) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
 		return nil
 	}
 
@@ -274,6 +275,64 @@ func Test_CustomConfig(t *testing.T) {
 	if err := database.Stop(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
+}
+
+type customLogger struct {
+	logLines []byte
+}
+
+func (cl *customLogger) Write(p []byte) (n int, err error) {
+	cl.logLines = append(cl.logLines, p...)
+	return len(p), nil
+}
+
+func Test_CustomLog(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	logger := customLogger{}
+
+	database := NewDatabase(DefaultConfig().
+		Logger(&logger))
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	current, err := user.Current()
+
+	lines := strings.Split(string(logger.logLines), "\n")
+
+	assert.NoError(t, err)
+	assert.Contains(t, lines, fmt.Sprintf("The files belonging to this database system will be owned by user \"%s\".", current.Username))
+	assert.Contains(t, lines, "syncing data to disk ... ok")
+	assert.Contains(t, lines, "server stopped")
+	assert.Len(t, lines, 47)
 }
 
 func Test_CustomLocaleConfig(t *testing.T) {
