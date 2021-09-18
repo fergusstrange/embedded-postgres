@@ -332,13 +332,6 @@ func Test_CustomLog(t *testing.T) {
 	assert.Contains(t, lines, fmt.Sprintf("The files belonging to this database system will be owned by user \"%s\".", current.Username))
 	assert.Contains(t, lines, "syncing data to disk ... ok")
 	assert.Contains(t, lines, "server stopped")
-	assert.Len(t, lines, func() int {
-		if shouldUseAlpineLinuxBuild() {
-			return 50
-		}
-
-		return 47
-	}())
 }
 
 func Test_CustomLocaleConfig(t *testing.T) {
