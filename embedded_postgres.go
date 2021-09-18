@@ -123,6 +123,10 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
+	if err := ep.syncedLogger.flush(); err != nil {
+		return err
+	}
+
 	ep.started = true
 
 	if !reuseData {
@@ -169,6 +173,10 @@ func (ep *EmbeddedPostgres) Stop() error {
 	}
 
 	ep.started = false
+
+	if err := ep.syncedLogger.flush(); err != nil {
+		return err
+	}
 
 	return nil
 }

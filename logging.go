@@ -1,14 +1,14 @@
 package embeddedpostgres
 
 import (
-	"bufio"
+	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 )
 
 type syncedLogger struct {
+	offset int64
 	logger io.Writer
 	file   *os.File
 }
@@ -24,48 +24,27 @@ func newSyncedLogger(logger io.Writer) (*syncedLogger, error) {
 		file:   file,
 	}
 
-	if logger != nil {
-		go syncLogFileAndCustomWriter(file, logger)
-	}
-
 	return &s, nil
 }
 
-func syncLogFileAndCustomWriter(file *os.File, logger io.Writer) {
-	offset := int64(0)
-
-	for {
-		fileToCopy, err := os.Open(file.Name())
+func (s *syncedLogger) flush() error {
+	if s.logger != nil {
+		file, err := os.Open(s.file.Name())
 		if err != nil {
-			log.Print(err)
-			break
+			return fmt.Errorf("unable to process postgres logs: %s", err)
 		}
 
-		if _, err := fileToCopy.Seek(offset, io.SeekStart); err != nil {
-			log.Print(err)
-			break
+		if _, err = file.Seek(s.offset, io.SeekStart); err != nil {
+			return fmt.Errorf("unable to process postgres logs: %s", err)
 		}
 
-		reader := bufio.NewReader(fileToCopy)
-
-		line, err := reader.ReadBytes('\n')
-		if err != nil && err != io.EOF {
-			log.Print(err)
-			break
+		readBytes, err := io.Copy(s.logger, file)
+		if err != nil {
+			return fmt.Errorf("unable to process postgres logs: %s", err)
 		}
 
-		offset += int64(len(line))
-
-		if len(line) != 0 {
-			if _, writeErr := logger.Write(line); writeErr != nil {
-				log.Print(err)
-				break
-			}
-		}
-
-		if err := fileToCopy.Close(); err != nil {
-			log.Print(err)
-			break
-		}
+		s.offset += readBytes
 	}
+
+	return nil
 }
