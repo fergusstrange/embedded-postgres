@@ -34,6 +34,12 @@ func (s *syncedLogger) flush() error {
 			return fmt.Errorf("unable to process postgres logs: %s", err)
 		}
 
+		defer func() {
+			if err := file.Close(); err != nil {
+				panic(err)
+			}
+		}()
+
 		if _, err = file.Seek(s.offset, io.SeekStart); err != nil {
 			return fmt.Errorf("unable to process postgres logs: %s", err)
 		}
