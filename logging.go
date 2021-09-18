@@ -32,18 +32,19 @@ func newSyncedLogger(logger io.Writer) (*syncedLogger, error) {
 }
 
 func syncLogFileAndCustomWriter(file *os.File, logger io.Writer) {
-	offset := 0
+	offset := int64(0)
+
+	fileToCopy, err := os.Open(file.Name())
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	for {
-		fileToCopy, err := os.Open(file.Name())
-		if err != nil {
+		if _, err := fileToCopy.Seek(offset, io.SeekStart); err != nil {
 			log.Fatal(err)
 		}
 
 		reader := bufio.NewReader(fileToCopy)
-		if _, err := reader.Discard(offset); err != nil {
-			log.Fatal(err)
-		}
 
 		line, err := reader.ReadBytes('\n')
 		if err != nil {
@@ -54,7 +55,7 @@ func syncLogFileAndCustomWriter(file *os.File, logger io.Writer) {
 			log.Fatal(err)
 		}
 
-		offset += len(line)
+		offset += int64(len(line))
 
 		if len(line) != 0 {
 			if _, writeErr := logger.Write(line); writeErr != nil {
