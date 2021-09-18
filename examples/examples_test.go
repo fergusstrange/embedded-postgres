@@ -11,10 +11,42 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapio"
 )
 
 func Test_GooseMigrations(t *testing.T) {
 	database := embeddedpostgres.NewDatabase()
+	if err := database.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := database.Stop(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	db, err := connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := goose.Up(db.DB, "./migrations"); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_ZapioLogger(t *testing.T) {
+	logger, err := zap.NewProduction()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := &zapio.Writer{Log: logger}
+
+	database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
+		Logger(w))
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
 	}
