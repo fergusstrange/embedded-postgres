@@ -277,15 +277,6 @@ func Test_CustomConfig(t *testing.T) {
 	}
 }
 
-type customLogger struct {
-	logLines []byte
-}
-
-func (cl *customLogger) Write(p []byte) (n int, err error) {
-	cl.logLines = append(cl.logLines, p...)
-	return len(p), nil
-}
-
 func Test_CustomLog(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
 	if err != nil {

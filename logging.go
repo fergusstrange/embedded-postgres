@@ -13,8 +13,8 @@ type syncedLogger struct {
 	file   *os.File
 }
 
-func newSyncedLogger(logger io.Writer) (*syncedLogger, error) {
-	file, err := ioutil.TempFile("", "embedded_postgres_log")
+func newSyncedLogger(dir string, logger io.Writer) (*syncedLogger, error) {
+	file, err := ioutil.TempFile(dir, "embedded_postgres_log")
 	if err != nil {
 		return nil, err
 	}

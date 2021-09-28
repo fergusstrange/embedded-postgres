@@ -69,7 +69,7 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
-	logger, err := newSyncedLogger(ep.config.logger)
+	logger, err := newSyncedLogger("", ep.config.logger)
 	if err != nil {
 		return errors.New("unable to create logger")
 	}
