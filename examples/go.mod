@@ -10,5 +10,6 @@ require (
 	github.com/lib/pq v1.8.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pressly/goose v2.6.0+incompatible
+	go.uber.org/zap v1.19.1
 	google.golang.org/appengine v1.6.7 // indirect
 )
