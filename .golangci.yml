@@ -25,13 +25,11 @@ linters:
     - godox
     - gofmt
     - goimports
-    - golint
-    - interfacer
-    - maligned
+    - revive
     - misspell
     - nakedret
     - prealloc
-    - scopelint
+    - exportloopref
     - stylecheck
     - unconvert
     - unparam
