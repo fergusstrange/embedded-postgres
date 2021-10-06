@@ -4,6 +4,9 @@ go 1.13
 
 replace github.com/fergusstrange/embedded-postgres => ../
 
+// To avoid CVE CVE-2021-29482
+replace github.com/ulikunitz/xz => github.com/ulikunitz/xz v0.5.8
+
 require (
 	github.com/fergusstrange/embedded-postgres v0.0.0
 	github.com/jmoiron/sqlx v1.2.0
