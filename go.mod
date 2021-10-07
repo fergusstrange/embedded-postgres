@@ -3,7 +3,7 @@ module github.com/fergusstrange/embedded-postgres
 go 1.13
 
 // To avoid CVE CVE-2021-29482
-replace github.com/ulikunitz/xz => github.com/ulikunitz/xz v0.5.8
+require github.com/ulikunitz/xz v0.5.10 // indirect
 
 require (
 	github.com/lib/pq v1.8.0
