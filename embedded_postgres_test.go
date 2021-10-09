@@ -8,8 +8,10 @@ import (
 	"net"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -97,7 +99,8 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 		}
 	}
 
-	assert.EqualError(t, err, fmt.Sprintf("unable to extract postgres archive %s to %s", jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
+	assert.EqualError(t, err, fmt.Sprintf(`unable to extract postgres archive %s to %s
+if running parallel tests, configure RuntimePath to isolate testing directories`, jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
 }
 
 func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
@@ -565,4 +568,45 @@ func Test_PrefetchedBinaries(t *testing.T) {
 	if err := database.Stop(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
+}
+
+func Test_RunningInParallel(t *testing.T) {
+	tempPath, err := ioutil.TempDir("", "parallel_tests_path")
+	if err != nil {
+		panic(err)
+	}
+
+	waitGroup := sync.WaitGroup{}
+	waitGroup.Add(2)
+
+	runTestWithPortAndPath := func(port uint32, path string) {
+		defer waitGroup.Done()
+
+		database := NewDatabase(DefaultConfig().Port(port).RuntimePath(path))
+		if err := database.Start(); err != nil {
+			shutdownDBAndFail(t, err, database)
+		}
+
+		db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=postgres sslmode=disable", port))
+		if err != nil {
+			shutdownDBAndFail(t, err, database)
+		}
+
+		if err = db.Ping(); err != nil {
+			shutdownDBAndFail(t, err, database)
+		}
+
+		if err := db.Close(); err != nil {
+			shutdownDBAndFail(t, err, database)
+		}
+
+		if err := database.Stop(); err != nil {
+			shutdownDBAndFail(t, err, database)
+		}
+	}
+
+	go runTestWithPortAndPath(8765, path.Join(tempPath, "1"))
+	go runTestWithPortAndPath(8766, path.Join(tempPath, "2"))
+
+	waitGroup.Wait()
 }

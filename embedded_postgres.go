@@ -103,7 +103,8 @@ func (ep *EmbeddedPostgres) Start() error {
 		}
 
 		if err := archiver.NewTarXz().Unarchive(cacheLocation, ep.config.binariesPath); err != nil {
-			return fmt.Errorf("unable to extract postgres archive %s to %s", cacheLocation, ep.config.binariesPath)
+			return fmt.Errorf(`unable to extract postgres archive %s to %s
+if running parallel tests, configure RuntimePath to isolate testing directories`, cacheLocation, ep.config.binariesPath)
 		}
 	}
 
