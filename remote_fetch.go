@@ -76,7 +76,7 @@ func decompressResponse(resp *http.Response, cacheLocator CacheLocator, download
 				return errorExtractingPostgres(err)
 			}
 
-			if err := ioutil.WriteFile(cacheLocation, archiveBytes, 0666); err != nil {
+			if err := ioutil.WriteFile(cacheLocation, archiveBytes, file.FileHeader.Mode()); err != nil {
 				return errorExtractingPostgres(err)
 			}
 
@@ -88,7 +88,7 @@ func decompressResponse(resp *http.Response, cacheLocator CacheLocator, download
 }
 
 func errorExtractingPostgres(err error) error {
-	return fmt.Errorf("unable to extract postgres archive to %s", err)
+	return fmt.Errorf("unable to extract postgres archive: %s", err)
 }
 
 func errorFetchingPostgres(err error) error {

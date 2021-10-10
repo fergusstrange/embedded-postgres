@@ -2,7 +2,6 @@ package embeddedpostgres
 
 import (
 	"archive/zip"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -65,7 +64,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "error fetching postgres: creating reader: zip: not a valid zip file")
+	assert.EqualError(t, err, "error fetching postgres: zip: not a valid zip file")
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
@@ -82,23 +81,14 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "error fetching postgres: creating reader: zip: not a valid zip file")
+	assert.EqualError(t, err, "error fetching postgres: zip: not a valid zip file")
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tempFile, err := ioutil.TempFile("", "temp.zip")
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		MyZipWriter := zip.NewWriter(tempFile)
+		MyZipWriter := zip.NewWriter(w)
 
 		if err := MyZipWriter.Close(); err != nil {
-			t.Error(err)
-		}
-
-		if err := tempFile.Close(); err != nil {
 			t.Error(err)
 		}
 	}))
