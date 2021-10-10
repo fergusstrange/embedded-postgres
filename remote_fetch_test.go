@@ -1,6 +1,8 @@
 package embeddedpostgres
 
 import (
+	"archive/zip"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -8,7 +10,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,14 +87,19 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		zip := archiver.NewZip()
-		defer func() {
-			if err := zip.Close(); err != nil {
-				panic(err)
-			}
-		}()
-		if err := zip.Create(w); err != nil {
-			panic(err)
+		tempFile, err := ioutil.TempFile("", "temp.zip")
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		MyZipWriter := zip.NewWriter(tempFile)
+
+		if err := MyZipWriter.Close(); err != nil {
+			t.Error(err)
+		}
+
+		if err := tempFile.Close(); err != nil {
+			t.Error(err)
 		}
 	}))
 	defer server.Close()

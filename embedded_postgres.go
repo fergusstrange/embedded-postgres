@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/mholt/archiver/v3"
 )
 
 // EmbeddedPostgres maintains all configuration and runtime functions for maintaining the lifecycle of one Postgres process.
@@ -102,9 +100,8 @@ func (ep *EmbeddedPostgres) Start() error {
 			}
 		}
 
-		if err := archiver.NewTarXz().Unarchive(cacheLocation, ep.config.binariesPath); err != nil {
-			return fmt.Errorf(`unable to extract postgres archive %s to %s
-if running parallel tests, configure RuntimePath to isolate testing directories`, cacheLocation, ep.config.binariesPath)
+		if err := unTar(cacheLocation, ep.config.binariesPath); err != nil {
+			return err
 		}
 	}
 
@@ -235,4 +232,8 @@ func dataDirIsValid(dataDir string, version PostgresVersion) bool {
 	v := strings.TrimSuffix(string(d), "\n")
 
 	return strings.HasPrefix(string(version), v)
+}
+
+func errorUnableToExtract(cacheLocation, binariesPath string) error {
+	return fmt.Errorf("unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories", cacheLocation, binariesPath)
 }
