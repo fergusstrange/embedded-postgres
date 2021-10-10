@@ -2,6 +2,7 @@ package embeddedpostgres
 
 import (
 	"archive/tar"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -85,6 +86,10 @@ func unTar(path, extractPath string) error {
 			return errorExtractingPostgres(err)
 		}
 	}
+}
+
+func errorUnableToExtract(cacheLocation, binariesPath string) error {
+	return fmt.Errorf("unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories", cacheLocation, binariesPath)
 }
 
 // Add this soon

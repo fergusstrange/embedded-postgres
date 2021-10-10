@@ -233,7 +233,3 @@ func dataDirIsValid(dataDir string, version PostgresVersion) bool {
 
 	return strings.HasPrefix(string(version), v)
 }
-
-func errorUnableToExtract(cacheLocation, binariesPath string) error {
-	return fmt.Errorf("unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories", cacheLocation, binariesPath)
-}
