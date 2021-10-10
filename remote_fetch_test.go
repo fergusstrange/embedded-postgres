@@ -132,7 +132,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "unable to extract postgres archive to "+dirBlockingExtract)
+	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *testing.T) {
@@ -167,7 +167,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "unable to extract postgres archive to "+cacheLocation)
+	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *testing.T) {
@@ -199,7 +199,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "unable to extract postgres archive to "+cacheLocation)
+	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
 
 func Test_defaultRemoteFetchStrategy(t *testing.T) {

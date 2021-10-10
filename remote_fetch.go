@@ -59,7 +59,7 @@ func decompressResponse(resp *http.Response, cacheLocator CacheLocator, download
 	}
 
 	for _, file := range zipReader.File {
-		if strings.HasSuffix(file.FileHeader.Name, ".txz") {
+		if !file.FileHeader.FileInfo().IsDir() && strings.HasSuffix(file.FileHeader.Name, ".txz") {
 			archiveReader, err := file.Open()
 			if err != nil {
 				return errorExtractingPostgres(err)
