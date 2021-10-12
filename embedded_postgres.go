@@ -25,6 +25,15 @@ type EmbeddedPostgres struct {
 	syncedLogger        *syncedLogger
 }
 
+// NewCustomDatabase does everything that NewDatabase does. Plus it allows to pass in a custom fetch strategy and cache locator.
+func NewCustomDatabase(fetchStrategy RemoteFetchStrategy, customCacheLocator CacheLocator, config ...Config) *EmbeddedPostgres {
+	if len(config) < 1 {
+		return newCustomDatabaseWithConfig(DefaultConfig(), fetchStrategy, customCacheLocator)
+	}
+
+	return newCustomDatabaseWithConfig(config[0], fetchStrategy, customCacheLocator)
+}
+
 // NewDatabase creates a new EmbeddedPostgres struct that can be used to start and stop a Postgres process.
 // When called with no parameters it will assume a default configuration state provided by the DefaultConfig method.
 // When called with parameters the first Config parameter will be used for configuration.
@@ -34,6 +43,21 @@ func NewDatabase(config ...Config) *EmbeddedPostgres {
 	}
 
 	return newDatabaseWithConfig(config[0])
+}
+
+func newCustomDatabaseWithConfig(config Config, fetchStrategy RemoteFetchStrategy, customCacheLocator CacheLocator) *EmbeddedPostgres {
+	if fetchStrategy == nil {
+		return newDatabaseWithConfig(config)
+	}
+
+	return &EmbeddedPostgres{
+		config:              config,
+		cacheLocator:        customCacheLocator,
+		remoteFetchStrategy: fetchStrategy,
+		initDatabase:        defaultInitDatabase,
+		createDatabase:      defaultCreateDatabase,
+		started:             false,
+	}
 }
 
 func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
