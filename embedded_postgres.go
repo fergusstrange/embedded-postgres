@@ -25,6 +25,7 @@ type EmbeddedPostgres struct {
 	syncedLogger        *syncedLogger
 }
 
+// NewCustomDatabase does everyting that NewDatabase does. Plus it allows to pass in a custom fetch strategy and cache locator.
 func NewCustomDatabase(fetchStrategy RemoteFetchStrategy, customCacheLocator CacheLocator, config ...Config) *EmbeddedPostgres {
 	if len(config) < 1 {
 		return newCustomDatabaseWithConfig(DefaultConfig(), fetchStrategy, customCacheLocator)
