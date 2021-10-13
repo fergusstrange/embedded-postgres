@@ -76,7 +76,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			if err == nil {
 				cacheLocation, _ := cacheLocator()
 
-				if err := createArchiveFile(cacheLocation, downloadedArchiveBytes); err != nil {
+				if err := CreateArchiveFile(cacheLocation, downloadedArchiveBytes); err != nil {
 					return fmt.Errorf("unable to extract postgres archive to %s", cacheLocation)
 				}
 
@@ -96,7 +96,7 @@ func errorFetchingPostgres(err error) error {
 	return fmt.Errorf("error fetching postgres: %s", err)
 }
 
-func createArchiveFile(archiveLocation string, archiveBytes []byte) error {
+func CreateArchiveFile(archiveLocation string, archiveBytes []byte) error {
 	if err := os.MkdirAll(filepath.Dir(archiveLocation), 0755); err != nil {
 		return err
 	}
