@@ -10,8 +10,7 @@ import (
 	"github.com/xi2/xz"
 )
 
-//nolint:funlen,gocognit
-func unTar(path, extractPath string) error {
+func decompressTarXz(path, extractPath string) error {
 	tarFile, err := os.Open(path)
 	if err != nil {
 		return errorUnableToExtract(path, extractPath)
@@ -43,16 +42,12 @@ func unTar(path, extractPath string) error {
 
 		targetPath := filepath.Join(extractPath, header.Name)
 
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if err := os.MkdirAll(targetPath, 0755); err != nil {
-				return errorExtractingPostgres(err)
-			}
-		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
-				return errorExtractingPostgres(err)
-			}
+		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+			return errorExtractingPostgres(err)
+		}
 
+		switch header.Typeflag {
+		case tar.TypeReg:
 			outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return errorExtractingPostgres(err)
@@ -66,24 +61,13 @@ func unTar(path, extractPath string) error {
 				return errorExtractingPostgres(err)
 			}
 		case tar.TypeSymlink:
-			err := os.MkdirAll(filepath.Dir(targetPath), 0755)
-			if err != nil {
+			if err := os.RemoveAll(targetPath); err != nil {
 				return errorExtractingPostgres(err)
-			}
-
-			_, err = os.Lstat(targetPath)
-
-			if err == nil {
-				if err := os.Remove(targetPath); err != nil {
-					return errorExtractingPostgres(err)
-				}
 			}
 
 			if err := os.Symlink(header.Linkname, targetPath); err != nil {
 				return errorExtractingPostgres(err)
 			}
-		default:
-			return errorExtractingPostgres(err)
 		}
 	}
 }
@@ -91,13 +75,3 @@ func unTar(path, extractPath string) error {
 func errorUnableToExtract(cacheLocation, binariesPath string) error {
 	return fmt.Errorf("unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories", cacheLocation, binariesPath)
 }
-
-// Add this soon
-/*func checkPath(to, filename string) error {
-	to, _ = filepath.Abs(to)
-	dest := filepath.Join(to, filename)
-	if !strings.HasPrefix(dest, to) {
-		return errors.New("illegal path traversal")
-	}
-	return nil
-}*/

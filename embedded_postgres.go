@@ -100,7 +100,7 @@ func (ep *EmbeddedPostgres) Start() error {
 			}
 		}
 
-		if err := unTar(cacheLocation, ep.config.binariesPath); err != nil {
+		if err := decompressTarXz(cacheLocation, ep.config.binariesPath); err != nil {
 			return err
 		}
 	}

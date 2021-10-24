@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_unTar(t *testing.T) {
+func Test_decompressTarXz(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "temp_tar_test")
 	if err != nil {
 		panic(err)
@@ -17,7 +17,7 @@ func Test_unTar(t *testing.T) {
 	archive, cleanUp := createTempXzArchive()
 	defer cleanUp()
 
-	err = unTar(archive, tempDir)
+	err = decompressTarXz(archive, tempDir)
 
 	assert.NoError(t, err)
 
@@ -28,4 +28,10 @@ func Test_unTar(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "b33r is g00d", string(fileContentBytes))
+}
+
+func Test_decompressTarXz_ErrorWhenFileNotExists(t *testing.T) {
+	err := decompressTarXz("/does-not-exist", "/also-fake")
+
+	assert.EqualError(t, err, "unable to extract postgres archive /does-not-exist to /also-fake, if running parallel tests, configure RuntimePath to isolate testing directories")
 }
