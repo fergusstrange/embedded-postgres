@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -98,7 +99,8 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 		}
 	}
 
-	assert.EqualError(t, err, fmt.Sprintf(`unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories`, jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
+	assert.EqualError(t, err, fmt.Sprintf(`unable to extract postgres archive %s to %s
+if running parallel tests, configure RuntimePath to isolate testing directories`, jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
 }
 
 func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
@@ -547,7 +549,7 @@ func Test_PrefetchedBinaries(t *testing.T) {
 	}
 
 	cacheLocation, _ := database.cacheLocator()
-	if err := decompressTarXz(cacheLocation, binTempDir); err != nil {
+	if err := archiver.NewTarXz().Unarchive(cacheLocation, binTempDir); err != nil {
 		panic(err)
 	}
 

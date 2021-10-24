@@ -103,7 +103,6 @@ func Test_defaultCreateDatabase_ErrorWhenSQLOpenError(t *testing.T) {
 
 func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
 	database := NewDatabase(DefaultConfig().
-		Port(9831).
 		Database("b33r"))
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
@@ -115,7 +114,7 @@ func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
 		}
 	}()
 
-	err := defaultCreateDatabase(9831, "postgres", "postgres", "b33r")
+	err := defaultCreateDatabase(5432, "postgres", "postgres", "b33r")
 
 	assert.EqualError(t, err, `unable to connect to create database with custom name b33r with the following error: pq: database "b33r" already exists`)
 }
