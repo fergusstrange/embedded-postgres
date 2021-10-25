@@ -10,8 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/mholt/archiver/v3"
 )
 
 // RemoteFetchStrategy provides a strategy to fetch a Postgres binary so that it is available for use.
@@ -45,65 +43,54 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			}
 		}()
 
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return errorFetchingPostgres(err)
-		}
-
-		zipFile := archiver.NewZip()
-
-		if err := zipFile.Open(bytes.NewReader(bodyBytes), resp.ContentLength); err != nil {
-			return errorFetchingPostgres(err)
-		}
-
-		defer func() {
-			if err := zipFile.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}()
-
-		for {
-			downloadedArchive, err := zipFile.Read()
-			if err != nil {
-				return errorExtractingBinary(downloadURL)
-			}
-
-			if header, ok := downloadedArchive.Header.(zip.FileHeader); !ok || !strings.HasSuffix(header.Name, ".txz") {
-				continue
-			}
-
-			downloadedArchiveBytes, err := ioutil.ReadAll(downloadedArchive)
-			if err == nil {
-				cacheLocation, _ := cacheLocator()
-
-				if err := createArchiveFile(cacheLocation, downloadedArchiveBytes); err != nil {
-					return fmt.Errorf("unable to extract postgres archive to %s", cacheLocation)
-				}
-
-				break
-			}
-		}
-
-		return nil
+		return decompressResponse(resp, cacheLocator, downloadURL)
 	}
 }
 
-func errorExtractingBinary(downloadURL string) error {
+func decompressResponse(resp *http.Response, cacheLocator CacheLocator, downloadURL string) error {
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return errorFetchingPostgres(err)
+	}
+
+	zipReader, err := zip.NewReader(bytes.NewReader(bodyBytes), resp.ContentLength)
+	if err != nil {
+		return errorFetchingPostgres(err)
+	}
+
+	for _, file := range zipReader.File {
+		if !file.FileHeader.FileInfo().IsDir() && strings.HasSuffix(file.FileHeader.Name, ".txz") {
+			archiveReader, err := file.Open()
+			if err != nil {
+				return errorExtractingPostgres(err)
+			}
+
+			archiveBytes, err := ioutil.ReadAll(archiveReader)
+			if err != nil {
+				return errorExtractingPostgres(err)
+			}
+
+			cacheLocation, _ := cacheLocator()
+
+			if err := os.MkdirAll(filepath.Dir(cacheLocation), 0755); err != nil {
+				return errorExtractingPostgres(err)
+			}
+
+			if err := ioutil.WriteFile(cacheLocation, archiveBytes, file.FileHeader.Mode()); err != nil {
+				return errorExtractingPostgres(err)
+			}
+
+			return nil
+		}
+	}
+
 	return fmt.Errorf("error fetching postgres: cannot find binary in archive retrieved from %s", downloadURL)
+}
+
+func errorExtractingPostgres(err error) error {
+	return fmt.Errorf("unable to extract postgres archive: %s", err)
 }
 
 func errorFetchingPostgres(err error) error {
 	return fmt.Errorf("error fetching postgres: %s", err)
-}
-
-func createArchiveFile(archiveLocation string, archiveBytes []byte) error {
-	if err := os.MkdirAll(filepath.Dir(archiveLocation), 0755); err != nil {
-		return err
-	}
-
-	if err := ioutil.WriteFile(archiveLocation, archiveBytes, 0666); err != nil {
-		return err
-	}
-
-	return nil
 }
