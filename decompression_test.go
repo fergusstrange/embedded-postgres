@@ -1,11 +1,15 @@
 package embeddedpostgres
 
 import (
+	"archive/tar"
+	"errors"
+	"io"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/xi2/xz"
 )
 
 func Test_decompressTarXz(t *testing.T) {
@@ -17,7 +21,7 @@ func Test_decompressTarXz(t *testing.T) {
 	archive, cleanUp := createTempXzArchive()
 	defer cleanUp()
 
-	err = decompressTarXz(archive, tempDir)
+	err = decompressTarXz(defaultTarReader, archive, tempDir)
 
 	assert.NoError(t, err)
 
@@ -31,7 +35,25 @@ func Test_decompressTarXz(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenFileNotExists(t *testing.T) {
-	err := decompressTarXz("/does-not-exist", "/also-fake")
+	err := decompressTarXz(defaultTarReader, "/does-not-exist", "/also-fake")
 
 	assert.EqualError(t, err, "unable to extract postgres archive /does-not-exist to /also-fake, if running parallel tests, configure RuntimePath to isolate testing directories")
+}
+
+func Test_decompressTarXz_ErrorWhenErrorDuringRead(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "temp_tar_test")
+	if err != nil {
+		panic(err)
+	}
+
+	archive, cleanUp := createTempXzArchive()
+	defer cleanUp()
+
+	err = decompressTarXz(func(reader *xz.Reader) (func() (*tar.Header, error), func() io.Reader) {
+		return func() (*tar.Header, error) {
+			return nil, errors.New("oh noes")
+		}, nil
+	}, archive, tempDir)
+
+	assert.EqualError(t, err, "unable to extract postgres archive: oh noes")
 }

@@ -547,7 +547,7 @@ func Test_PrefetchedBinaries(t *testing.T) {
 	}
 
 	cacheLocation, _ := database.cacheLocator()
-	if err := decompressTarXz(cacheLocation, binTempDir); err != nil {
+	if err := decompressTarXz(defaultTarReader, cacheLocation, binTempDir); err != nil {
 		panic(err)
 	}
 

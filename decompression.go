@@ -10,7 +10,17 @@ import (
 	"github.com/xi2/xz"
 )
 
-func decompressTarXz(path, extractPath string) error {
+func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() io.Reader) {
+	tarReader := tar.NewReader(xzReader)
+
+	return func() (*tar.Header, error) {
+			return tarReader.Next()
+		}, func() io.Reader {
+			return tarReader
+		}
+}
+
+func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), func() io.Reader), path, extractPath string) error {
 	tarFile, err := os.Open(path)
 	if err != nil {
 		return errorUnableToExtract(path, extractPath)
@@ -27,10 +37,10 @@ func decompressTarXz(path, extractPath string) error {
 		return errorUnableToExtract(path, extractPath)
 	}
 
-	tarReader := tar.NewReader(xzReader)
+	readNext, reader := tarReader(xzReader)
 
 	for {
-		header, err := tarReader.Next()
+		header, err := readNext()
 
 		if err == io.EOF {
 			return nil
@@ -53,7 +63,7 @@ func decompressTarXz(path, extractPath string) error {
 				return errorExtractingPostgres(err)
 			}
 
-			if _, err := io.Copy(outFile, tarReader); err != nil {
+			if _, err := io.Copy(outFile, reader()); err != nil {
 				return errorExtractingPostgres(err)
 			}
 
