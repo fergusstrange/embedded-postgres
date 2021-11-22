@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"archive/zip"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -8,7 +9,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/mholt/archiver/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -64,7 +64,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "error fetching postgres: creating reader: zip: not a valid zip file")
+	assert.EqualError(t, err, "error fetching postgres: zip: not a valid zip file")
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
@@ -81,19 +81,15 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "error fetching postgres: creating reader: zip: not a valid zip file")
+	assert.EqualError(t, err, "error fetching postgres: zip: not a valid zip file")
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		zip := archiver.NewZip()
-		defer func() {
-			if err := zip.Close(); err != nil {
-				panic(err)
-			}
-		}()
-		if err := zip.Create(w); err != nil {
-			panic(err)
+		MyZipWriter := zip.NewWriter(w)
+
+		if err := MyZipWriter.Close(); err != nil {
+			t.Error(err)
 		}
 	}))
 	defer server.Close()
@@ -136,7 +132,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "unable to extract postgres archive to "+dirBlockingExtract)
+	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *testing.T) {
@@ -171,7 +167,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "unable to extract postgres archive to "+cacheLocation)
+	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *testing.T) {
@@ -203,7 +199,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "unable to extract postgres archive to "+cacheLocation)
+	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
 
 func Test_defaultRemoteFetchStrategy(t *testing.T) {

@@ -44,7 +44,7 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.42.1
           /home/runner/go/bin/golangci-lint run
       - name: Test
-        run: go test -v -race -cover -covermode=atomic -coverprofile=coverage.out ./...
+        run: go test -v -test.timeout 0 -race -cover -covermode=atomic -coverprofile=coverage.out ./...
       - name: Test Examples
         run: |
           pushd examples && \
