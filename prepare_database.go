@@ -13,6 +13,11 @@ import (
 	"github.com/lib/pq"
 )
 
+const (
+	fmtCloseDBConn = "unable to close database connection: %w"
+	fmtAfterError  = "%v happened after error: %w"
+)
+
 type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
 type createDatabase func(port uint32, username, password, database string) error
 
@@ -58,7 +63,7 @@ func createPasswordFile(runtimePath, password string) (string, error) {
 	return passwordFileLocation, nil
 }
 
-func defaultCreateDatabase(port uint32, username, password, database string) error {
+func defaultCreateDatabase(port uint32, username, password, database string) (err error) {
 	if database == "postgres" {
 		return nil
 	}
@@ -68,7 +73,21 @@ func defaultCreateDatabase(port uint32, username, password, database string) err
 		return errorCustomDatabase(database, err)
 	}
 
-	if _, err := sql.OpenDB(conn).Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
+	db := sql.OpenDB(conn)
+	defer func(db *sql.DB) {
+		closeErr := db.Close()
+		if closeErr != nil {
+			closeErr = fmt.Errorf(fmtCloseDBConn, closeErr)
+
+			if err != nil {
+				err = fmt.Errorf(fmtAfterError, closeErr, err)
+			} else {
+				err = closeErr
+			}
+		}
+	}(db)
+
+	if _, err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
 		return errorCustomDatabase(database, err)
 	}
 
@@ -103,15 +122,29 @@ func healthCheckDatabaseOrTimeout(config Config) error {
 	}
 }
 
-func healthCheckDatabase(port uint32, database, username, password string) error {
+func healthCheckDatabase(port uint32, database, username, password string) (err error) {
 	conn, err := openDatabaseConnection(port, username, password, database)
 	if err != nil {
 		return err
 	}
 
+	db := sql.OpenDB(conn)
+
 	if _, err := sql.OpenDB(conn).Query("SELECT 1"); err != nil {
 		return err
 	}
+	defer func(db *sql.DB) {
+		closeErr := db.Close()
+		if closeErr != nil {
+			closeErr = fmt.Errorf(fmtCloseDBConn, closeErr)
+
+			if err != nil {
+				err = fmt.Errorf(fmtAfterError, closeErr, err)
+			} else {
+				err = closeErr
+			}
+		}
+	}(db)
 
 	return nil
 }
