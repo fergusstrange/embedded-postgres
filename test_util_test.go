@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"go.uber.org/goleak"
 )
 
 func createTempXzArchive() (string, func()) {
@@ -57,4 +59,13 @@ func testCacheLocator() CacheLocator {
 	return func() (s string, b bool) {
 		return "", false
 	}
+}
+
+func verifyLeak(t *testing.T, opts ...goleak.Option) {
+	// Ideally, there should be no exceptions here.
+	opts = append(opts,
+		goleak.IgnoreTopFunction("internal/poll.runtime_pollWait"),
+	)
+
+	goleak.VerifyNone(t, opts...)
 }

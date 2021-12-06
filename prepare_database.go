@@ -129,10 +129,6 @@ func healthCheckDatabase(port uint32, database, username, password string) (err 
 	}
 
 	db := sql.OpenDB(conn)
-
-	if _, err := sql.OpenDB(conn).Query("SELECT 1"); err != nil {
-		return err
-	}
 	defer func(db *sql.DB) {
 		closeErr := db.Close()
 		if closeErr != nil {
@@ -145,6 +141,10 @@ func healthCheckDatabase(port uint32, database, username, password string) (err 
 			}
 		}
 	}(db)
+
+	if _, err := db.Query("SELECT 1"); err != nil {
+		return err
+	}
 
 	return nil
 }

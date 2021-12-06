@@ -13,6 +13,8 @@ import (
 )
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenHttpGet(t *testing.T) {
+	defer verifyLeak(t)
+
 	remoteFetchStrategy := defaultRemoteFetchStrategy("http://localhost:1234",
 		testVersionStrategy(),
 		testCacheLocator())
@@ -23,6 +25,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenHttpGet(t *testing.T) {
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenHttpStatusNot200(t *testing.T) {
+	defer verifyLeak(t)
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}))
@@ -38,6 +42,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenHttpStatusNot200(t *testing.T) {
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
+	defer verifyLeak(t)
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", "1")
 	}))
@@ -53,6 +59,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
+	defer verifyLeak(t)
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 	}))
@@ -68,6 +76,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
+	defer verifyLeak(t)
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if _, err := w.Write([]byte("lolz")); err != nil {
 			panic(err)
@@ -85,6 +95,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
+	defer verifyLeak(t)
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MyZipWriter := zip.NewWriter(w)
 
@@ -104,6 +116,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing.T) {
+	defer verifyLeak(t)
+
 	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
 
@@ -136,6 +150,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *testing.T) {
+	defer verifyLeak(t)
+
 	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
 
@@ -171,6 +187,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *testing.T) {
+	defer verifyLeak(t)
+
 	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
 
@@ -203,6 +221,8 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 }
 
 func Test_defaultRemoteFetchStrategy(t *testing.T) {
+	defer verifyLeak(t)
+
 	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
 

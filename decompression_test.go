@@ -14,6 +14,8 @@ import (
 )
 
 func Test_decompressTarXz(t *testing.T) {
+	defer verifyLeak(t)
+
 	tempDir, err := ioutil.TempDir("", "temp_tar_test")
 	if err != nil {
 		panic(err)
@@ -36,12 +38,16 @@ func Test_decompressTarXz(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenFileNotExists(t *testing.T) {
+	defer verifyLeak(t)
+
 	err := decompressTarXz(defaultTarReader, "/does-not-exist", "/also-fake")
 
 	assert.EqualError(t, err, "unable to extract postgres archive /does-not-exist to /also-fake, if running parallel tests, configure RuntimePath to isolate testing directories")
 }
 
 func Test_decompressTarXz_ErrorWhenErrorDuringRead(t *testing.T) {
+	defer verifyLeak(t)
+
 	tempDir, err := ioutil.TempDir("", "temp_tar_test")
 	if err != nil {
 		panic(err)
@@ -60,6 +66,8 @@ func Test_decompressTarXz_ErrorWhenErrorDuringRead(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenFailedToReadFileToCopy(t *testing.T) {
+	defer verifyLeak(t)
+
 	tempDir, err := ioutil.TempDir("", "temp_tar_test")
 	if err != nil {
 		panic(err)
@@ -100,6 +108,8 @@ func Test_decompressTarXz_ErrorWhenFailedToReadFileToCopy(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenFileToCopyToNotExists(t *testing.T) {
+	defer verifyLeak(t)
+
 	tempDir, err := ioutil.TempDir("", "temp_tar_test")
 	if err != nil {
 		panic(err)

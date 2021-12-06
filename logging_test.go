@@ -18,6 +18,8 @@ func (cl *customLogger) Write(p []byte) (n int, err error) {
 }
 
 func Test_SyncedLogger_CreateError(t *testing.T) {
+	defer verifyLeak(t)
+
 	logger := customLogger{}
 	_, err := newSyncedLogger("/not-exists-anywhere", &logger)
 
@@ -25,6 +27,8 @@ func Test_SyncedLogger_CreateError(t *testing.T) {
 }
 
 func Test_SyncedLogger_ErrorDuringFlush(t *testing.T) {
+	defer verifyLeak(t)
+
 	logger := customLogger{}
 
 	sl, slErr := newSyncedLogger("", &logger)
@@ -41,6 +45,8 @@ func Test_SyncedLogger_ErrorDuringFlush(t *testing.T) {
 }
 
 func Test_SyncedLogger_NoErrorDuringFlush(t *testing.T) {
+	defer verifyLeak(t)
+
 	logger := customLogger{}
 
 	sl, slErr := newSyncedLogger("", &logger)

@@ -10,6 +10,8 @@ import (
 
 //nolint:funlen
 func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
+	defer verifyLeak(t)
+
 	allGolangDistributions := map[string][]string{
 		"aix/ppc64":       {"aix", "ppc64"},
 		"android/386":     {"android", "386"},
@@ -80,6 +82,8 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 }
 
 func Test_DefaultVersionStrategy_Linux_ARM32V6(t *testing.T) {
+	defer verifyLeak(t)
+
 	operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
 		DefaultConfig(),
 		"linux",
@@ -96,6 +100,8 @@ func Test_DefaultVersionStrategy_Linux_ARM32V6(t *testing.T) {
 }
 
 func Test_DefaultVersionStrategy_Linux_ARM32V7(t *testing.T) {
+	defer verifyLeak(t)
+
 	operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
 		DefaultConfig(),
 		"linux",
@@ -112,6 +118,8 @@ func Test_DefaultVersionStrategy_Linux_ARM32V7(t *testing.T) {
 }
 
 func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
+	defer verifyLeak(t)
+
 	operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
 		DefaultConfig(),
 		"linux",
@@ -130,6 +138,8 @@ func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
 }
 
 func Test_DefaultVersionStrategy_shouldUseAlpineLinuxBuild(t *testing.T) {
+	defer verifyLeak(t)
+
 	assert.NotPanics(t, func() {
 		shouldUseAlpineLinuxBuild()
 	})
