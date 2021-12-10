@@ -61,11 +61,7 @@ func testCacheLocator() CacheLocator {
 	}
 }
 
-func verifyLeak(t *testing.T, opts ...goleak.Option) {
+func verifyLeak(t *testing.T) {
 	// Ideally, there should be no exceptions here.
-	opts = append(opts,
-		goleak.IgnoreTopFunction("internal/poll.runtime_pollWait"),
-	)
-
-	goleak.VerifyNone(t, opts...)
+	goleak.VerifyNone(t, goleak.IgnoreTopFunction("internal/poll.runtime_pollWait"))
 }
