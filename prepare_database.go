@@ -9,14 +9,15 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 
 	"github.com/lib/pq"
 )
 
-type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
+type initDatabase func(procAttr *syscall.SysProcAttr, binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
 type createDatabase func(port uint32, username, password, database string) error
 
-func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error {
+func defaultInitDatabase(procAttr *syscall.SysProcAttr, binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error {
 	passwordFile, err := createPasswordFile(runtimePath, password)
 	if err != nil {
 		return err
@@ -35,15 +36,18 @@ func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username
 
 	postgresInitDBBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
 	postgresInitDBProcess := exec.Command(postgresInitDBBinary, args...)
+
+	postgresInitDBProcess.SysProcAttr = procAttr
+
 	postgresInitDBProcess.Stderr = logger
 	postgresInitDBProcess.Stdout = logger
 
-	if err := postgresInitDBProcess.Run(); err != nil {
-		return fmt.Errorf("unable to init database using: %s", postgresInitDBProcess.String())
+	if err = postgresInitDBProcess.Run(); err != nil {
+		return fmt.Errorf("unable to init database using: %s: %w", postgresInitDBProcess.String(), err)
 	}
 
 	if err = os.Remove(passwordFile); err != nil {
-		return fmt.Errorf("unable to remove password file '%v': %v", passwordFile, err)
+		return fmt.Errorf("unable to remove password file '%v': %w", passwordFile, err)
 	}
 
 	return nil

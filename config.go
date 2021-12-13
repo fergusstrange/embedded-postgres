@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"io"
 	"os"
+	"syscall"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type Config struct {
 	locale       string
 	startTimeout time.Duration
 	logger       io.Writer
+	procAttr     *syscall.SysProcAttr
 }
 
 // DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
