@@ -21,6 +21,7 @@ type Config struct {
 	startTimeout time.Duration
 	logger       io.Writer
 	procAttr     *syscall.SysProcAttr
+	inDir        string
 }
 
 // DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
@@ -109,6 +110,12 @@ func (c Config) StartTimeout(timeout time.Duration) Config {
 // Logger sets the logger for postgres output
 func (c Config) Logger(logger io.Writer) Config {
 	c.logger = logger
+	return c
+}
+
+// InDir sets where to change folder to before executing
+func (c Config) InDir(path string) Config {
+	c.inDir = path
 	return c
 }
 

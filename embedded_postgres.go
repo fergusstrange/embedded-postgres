@@ -153,7 +153,7 @@ func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
 		return fmt.Errorf("unable to clean up data directory %s with error: %s", ep.config.dataPath, err)
 	}
 
-	if err := ep.initDatabase(ep.config.procAttr, ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.syncedLogger.file); err != nil {
+	if err := ep.initDatabase(ep.config.procAttr, ep.config.inDir, ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.syncedLogger.file); err != nil {
 		return err
 	}
 
@@ -186,6 +186,9 @@ func startPostgres(ep *EmbeddedPostgres) error {
 		"-o", fmt.Sprintf(`"-p %d"`, ep.config.port))
 
 	postgresProcess.SysProcAttr = ep.config.procAttr
+	if ep.config.inDir != "" {
+		postgresProcess.Dir = ep.config.inDir
+	}
 
 	postgresProcess.Stdout = ep.syncedLogger.file
 	postgresProcess.Stderr = ep.syncedLogger.file
@@ -203,6 +206,9 @@ func stopPostgres(ep *EmbeddedPostgres) error {
 		"-D", ep.config.dataPath)
 
 	postgresProcess.SysProcAttr = ep.config.procAttr
+	if ep.config.inDir != "" {
+		postgresProcess.Dir = ep.config.inDir
+	}
 
 	postgresProcess.Stderr = ep.syncedLogger.file
 	postgresProcess.Stdout = ep.syncedLogger.file

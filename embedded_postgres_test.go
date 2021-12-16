@@ -122,7 +122,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(procAttr *syscall.SysProcAttr, binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
+	database.initDatabase = func(procAttr *syscall.SysProcAttr, inDir string, binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -225,7 +225,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(procAttr *syscall.SysProcAttr, binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
+	database.initDatabase = func(procAttr *syscall.SysProcAttr, inDir string, binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
 		return nil
 	}
 

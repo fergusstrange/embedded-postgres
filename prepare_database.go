@@ -14,10 +14,10 @@ import (
 	"github.com/lib/pq"
 )
 
-type initDatabase func(procAttr *syscall.SysProcAttr, binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
+type initDatabase func(procAttr *syscall.SysProcAttr, inDir string, binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
 type createDatabase func(port uint32, username, password, database string) error
 
-func defaultInitDatabase(procAttr *syscall.SysProcAttr, binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error {
+func defaultInitDatabase(procAttr *syscall.SysProcAttr, inDir string, binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error {
 	passwordFile, err := createPasswordFile(runtimePath, password)
 	if err != nil {
 		return err
@@ -38,6 +38,9 @@ func defaultInitDatabase(procAttr *syscall.SysProcAttr, binaryExtractLocation, r
 	postgresInitDBProcess := exec.Command(postgresInitDBBinary, args...)
 
 	postgresInitDBProcess.SysProcAttr = procAttr
+	if inDir != "" {
+		postgresInitDBProcess.Dir = inDir
+	}
 
 	postgresInitDBProcess.Stderr = logger
 	postgresInitDBProcess.Stdout = logger
