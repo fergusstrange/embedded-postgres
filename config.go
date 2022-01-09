@@ -115,6 +115,7 @@ type PostgresVersion string
 
 // Predefined supported Postgres versions.
 const (
+	V14 = PostgresVersion("14.1.0")
 	V13 = PostgresVersion("13.4.0")
 	V12 = PostgresVersion("12.8.0")
 	V11 = PostgresVersion("11.13.0")
