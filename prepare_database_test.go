@@ -11,16 +11,12 @@ import (
 )
 
 func Test_defaultInitDatabase_ErrorWhenCannotCreatePasswordFile(t *testing.T) {
-	defer verifyLeak(t)
-
 	err := defaultInitDatabase("path_not_exists", "path_not_exists", "path_not_exists", "Tom", "Beer", "", os.Stderr)
 
 	assert.EqualError(t, err, "unable to write password file to path_not_exists/pwfile")
 }
 
 func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
-	defer verifyLeak(t)
-
 	binTempDir, err := ioutil.TempDir("", "prepare_database_test_bin")
 	if err != nil {
 		panic(err)
@@ -51,8 +47,6 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 }
 
 func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
-	defer verifyLeak(t)
-
 	tempDir, err := ioutil.TempDir("", "prepare_database_test")
 	if err != nil {
 		panic(err)
@@ -73,8 +67,6 @@ func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
 }
 
 func Test_defaultInitDatabase_PwFileRemoved(t *testing.T) {
-	defer verifyLeak(t)
-
 	tempDir, err := ioutil.TempDir("", "prepare_database_test")
 	if err != nil {
 		panic(err)
@@ -104,16 +96,12 @@ func Test_defaultInitDatabase_PwFileRemoved(t *testing.T) {
 }
 
 func Test_defaultCreateDatabase_ErrorWhenSQLOpenError(t *testing.T) {
-	defer verifyLeak(t)
-
 	err := defaultCreateDatabase(1234, "user client_encoding=lol", "password", "database")
 
 	assert.EqualError(t, err, "unable to connect to create database with custom name database with the following error: client_encoding must be absent or 'UTF8'")
 }
 
 func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
-	defer verifyLeak(t)
-
 	database := NewDatabase(DefaultConfig().
 		Port(9831).
 		Database("b33r"))
@@ -133,8 +121,6 @@ func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
 }
 
 func Test_healthCheckDatabase_ErrorWhenSQLConnectingError(t *testing.T) {
-	defer verifyLeak(t)
-
 	err := healthCheckDatabase(1234, "tom client_encoding=lol", "more", "b33r")
 
 	assert.EqualError(t, err, "client_encoding must be absent or 'UTF8'")

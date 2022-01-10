@@ -7,8 +7,6 @@ import (
 )
 
 func Test_defaultCacheLocator_NotExists(t *testing.T) {
-	defer verifyLeak(t)
-
 	locator := defaultCacheLocator(func() (string, string, PostgresVersion) {
 		return "a", "b", "1.2.3"
 	})

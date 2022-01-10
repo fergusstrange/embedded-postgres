@@ -45,8 +45,6 @@ func Test_DefaultConfig(t *testing.T) {
 }
 
 func Test_ErrorWhenPortAlreadyTaken(t *testing.T) {
-	defer verifyLeak(t)
-
 	listener, err := net.Listen("tcp", "localhost:9887")
 	if err != nil {
 		panic(err)
@@ -67,8 +65,6 @@ func Test_ErrorWhenPortAlreadyTaken(t *testing.T) {
 }
 
 func Test_ErrorWhenRemoteFetchError(t *testing.T) {
-	defer verifyLeak(t)
-
 	database := NewDatabase()
 	database.cacheLocator = func() (string, bool) {
 		return "", false
@@ -83,8 +79,6 @@ func Test_ErrorWhenRemoteFetchError(t *testing.T) {
 }
 
 func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
-	defer verifyLeak(t)
-
 	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
 
@@ -110,8 +104,6 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 }
 
 func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
-	defer verifyLeak(t)
-
 	jarFile, cleanUp := createTempXzArchive()
 	defer cleanUp()
 
@@ -147,8 +139,6 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 }
 
 func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
-	defer verifyLeak(t)
-
 	jarFile, cleanUp := createTempXzArchive()
 
 	defer cleanUp()
@@ -182,8 +172,6 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 }
 
 func Test_TimesOutWhenCannotStart(t *testing.T) {
-	defer verifyLeak(t)
-
 	database := NewDatabase(DefaultConfig().
 		Database("something-fancy").
 		StartTimeout(500 * time.Millisecond))
@@ -198,8 +186,6 @@ func Test_TimesOutWhenCannotStart(t *testing.T) {
 }
 
 func Test_ErrorWhenStopCalledBeforeStart(t *testing.T) {
-	defer verifyLeak(t)
-
 	database := NewDatabase()
 
 	err := database.Stop()
@@ -208,8 +194,6 @@ func Test_ErrorWhenStopCalledBeforeStart(t *testing.T) {
 }
 
 func Test_ErrorWhenStartCalledWhenAlreadyStarted(t *testing.T) {
-	defer verifyLeak(t)
-
 	database := NewDatabase()
 
 	defer func() {
@@ -226,8 +210,6 @@ func Test_ErrorWhenStartCalledWhenAlreadyStarted(t *testing.T) {
 }
 
 func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
-	defer verifyLeak(t)
-
 	jarFile, cleanUp := createTempXzArchive()
 
 	defer cleanUp()
@@ -254,8 +236,6 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 }
 
 func Test_CustomConfig(t *testing.T) {
-	defer verifyLeak(t)
-
 	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
 	if err != nil {
 		panic(err)
@@ -301,8 +281,6 @@ func Test_CustomConfig(t *testing.T) {
 }
 
 func Test_CustomLog(t *testing.T) {
-	defer verifyLeak(t)
-
 	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
 	if err != nil {
 		panic(err)
@@ -353,8 +331,6 @@ func Test_CustomLog(t *testing.T) {
 }
 
 func Test_CustomLocaleConfig(t *testing.T) {
-	defer verifyLeak(t)
-
 	// C is the only locale we can guarantee to always work
 	database := NewDatabase(DefaultConfig().Locale("C"))
 	if err := database.Start(); err != nil {
@@ -380,8 +356,6 @@ func Test_CustomLocaleConfig(t *testing.T) {
 }
 
 func Test_CanStartAndStopTwice(t *testing.T) {
-	defer verifyLeak(t)
-
 	database := NewDatabase()
 
 	if err := database.Start(); err != nil {
@@ -429,8 +403,6 @@ func Test_CanStartAndStopTwice(t *testing.T) {
 
 //nolint:funlen
 func Test_ReuseData(t *testing.T) {
-	defer verifyLeak(t)
-
 	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
 	if err != nil {
 		panic(err)
@@ -509,8 +481,6 @@ func Test_ReuseData(t *testing.T) {
 }
 
 func Test_CustomBinariesLocation(t *testing.T) {
-	defer verifyLeak(t)
-
 	tempDir, err := ioutil.TempDir("", "prepare_database_test")
 	if err != nil {
 		panic(err)
@@ -549,8 +519,6 @@ func Test_CustomBinariesLocation(t *testing.T) {
 }
 
 func Test_PrefetchedBinaries(t *testing.T) {
-	defer verifyLeak(t)
-
 	binTempDir, err := ioutil.TempDir("", "prepare_database_test_bin")
 	if err != nil {
 		panic(err)
@@ -603,8 +571,6 @@ func Test_PrefetchedBinaries(t *testing.T) {
 }
 
 func Test_RunningInParallel(t *testing.T) {
-	defer verifyLeak(t)
-
 	tempPath, err := ioutil.TempDir("", "parallel_tests_path")
 	if err != nil {
 		panic(err)
