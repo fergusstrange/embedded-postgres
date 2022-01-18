@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -74,24 +75,26 @@ func defaultCreateDatabase(port uint32, username, password, database string) (er
 	}
 
 	db := sql.OpenDB(conn)
-	defer func(db *sql.DB) {
-		closeErr := db.Close()
-		if closeErr != nil {
-			closeErr = fmt.Errorf(fmtCloseDBConn, closeErr)
-
-			if err != nil {
-				err = fmt.Errorf(fmtAfterError, closeErr, err)
-			} else {
-				err = closeErr
-			}
-		}
-	}(db)
+	defer connectionClose(db, &err)
 
 	if _, err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
 		return errorCustomDatabase(database, err)
 	}
 
 	return nil
+}
+
+func connectionClose(db io.Closer, err *error) {
+	closeErr := db.Close()
+	if closeErr != nil {
+		closeErr = fmt.Errorf(fmtCloseDBConn, closeErr)
+
+		if *err != nil {
+			*err = fmt.Errorf(fmtAfterError, closeErr, *err)
+		} else {
+			*err = closeErr
+		}
+	}
 }
 
 func healthCheckDatabaseOrTimeout(config Config) error {
@@ -129,18 +132,7 @@ func healthCheckDatabase(port uint32, database, username, password string) (err 
 	}
 
 	db := sql.OpenDB(conn)
-	defer func(db *sql.DB) {
-		closeErr := db.Close()
-		if closeErr != nil {
-			closeErr = fmt.Errorf(fmtCloseDBConn, closeErr)
-
-			if err != nil {
-				err = fmt.Errorf(fmtAfterError, closeErr, err)
-			} else {
-				err = closeErr
-			}
-		}
-	}(db)
+	defer connectionClose(db, &err)
 
 	if _, err := db.Query("SELECT 1"); err != nil {
 		return err
