@@ -155,18 +155,18 @@ func TestConnCloserWithoutErr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			connectionClose(&CloserWithoutErr{}, &tt.err)
+			resultErr := connectionClose(&CloserWithoutErr{}, tt.err)
 
 			if len(tt.expectedErrTxt) == 0 {
-				if tt.err != nil {
-					t.Fatalf("Expected nil error, got error: %v", tt.err)
+				if resultErr != nil {
+					t.Fatalf("Expected nil error, got error: %v", resultErr)
 				}
 
 				return
 			}
 
-			if tt.err.Error() != tt.expectedErrTxt {
-				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, tt.err)
+			if resultErr.Error() != tt.expectedErrTxt {
+				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, resultErr)
 			}
 		})
 	}
@@ -204,18 +204,18 @@ func TestConnCloserWithErr(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			connectionClose(&CloserWithErr{}, &tt.err)
+			resultErr := connectionClose(&CloserWithErr{}, tt.err)
 
 			if len(tt.expectedErrTxt) == 0 {
-				if tt.err != nil {
-					t.Fatalf("Expected nil error, got error: %v", tt.err)
+				if resultErr != nil {
+					t.Fatalf("Expected nil error, got error: %v", resultErr)
 				}
 
 				return
 			}
 
-			if tt.err.Error() != tt.expectedErrTxt {
-				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, tt.err)
+			if resultErr.Error() != tt.expectedErrTxt {
+				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, resultErr)
 			}
 		})
 	}

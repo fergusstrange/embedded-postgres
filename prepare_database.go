@@ -75,7 +75,9 @@ func defaultCreateDatabase(port uint32, username, password, database string) (er
 	}
 
 	db := sql.OpenDB(conn)
-	defer connectionClose(db, &err)
+	defer func() {
+		err = connectionClose(db, err)
+	}()
 
 	if _, err := db.Exec(fmt.Sprintf("CREATE DATABASE %s", database)); err != nil {
 		return errorCustomDatabase(database, err)
@@ -84,17 +86,19 @@ func defaultCreateDatabase(port uint32, username, password, database string) (er
 	return nil
 }
 
-func connectionClose(db io.Closer, err *error) {
+func connectionClose(db io.Closer, err error) error {
 	closeErr := db.Close()
 	if closeErr != nil {
 		closeErr = fmt.Errorf(fmtCloseDBConn, closeErr)
 
-		if *err != nil {
-			*err = fmt.Errorf(fmtAfterError, closeErr, *err)
+		if err != nil {
+			err = fmt.Errorf(fmtAfterError, closeErr, err)
 		} else {
-			*err = closeErr
+			err = closeErr
 		}
 	}
+
+	return err
 }
 
 func healthCheckDatabaseOrTimeout(config Config) error {
@@ -132,7 +136,9 @@ func healthCheckDatabase(port uint32, database, username, password string) (err 
 	}
 
 	db := sql.OpenDB(conn)
-	defer connectionClose(db, &err)
+	defer func() {
+		err = connectionClose(db, err)
+	}()
 
 	if _, err := db.Query("SELECT 1"); err != nil {
 		return err
