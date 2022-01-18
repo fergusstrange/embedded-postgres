@@ -86,6 +86,7 @@ func defaultCreateDatabase(port uint32, username, password, database string) (er
 	return nil
 }
 
+// connectionClose closes the database connection and handles the error of the function that used the database connection
 func connectionClose(db io.Closer, err error) error {
 	closeErr := db.Close()
 	if closeErr != nil {
