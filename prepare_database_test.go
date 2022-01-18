@@ -3,7 +3,6 @@ package embeddedpostgres
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -134,6 +133,45 @@ func (c *CloserWithoutErr) Close() error {
 	return nil
 }
 
+func TestConnCloserWithoutErr(t *testing.T) {
+	originalErr := errors.New("OriginalError")
+
+	tests := []struct {
+		name           string
+		err            error
+		expectedErrTxt string
+	}{
+		{
+			"No original error, no error from closer",
+			nil,
+			"",
+		},
+		{
+			"original error, no error from closer",
+			originalErr,
+			originalErr.Error(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			connectionClose(&CloserWithoutErr{}, &tt.err)
+
+			if len(tt.expectedErrTxt) == 0 {
+				if tt.err != nil {
+					t.Fatalf("Expected nil error, got error: %v", tt.err)
+				}
+
+				return
+			}
+
+			if tt.err.Error() != tt.expectedErrTxt {
+				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, tt.err)
+			}
+		})
+	}
+}
+
 type CloserWithErr struct{}
 
 const testError = "TestError"
@@ -142,69 +180,42 @@ func (c *CloserWithErr) Close() error {
 	return errors.New(testError)
 }
 
-func TestClose(t *testing.T) {
+func TestConnCloserWithErr(t *testing.T) {
 	originalErr := errors.New("OriginalError")
 
 	closeDBConnErr := fmt.Errorf(fmtCloseDBConn, errors.New(testError))
 
-	type args struct {
-		db  io.Closer
-		err error
-	}
-
 	tests := []struct {
 		name           string
-		args           args
+		err            error
 		expectedErrTxt string
 	}{
 		{
-			"No original error, no error from closer",
-			args{
-				db:  &CloserWithoutErr{},
-				err: nil,
-			},
-			"",
-		},
-		{
 			"No original error, error from closer",
-			args{
-				db:  &CloserWithErr{},
-				err: nil,
-			},
+			nil,
 			closeDBConnErr.Error(),
 		},
 		{
-			"original error, no error from closer",
-			args{
-				db:  &CloserWithoutErr{},
-				err: originalErr,
-			},
-			originalErr.Error(),
-		},
-		{
 			"original error, error from closer",
-			args{
-				db:  &CloserWithErr{},
-				err: originalErr,
-			},
+			originalErr,
 			fmt.Errorf(fmtAfterError, closeDBConnErr, originalErr).Error(),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			connectionClose(tt.args.db, &tt.args.err)
+			connectionClose(&CloserWithErr{}, &tt.err)
 
 			if len(tt.expectedErrTxt) == 0 {
-				if tt.args.err != nil {
-					t.Fatalf("Expected nil error, got error: %v", tt.args.err)
+				if tt.err != nil {
+					t.Fatalf("Expected nil error, got error: %v", tt.err)
 				}
 
 				return
 			}
 
-			if tt.args.err.Error() != tt.expectedErrTxt {
-				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, tt.args.err)
+			if tt.err.Error() != tt.expectedErrTxt {
+				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, tt.err)
 			}
 		})
 	}
