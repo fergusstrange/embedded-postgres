@@ -142,7 +142,7 @@ func (c *CloserWithErr) Close() error {
 	return errors.New(testError)
 }
 
-func Test_connectionCloseWith(t *testing.T) {
+func Test_connClose(t *testing.T) {
 	originalErr := errors.New("OriginalError")
 
 	closeDBConnErr := fmt.Errorf(fmtCloseDBConn, errors.New(testError))
