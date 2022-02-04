@@ -12,6 +12,12 @@
 
 # embedded-postgres
 
+This project has been forked from [https://github.com/fergusstrange/embedded-postgres](https://github.com/fergusstrange/embedded-postgres). 
+For Vega Data Node purposes, we need to have access to a postgres database with the TimescaleDB plugin. This requires prebuilt binaries
+that can be found [here](https://github.com/vegaprotocol/embedded-postgres-binaries)
+
+---
+
 Run a real Postgres database locally on Linux, OSX or Windows as part of another Go application or test.
 
 When testing this provides a higher level of confidence than using any in memory alternative. It also requires no other
@@ -29,7 +35,7 @@ embedded-postgres uses Go modules and as such can be referenced by release versi
 following to add the latest release to your project.
 
 ```bash
-go get -u github.com/fergusstrange/embedded-postgres
+go get -u github.com/vegaprotocol/embedded-postgres
 ``` 
 
 ## How to use
@@ -37,11 +43,11 @@ go get -u github.com/fergusstrange/embedded-postgres
 This library aims to require as little configuration as possible, favouring overridable defaults
 
 | Configuration  | Default Value                                   |
-| -------------- | -------------------------------------------     |
+| -------------- |-------------------------------------------------|
 | Username       | postgres                                        |
 | Password       | postgres                                        |
 | Database       | postgres                                        |
-| Version        | 12.1.0                                          |
+| Version        | 14.1.0                                          |
 | RuntimePath    | $USER_HOME/.embedded-postgres-go/extracted      |
 | DataPath       | $USER_HOME/.embedded-postgres-go/extracted/data |
 | BinariesPath   | $USER_HOME/.embedded-postgres-go/extracted      |
@@ -98,7 +104,7 @@ caller will block.
 ## Examples
 
 There are a number of realistic representations of how to use this library
-in [examples](https://github.com/fergusstrange/embedded-postgres/tree/master/examples).
+in [examples](https://github.com/vegaprotocol/embedded-postgres/tree/master/examples).
 
 ## Credits
 
