@@ -33,6 +33,8 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 
 			if shouldUseAlpineLinuxBuild() {
 				arch += "-alpine"
+			} else {
+				arch += "-debian"
 			}
 		}
 
