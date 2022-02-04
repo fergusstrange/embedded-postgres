@@ -15,15 +15,40 @@ import (
 // RemoteFetchStrategy provides a strategy to fetch a Postgres binary so that it is available for use.
 type RemoteFetchStrategy func() error
 
+var (
+	supportedOS   = []string{"linux", "darwin"}
+	supportedArch = []string{"amd64"}
+)
+
+func isSupported(value string, supported ...string) bool {
+	for _, platform := range supported {
+		if strings.HasPrefix(value, platform) {
+			return true
+		}
+	}
+
+	return false
+}
+
 //nolint:funlen
-func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionStrategy, cacheLocator CacheLocator) RemoteFetchStrategy {
+func defaultRemoteFetchStrategy(remoteFetchHost, binaryRepoRelease string, versionStrategy VersionStrategy, cacheLocator CacheLocator) RemoteFetchStrategy {
 	return func() error {
 		operatingSystem, architecture, version := versionStrategy()
-		downloadURL := fmt.Sprintf("%s/maven2/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
+
+		// For now, we're only supporting Linux and MacOS until we have time to build and test the Windows Postgres binaries.
+		if !isSupported(operatingSystem, supportedOS...) {
+			return fmt.Errorf("unsupported operating system: %s. Currently only Linux and MacOS are supported", operatingSystem)
+		}
+
+		// For now, we're not supporting arm architecture until we have time to build and test the arm Postgres binaries.
+		if !isSupported(architecture, supportedArch...) {
+			return fmt.Errorf("unsupported architecture: %s", architecture)
+		}
+
+		// https://github.com/vegaprotocol/embedded-postgres-binaries/releases/download/v0.1.0/embedded-postgres-binaries-darwin-amd64-14.1.0.zip
+		downloadURL := fmt.Sprintf("%s/vegaprotocol/embedded-postgres-binaries/releases/download/%s/embedded-postgres-binaries-%s-%s-%s.zip",
 			remoteFetchHost,
-			operatingSystem,
-			architecture,
-			version,
+			binaryRepoRelease,
 			operatingSystem,
 			architecture,
 			version)

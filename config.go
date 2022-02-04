@@ -31,7 +31,7 @@ type Config struct {
 // StartTimeout: 15 Seconds
 func DefaultConfig() Config {
 	return Config{
-		version:      V12,
+		version:      V14,
 		port:         5432,
 		database:     "postgres",
 		username:     "postgres",

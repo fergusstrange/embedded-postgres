@@ -25,18 +25,18 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 		"freebsd/arm64":   {"freebsd", "arm64"},
 		"illumos/amd64":   {"illumos", "amd64"},
 		"js/wasm":         {"js", "wasm"},
-		"linux/386":       {"linux", "386"},
-		"linux/amd64":     {"linux", "amd64"},
-		"linux/arm":       {"linux", "arm"},
-		"linux/arm64":     {"linux", "arm64v8"},
-		"linux/mips":      {"linux", "mips"},
-		"linux/mips64":    {"linux", "mips64"},
-		"linux/mips64le":  {"linux", "mips64le"},
-		"linux/mipsle":    {"linux", "mipsle"},
-		"linux/ppc64":     {"linux", "ppc64"},
-		"linux/ppc64le":   {"linux", "ppc64le"},
-		"linux/riscv64":   {"linux", "riscv64"},
-		"linux/s390x":     {"linux", "s390x"},
+		"linux/386":       {"linux", "386-debian"},
+		"linux/amd64":     {"linux", "amd64-debian"},
+		"linux/arm":       {"linux", "arm-debian"},
+		"linux/arm64":     {"linux", "arm64v8-debian"},
+		"linux/mips":      {"linux", "mips-debian"},
+		"linux/mips64":    {"linux", "mips64-debian"},
+		"linux/mips64le":  {"linux", "mips64le-debian"},
+		"linux/mipsle":    {"linux", "mipsle-debian"},
+		"linux/ppc64":     {"linux", "ppc64-debian"},
+		"linux/ppc64le":   {"linux", "ppc64le-debian"},
+		"linux/riscv64":   {"linux", "riscv64-debian"},
+		"linux/s390x":     {"linux", "s390x-debian"},
 		"netbsd/386":      {"netbsd", "386"},
 		"netbsd/amd64":    {"netbsd", "amd64"},
 		"netbsd/arm":      {"netbsd", "arm"},
@@ -74,7 +74,7 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 
 			assert.Equal(t, expected[0], operatingSystem)
 			assert.Equal(t, expected[1], architecture)
-			assert.Equal(t, V12, postgresVersion)
+			assert.Equal(t, V14, postgresVersion)
 		})
 	}
 }
@@ -91,8 +91,8 @@ func Test_DefaultVersionStrategy_Linux_ARM32V6(t *testing.T) {
 		})()
 
 	assert.Equal(t, "linux", operatingSystem)
-	assert.Equal(t, "arm32v6", architecture)
-	assert.Equal(t, V12, postgresVersion)
+	assert.Equal(t, "arm32v6-debian", architecture)
+	assert.Equal(t, V14, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_Linux_ARM32V7(t *testing.T) {
@@ -107,8 +107,8 @@ func Test_DefaultVersionStrategy_Linux_ARM32V7(t *testing.T) {
 		})()
 
 	assert.Equal(t, "linux", operatingSystem)
-	assert.Equal(t, "arm32v7", architecture)
-	assert.Equal(t, V12, postgresVersion)
+	assert.Equal(t, "arm32v7-debian", architecture)
+	assert.Equal(t, V14, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
@@ -126,7 +126,7 @@ func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "amd64-alpine", architecture)
-	assert.Equal(t, V12, postgresVersion)
+	assert.Equal(t, V14, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_shouldUseAlpineLinuxBuild(t *testing.T) {
