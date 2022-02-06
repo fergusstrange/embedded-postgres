@@ -19,6 +19,8 @@ import (
 )
 
 func Test_DefaultConfig(t *testing.T) {
+	defer verifyLeak(t)
+
 	database := NewDatabase()
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
