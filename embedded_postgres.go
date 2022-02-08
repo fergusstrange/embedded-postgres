@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +11,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
+	"time"
+
+	"github.com/cenkalti/backoff/v4"
 )
 
 // EmbeddedPostgres maintains all configuration and runtime functions for maintaining the lifecycle of one Postgres process.
@@ -21,6 +26,8 @@ type EmbeddedPostgres struct {
 	createDatabase      createDatabase
 	started             bool
 	syncedLogger        *syncedLogger
+	postgresProcess     *exec.Cmd
+	cancelProcess       context.CancelFunc
 }
 
 // NewDatabase creates a new EmbeddedPostgres struct that can be used to start and stop a Postgres process.
@@ -128,7 +135,14 @@ func (ep *EmbeddedPostgres) Start() error {
 	ep.started = true
 
 	if !reuseData {
-		if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
+		op := func() error {
+			return ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database)
+		}
+
+		expBackoff := backoff.NewExponentialBackOff()
+		expBackoff.MaxElapsedTime = 10 * time.Second
+
+		if err := backoff.Retry(op, expBackoff); err != nil {
 			if stopErr := stopPostgres(ep); stopErr != nil {
 				return fmt.Errorf("unable to stop database casused by error %s", err)
 			}
@@ -180,30 +194,66 @@ func (ep *EmbeddedPostgres) Stop() error {
 }
 
 func startPostgres(ep *EmbeddedPostgres) error {
-	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
-	postgresProcess := exec.Command(postgresBinary, "start", "-w",
-		"-D", ep.config.dataPath,
-		"-o", fmt.Sprintf(`"-p %d"`, ep.config.port))
-	postgresProcess.Stdout = ep.syncedLogger.file
-	postgresProcess.Stderr = ep.syncedLogger.file
+	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/postgres")
 
-	if err := postgresProcess.Run(); err != nil {
-		return fmt.Errorf("could not start postgres using %s", postgresProcess.String())
+	if ep.postgresProcess != nil && ep.postgresProcess.Process != nil {
+		if err := stopPostgres(ep); err != nil {
+			return err
+		}
 	}
 
-	return nil
+	ep.postgresProcess = exec.Command(postgresBinary,
+		"-D", ep.config.dataPath,
+		"-p", fmt.Sprintf("%d", ep.config.port))
+	ep.postgresProcess.Stdout = ep.syncedLogger.file
+	ep.postgresProcess.Stderr = ep.syncedLogger.file
+
+	var postgresStartErr error
+
+	timeout, cancel := context.WithTimeout(context.Background(), time.Second*2)
+
+	defer cancel()
+
+	go func() {
+		postgresStartErr = ep.postgresProcess.Run()
+	}()
+
+	for {
+		select {
+		case <-timeout.Done():
+			return postgresStartErr
+		default:
+			if err := ensurePortAvailable(ep.config.port); err != nil {
+				// the port is open so assume postgres has started
+				return nil
+			}
+
+			if postgresStartErr != nil {
+				return postgresStartErr
+			}
+		}
+	}
 }
 
 func stopPostgres(ep *EmbeddedPostgres) error {
-	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
-	postgresProcess := exec.Command(postgresBinary, "stop", "-w",
-		"-D", ep.config.dataPath)
-	postgresProcess.Stderr = ep.syncedLogger.file
-	postgresProcess.Stdout = ep.syncedLogger.file
+	if ep.postgresProcess != nil && ep.postgresProcess.Process != nil {
+		if err := ep.postgresProcess.Process.Signal(syscall.SIGINT); err != nil {
+			return err
+		}
 
-	if err := postgresProcess.Run(); err != nil {
-		return err
+		op := func() error {
+			return ensurePortAvailable(ep.config.port)
+		}
+
+		expBackoff := backoff.NewExponentialBackOff()
+		expBackoff.MaxElapsedTime = time.Second * 5
+
+		if err := backoff.Retry(op, expBackoff); err != nil {
+			return fmt.Errorf("could not stop Postgres server: %w", err)
+		}
 	}
+
+	ep.postgresProcess = nil
 
 	return nil
 }

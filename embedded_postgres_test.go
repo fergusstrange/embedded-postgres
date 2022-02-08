@@ -181,6 +181,8 @@ func Test_TimesOutWhenCannotStart(t *testing.T) {
 	err := database.Start()
 
 	assert.EqualError(t, err, "timed out waiting for database to become available")
+	err = database.Stop()
+	assert.NoError(t, err)
 }
 
 func Test_ErrorWhenStopCalledBeforeStart(t *testing.T) {
@@ -230,7 +232,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 
 	err = database.Start()
 
-	assert.EqualError(t, err, fmt.Sprintf(`could not start postgres using %s/bin/pg_ctl start -w -D %s/data -o "-p 5432"`, extractPath, extractPath))
+	assert.Error(t, err)
 }
 
 func Test_CustomConfig(t *testing.T) {
@@ -323,7 +325,14 @@ func Test_CustomLog(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, lines, fmt.Sprintf("The files belonging to this database system will be owned by user \"%s\".", current.Username))
 	assert.Contains(t, lines, "syncing data to disk ... ok")
-	assert.Contains(t, lines, "server stopped")
+
+	foundShutdown := false
+	for _, l := range lines {
+		if strings.Contains(l, "database system is shut down") {
+			foundShutdown = true
+		}
+	}
+	assert.True(t, foundShutdown)
 	assert.Less(t, len(lines), 55)
 	assert.Greater(t, len(lines), 40)
 }
