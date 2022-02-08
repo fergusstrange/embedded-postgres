@@ -3,6 +3,7 @@ module github.com/vegaprotocol/embedded-postgres
 go 1.13
 
 require (
+	github.com/cenkalti/backoff/v4 v4.1.2
 	github.com/fergusstrange/embedded-postgres v0.0.0-00010101000000-000000000000
 	github.com/lib/pq v1.8.0
 	github.com/stretchr/testify v1.6.1
