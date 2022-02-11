@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"bufio"
 	"context"
 	"database/sql"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/lib/pq"
 )
@@ -43,10 +45,91 @@ func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username
 	}
 
 	if err = os.Remove(passwordFile); err != nil {
-		return fmt.Errorf("unable to remove password file '%v': %v", passwordFile, err)
+		return fmt.Errorf("unable to remove password file '%v'", passwordFile)
+	}
+
+	if err = enableTimescaleDB(pgDataDir); err != nil {
+		return fmt.Errorf("unable to enable timescaledb library preloading: %w", err)
 	}
 
 	return nil
+}
+
+func enableTimescaleDB(pgDataDir string) (err error) {
+	srcConfig := filepath.Join(pgDataDir, "postgresql.conf")
+	destConfig := filepath.Join(pgDataDir, "postgresql.new")
+
+	var input, output *os.File
+
+	if input, output, err = openConfigFiles(srcConfig, destConfig); err != nil {
+		return
+	}
+
+	scanner := bufio.NewScanner(input)
+	if err = updatePgConfig(scanner, output); err != nil {
+		return err
+	}
+
+	// We need to make sure both the input and output files are closed before we can rename the new file to replace the original
+	if err = closeConfigFiles(input, output); err != nil {
+		return
+	}
+
+	return os.Rename(destConfig, srcConfig)
+}
+
+func openConfigFiles(src, dst string) (input *os.File, output *os.File, err error) {
+	if input, err = os.Open(src); err != nil {
+		return nil, nil, fmt.Errorf("could not open postgresql.conf for reading: %w", err)
+	}
+
+	if output, err = os.Create(dst); err != nil {
+		return nil, nil, fmt.Errorf("could not open new postgresql.conf for writing: %w", err)
+	}
+
+	return
+}
+
+func closeConfigFiles(input, output *os.File) (err error) {
+	if err = input.Close(); err != nil {
+		return fmt.Errorf("could not close postgresql.conf: %w", err)
+	}
+
+	if err = output.Close(); err != nil {
+		return fmt.Errorf("could not close new postgresql.conf: %w", err)
+	}
+
+	return
+}
+
+func updatePgConfig(scanner *bufio.Scanner, output *os.File) (err error) {
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "#shared_preload_libraries") {
+			if err = writeNewConfig(output, "shared_preload_libraries = 'timescaledb'  # (change requires restart)"); err != nil {
+				return
+			}
+			continue
+		}
+
+		if err = writeNewConfig(output, line); err != nil {
+			return
+		}
+	}
+
+	return
+}
+
+func writeNewConfig(output *os.File, line string) (err error) {
+	if _, err = output.WriteString(fmt.Sprintf("%s\n", line)); err != nil {
+		err = fmt.Errorf("could not write configs to new postgresql.conf file: %w", err)
+		if closeErr := output.Close(); closeErr != nil {
+			err = fmt.Errorf("could not close new postgresql.conf file: %w", err)
+			return
+		}
+	}
+
+	return
 }
 
 func createPasswordFile(runtimePath, password string) (string, error) {
