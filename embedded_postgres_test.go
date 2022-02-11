@@ -29,6 +29,10 @@ func Test_DefaultConfig(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
+	if _, err := db.Exec(`create extension if not exists timescaledb`); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
 	if err = db.Ping(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
