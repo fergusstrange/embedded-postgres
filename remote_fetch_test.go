@@ -13,13 +13,13 @@ import (
 )
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenHttpGet(t *testing.T) {
-	remoteFetchStrategy := defaultRemoteFetchStrategy("http://localhost:1234",
+	remoteFetchStrategy := defaultRemoteFetchStrategy("http://localhost:1234/maven2",
 		testVersionStrategy(),
 		testCacheLocator())
 
 	err := remoteFetchStrategy()
 
-	assert.EqualError(t, err, "unable to connect to http://localhost:1234")
+	assert.EqualError(t, err, "unable to connect to http://localhost:1234/maven2")
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenHttpStatusNot200(t *testing.T) {
@@ -43,7 +43,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
 	}))
 	defer server.Close()
 
-	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		testCacheLocator())
 
@@ -58,7 +58,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
 	}))
 	defer server.Close()
 
-	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		testCacheLocator())
 
@@ -75,7 +75,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 	}))
 	defer server.Close()
 
-	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		testCacheLocator())
 
@@ -94,7 +94,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 	}))
 	defer server.Close()
 
-	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		testCacheLocator())
 
@@ -124,7 +124,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 	}))
 	defer server.Close()
 
-	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		func() (s string, b bool) {
 			return dirBlockingExtract, false
@@ -159,7 +159,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 
 	defer server.Close()
 
-	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		func() (s string, b bool) {
 			return cacheLocation, false
@@ -191,7 +191,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 	}))
 	defer server.Close()
 
-	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		func() (s string, b bool) {
 			return cacheLocation, false
@@ -219,7 +219,7 @@ func Test_defaultRemoteFetchStrategy(t *testing.T) {
 	}))
 	defer server.Close()
 
-	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL,
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		func() (s string, b bool) {
 			return cacheLocation, false
