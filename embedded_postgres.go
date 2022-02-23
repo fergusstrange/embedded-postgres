@@ -214,9 +214,7 @@ func startPostgres(ep *EmbeddedPostgres) error {
 
 	defer cancel()
 
-	go func() {
-		postgresStartErr = ep.postgresProcess.Run()
-	}()
+	postgresStartErr = ep.postgresProcess.Start()
 
 	for {
 		select {
