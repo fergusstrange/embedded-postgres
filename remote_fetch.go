@@ -19,7 +19,7 @@ type RemoteFetchStrategy func() error
 func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionStrategy, cacheLocator CacheLocator) RemoteFetchStrategy {
 	return func() error {
 		operatingSystem, architecture, version := versionStrategy()
-		downloadURL := fmt.Sprintf("%s/maven2/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
+		downloadURL := fmt.Sprintf("%s/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
 			remoteFetchHost,
 			operatingSystem,
 			architecture,
@@ -33,15 +33,15 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			return fmt.Errorf("unable to connect to %s", remoteFetchHost)
 		}
 
-		if resp.StatusCode != http.StatusOK {
-			return fmt.Errorf("no version found matching %s", version)
-		}
-
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
 				log.Fatal(err)
 			}
 		}()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("no version found matching %s", version)
+		}
 
 		return decompressResponse(resp, cacheLocator, downloadURL)
 	}

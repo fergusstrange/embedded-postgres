@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -124,4 +125,98 @@ func Test_healthCheckDatabase_ErrorWhenSQLConnectingError(t *testing.T) {
 	err := healthCheckDatabase(1234, "tom client_encoding=lol", "more", "b33r")
 
 	assert.EqualError(t, err, "client_encoding must be absent or 'UTF8'")
+}
+
+type CloserWithoutErr struct{}
+
+func (c *CloserWithoutErr) Close() error {
+	return nil
+}
+
+func TestConnCloserWithoutErr(t *testing.T) {
+	originalErr := errors.New("OriginalError")
+
+	tests := []struct {
+		name           string
+		err            error
+		expectedErrTxt string
+	}{
+		{
+			"No original error, no error from closer",
+			nil,
+			"",
+		},
+		{
+			"original error, no error from closer",
+			originalErr,
+			originalErr.Error(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resultErr := connectionClose(&CloserWithoutErr{}, tt.err)
+
+			if len(tt.expectedErrTxt) == 0 {
+				if resultErr != nil {
+					t.Fatalf("Expected nil error, got error: %v", resultErr)
+				}
+
+				return
+			}
+
+			if resultErr.Error() != tt.expectedErrTxt {
+				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, resultErr)
+			}
+		})
+	}
+}
+
+type CloserWithErr struct{}
+
+const testError = "TestError"
+
+func (c *CloserWithErr) Close() error {
+	return errors.New(testError)
+}
+
+func TestConnCloserWithErr(t *testing.T) {
+	originalErr := errors.New("OriginalError")
+
+	closeDBConnErr := fmt.Errorf(fmtCloseDBConn, errors.New(testError))
+
+	tests := []struct {
+		name           string
+		err            error
+		expectedErrTxt string
+	}{
+		{
+			"No original error, error from closer",
+			nil,
+			closeDBConnErr.Error(),
+		},
+		{
+			"original error, error from closer",
+			originalErr,
+			fmt.Errorf(fmtAfterError, closeDBConnErr, originalErr).Error(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resultErr := connectionClose(&CloserWithErr{}, tt.err)
+
+			if len(tt.expectedErrTxt) == 0 {
+				if resultErr != nil {
+					t.Fatalf("Expected nil error, got error: %v", resultErr)
+				}
+
+				return
+			}
+
+			if resultErr.Error() != tt.expectedErrTxt {
+				t.Fatalf("Expected error: %v, got error: %v", tt.expectedErrTxt, resultErr)
+			}
+		})
+	}
 }

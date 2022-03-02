@@ -19,6 +19,8 @@ import (
 )
 
 func Test_DefaultConfig(t *testing.T) {
+	defer verifyLeak(t)
+
 	database := NewDatabase()
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
@@ -467,6 +469,52 @@ func Test_ReuseData(t *testing.T) {
 		if value != "foobar" {
 			shutdownDBAndFail(t, errors.New("wrong value from db"), database)
 		}
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_CustomBinariesRepo(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	database := NewDatabase(DefaultConfig().
+		Username("gin").
+		Password("wine").
+		Database("beer").
+		Version(V12).
+		RuntimePath(tempDir).
+		BinaryRepositoryURL("https://repo.maven.apache.org/maven2").
+		Port(9876).
+		StartTimeout(10 * time.Second).
+		Locale("C").
+		Logger(nil))
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", "host=localhost port=9876 user=gin password=wine dbname=beer sslmode=disable")
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
 	}
 
 	if err := db.Close(); err != nil {

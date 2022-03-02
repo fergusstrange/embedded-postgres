@@ -36,17 +36,18 @@ go get -u github.com/fergusstrange/embedded-postgres
 
 This library aims to require as little configuration as possible, favouring overridable defaults
 
-| Configuration  | Default Value                                   |
-| -------------- | -------------------------------------------     |
-| Username       | postgres                                        |
-| Password       | postgres                                        |
-| Database       | postgres                                        |
-| Version        | 12.1.0                                          |
-| RuntimePath    | $USER_HOME/.embedded-postgres-go/extracted      |
-| DataPath       | $USER_HOME/.embedded-postgres-go/extracted/data |
-| BinariesPath   | $USER_HOME/.embedded-postgres-go/extracted      |
-| Port           | 5432                                            |
-| StartTimeout   | 15 Seconds                                      |
+| Configuration       | Default Value                                   |
+|---------------------|-------------------------------------------------|
+| Username            | postgres                                        |
+| Password            | postgres                                        |
+| Database            | postgres                                        |
+| Version             | 12.1.0                                          |
+| RuntimePath         | $USER_HOME/.embedded-postgres-go/extracted      |
+| DataPath            | $USER_HOME/.embedded-postgres-go/extracted/data |
+| BinariesPath        | $USER_HOME/.embedded-postgres-go/extracted      |
+| BinaryRepositoryURL | https://repo1.maven.org/maven2                  |
+| Port                | 5432                                            |
+| StartTimeout        | 15 Seconds                                      |
 
 The *RuntimePath* directory is erased and recreated at each `Start()` and therefore not suitable for persistent data.
 
@@ -56,6 +57,7 @@ If the *RuntimePath* directory is empty or already initialized but with an incom
 removed and Postgres reinitialized.
 
 Postgres binaries will be downloaded and placed in *BinaryPath* if `BinaryPath/bin` doesn't exist.
+*BinaryRepositoryURL* parameter allow overriding maven repository url for Postgres binaries.
 If the directory does exist, whatever binary version is placed there will be used (no version check
 is done).  
 If your test need to run multiple different versions of Postgres for different tests, make sure
@@ -82,6 +84,7 @@ Password("wine").
 Database("gin").
 Version(V12).
 RuntimePath("/tmp").
+BinaryRepositoryURL("https://repo.local/central.proxy").	
 Port(9876).
 StartTimeout(45 * time.Second).
 Logger(logger))
