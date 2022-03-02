@@ -8,17 +8,18 @@ import (
 
 // Config maintains the runtime configuration for the Postgres process to be created.
 type Config struct {
-	version      PostgresVersion
-	port         uint32
-	database     string
-	username     string
-	password     string
-	runtimePath  string
-	dataPath     string
-	binariesPath string
-	locale       string
-	startTimeout time.Duration
-	logger       io.Writer
+	version             PostgresVersion
+	port                uint32
+	database            string
+	username            string
+	password            string
+	runtimePath         string
+	dataPath            string
+	binariesPath        string
+	locale              string
+	binaryRepositoryURL string
+	startTimeout        time.Duration
+	logger              io.Writer
 }
 
 // DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
@@ -31,13 +32,14 @@ type Config struct {
 // StartTimeout: 15 Seconds
 func DefaultConfig() Config {
 	return Config{
-		version:      V12,
-		port:         5432,
-		database:     "postgres",
-		username:     "postgres",
-		password:     "postgres",
-		startTimeout: 15 * time.Second,
-		logger:       os.Stdout,
+		version:             V12,
+		port:                5432,
+		database:            "postgres",
+		username:            "postgres",
+		password:            "postgres",
+		startTimeout:        15 * time.Second,
+		logger:              os.Stdout,
+		binaryRepositoryURL: "https://repo1.maven.org/maven2",
 	}
 }
 
@@ -107,6 +109,12 @@ func (c Config) StartTimeout(timeout time.Duration) Config {
 // Logger sets the logger for postgres output
 func (c Config) Logger(logger io.Writer) Config {
 	c.logger = logger
+	return c
+}
+
+// BinaryRepositoryURL set BinaryRepositoryURL to fetch PG Binary in case of Maven proxy
+func (c Config) BinaryRepositoryURL(binaryRepositoryURL string) Config {
+	c.binaryRepositoryURL = binaryRepositoryURL
 	return c
 }
 
