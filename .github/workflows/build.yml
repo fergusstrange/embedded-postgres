@@ -37,8 +37,8 @@ jobs:
       - name: Nancy Vulnerability
         uses: sonatype-nexus-community/nancy-github-action@main
         with:
-          nancyVersion: v1.0.15
-          nancyCommand: sleuth --exclude-vulnerability=33316a47-aa6d-4d63-9b68-c7c97de1b02c
+          nancyVersion: v1.0.33
+          nancyCommand: sleuth
       - name: GolangCI Lint
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.42.1
