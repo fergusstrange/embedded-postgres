@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/pressly/goose"
+	"github.com/pressly/goose/v3"
 )
 
 type BeerCatalogue struct {
