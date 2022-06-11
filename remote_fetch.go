@@ -3,6 +3,9 @@ package embeddedpostgres
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -33,27 +36,51 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			return fmt.Errorf("unable to connect to %s", remoteFetchHost)
 		}
 
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}()
+		defer closeBody(resp)()
+
+		downloadSHAURL := fmt.Sprintf("%s.sha256", downloadURL)
+
+		shaResp, err := http.Get(downloadSHAURL)
+		if err != nil {
+			return fmt.Errorf("unable to connect to %s", remoteFetchHost)
+		}
+
+		defer closeBody(shaResp)()
 
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("no version found matching %s", version)
 		}
 
-		return decompressResponse(resp, cacheLocator, downloadURL)
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return errorFetchingPostgres(err)
+		}
+
+		if shaResp.StatusCode == http.StatusOK {
+			shaBytes, err := ioutil.ReadAll(shaResp.Body)
+			if err == nil {
+				bodyBytesHash := sha256.Sum256(bodyBytes)
+				downloadedHash := hex.EncodeToString(bodyBytesHash[:])
+				if !strings.EqualFold(string(shaBytes), downloadedHash) {
+					return errors.New("downloaded checksums do not match")
+				}
+			}
+		}
+
+		return decompressResponse(bodyBytes, resp.ContentLength, cacheLocator, downloadURL)
 	}
 }
 
-func decompressResponse(resp *http.Response, cacheLocator CacheLocator, downloadURL string) error {
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return errorFetchingPostgres(err)
+func closeBody(resp *http.Response) func() {
+	return func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Fatal(err)
+		}
 	}
+}
 
-	zipReader, err := zip.NewReader(bytes.NewReader(bodyBytes), resp.ContentLength)
+func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator CacheLocator, downloadURL string) error {
+	zipReader, err := zip.NewReader(bytes.NewReader(bodyBytes), contentLength)
 	if err != nil {
 		return errorFetchingPostgres(err)
 	}
