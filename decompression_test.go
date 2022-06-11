@@ -132,3 +132,35 @@ func Test_decompressTarXz_ErrorWhenFileToCopyToNotExists(t *testing.T) {
 
 	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
+
+func Test_decompressTarXz_ErrorWhenArchiveCorrupted(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "temp_tar_test")
+	if err != nil {
+		panic(err)
+	}
+
+	archive, cleanup := createTempXzArchive()
+
+	defer cleanup()
+
+	file, err := os.OpenFile(archive, os.O_WRONLY, 0664)
+	if err != nil {
+		panic(err)
+	}
+
+	if _, err := file.Seek(35, 0); err != nil {
+		panic(err)
+	}
+
+	if _, err := file.WriteString("someJunk"); err != nil {
+		panic(err)
+	}
+
+	if err := file.Close(); err != nil {
+		panic(err)
+	}
+
+	err = decompressTarXz(defaultTarReader, archive, tempDir)
+
+	assert.EqualError(t, err, "unable to extract postgres archive: xz: data is corrupt")
+}
