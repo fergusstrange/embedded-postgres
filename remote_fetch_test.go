@@ -2,11 +2,14 @@ package embeddedpostgres
 
 import (
 	"archive/zip"
+	"crypto/sha256"
+	"encoding/hex"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -54,7 +57,10 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 	}))
 	defer server.Close()
 
@@ -69,6 +75,11 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(404)
+			return
+		}
+
 		if _, err := w.Write([]byte("lolz")); err != nil {
 			panic(err)
 		}
@@ -86,6 +97,11 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		MyZipWriter := zip.NewWriter(w)
 
 		if err := MyZipWriter.Close(); err != nil {
@@ -114,6 +130,11 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		bytes, err := ioutil.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
@@ -148,6 +169,11 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 	cacheLocation := filepath.Join(fileBlockingExtractDirectory, "cache_file.jar")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		bytes, err := ioutil.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
@@ -181,6 +207,11 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+
 		bytes, err := ioutil.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
@@ -213,6 +244,17 @@ func Test_defaultRemoteFetchStrategy(t *testing.T) {
 		if err != nil {
 			panic(err)
 		}
+
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(200)
+			contentHash := sha256.Sum256(bytes)
+			if _, err := w.Write([]byte(hex.EncodeToString(contentHash[:]))); err != nil {
+				panic(err)
+			}
+
+			return
+		}
+
 		if _, err := w.Write(bytes); err != nil {
 			panic(err)
 		}
