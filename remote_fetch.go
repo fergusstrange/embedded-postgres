@@ -61,6 +61,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			if err == nil {
 				bodyBytesHash := sha256.Sum256(bodyBytes)
 				downloadedHash := hex.EncodeToString(bodyBytesHash[:])
+
 				if !strings.EqualFold(string(shaBytes), downloadedHash) {
 					return errors.New("downloaded checksums do not match")
 				}
