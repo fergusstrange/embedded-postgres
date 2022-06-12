@@ -23,7 +23,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 	return func() error {
 		operatingSystem, architecture, version := versionStrategy()
 
-		downloadURL := fmt.Sprintf("%s/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
+		jarDownloadURL := fmt.Sprintf("%s/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
 			remoteFetchHost,
 			operatingSystem,
 			architecture,
@@ -32,40 +32,37 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			architecture,
 			version)
 
-		resp, err := http.Get(downloadURL)
+		jarDownloadResponse, err := http.Get(jarDownloadURL)
 		if err != nil {
 			return fmt.Errorf("unable to connect to %s", remoteFetchHost)
 		}
 
-		defer closeBody(resp)()
+		defer closeBody(jarDownloadResponse)()
 
-		if resp.StatusCode != http.StatusOK {
+		if jarDownloadResponse.StatusCode != http.StatusOK {
 			return fmt.Errorf("no version found matching %s", version)
 		}
 
-		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		jarBodyBytes, err := ioutil.ReadAll(jarDownloadResponse.Body)
 		if err != nil {
 			return errorFetchingPostgres(err)
 		}
 
-		downloadSHAURL := fmt.Sprintf("%s.sha256", downloadURL)
-		shaResp, err := http.Get(downloadSHAURL)
+		shaDownloadURL := fmt.Sprintf("%s.sha256", jarDownloadURL)
+		shaDownloadResponse, err := http.Get(shaDownloadURL)
 
-		defer closeBody(shaResp)()
+		defer closeBody(shaDownloadResponse)()
 
-		if err == nil && shaResp.StatusCode == http.StatusOK {
-			shaBytes, err := ioutil.ReadAll(shaResp.Body)
-			if err == nil {
-				bodyBytesHash := sha256.Sum256(bodyBytes)
-				downloadedHash := hex.EncodeToString(bodyBytesHash[:])
-
-				if !strings.EqualFold(string(shaBytes), downloadedHash) {
+		if err == nil && shaDownloadResponse.StatusCode == http.StatusOK {
+			if shaBodyBytes, err := ioutil.ReadAll(shaDownloadResponse.Body); err == nil {
+				jarChecksum := sha256.Sum256(jarBodyBytes)
+				if !bytes.Equal(shaBodyBytes, []byte(hex.EncodeToString(jarChecksum[:]))) {
 					return errors.New("downloaded checksums do not match")
 				}
 			}
 		}
 
-		return decompressResponse(bodyBytes, resp.ContentLength, cacheLocator, downloadURL)
+		return decompressResponse(jarBodyBytes, jarDownloadResponse.ContentLength, cacheLocator, jarDownloadURL)
 	}
 }
 
