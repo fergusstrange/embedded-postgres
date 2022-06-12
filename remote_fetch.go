@@ -22,6 +22,7 @@ type RemoteFetchStrategy func() error
 func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionStrategy, cacheLocator CacheLocator) RemoteFetchStrategy {
 	return func() error {
 		operatingSystem, architecture, version := versionStrategy()
+
 		downloadURL := fmt.Sprintf("%s/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
 			remoteFetchHost,
 			operatingSystem,
@@ -38,15 +39,6 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 
 		defer closeBody(resp)()
 
-		downloadSHAURL := fmt.Sprintf("%s.sha256", downloadURL)
-
-		shaResp, err := http.Get(downloadSHAURL)
-		if err != nil {
-			return fmt.Errorf("unable to connect to %s", remoteFetchHost)
-		}
-
-		defer closeBody(shaResp)()
-
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("no version found matching %s", version)
 		}
@@ -56,7 +48,12 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			return errorFetchingPostgres(err)
 		}
 
-		if shaResp.StatusCode == http.StatusOK {
+		downloadSHAURL := fmt.Sprintf("%s.sha256", downloadURL)
+		shaResp, err := http.Get(downloadSHAURL)
+
+		defer closeBody(shaResp)()
+
+		if err == nil && shaResp.StatusCode == http.StatusOK {
 			shaBytes, err := ioutil.ReadAll(shaResp.Body)
 			if err == nil {
 				bodyBytesHash := sha256.Sum256(bodyBytes)

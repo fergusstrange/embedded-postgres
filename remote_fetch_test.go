@@ -233,6 +233,44 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
 
+func Test_defaultRemoteFetchStrategy_ErrorWhenSHA256NotMatch(t *testing.T) {
+	jarFile, cleanUp := createTempZipArchive()
+	defer cleanUp()
+
+	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_location", "cache.jar")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bytes, err := ioutil.ReadFile(jarFile)
+		if err != nil {
+			panic(err)
+		}
+
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(200)
+			if _, err := w.Write([]byte("literallyN3verGonnaWork")); err != nil {
+				panic(err)
+			}
+
+			return
+		}
+
+		if _, err := w.Write(bytes); err != nil {
+			panic(err)
+		}
+	}))
+	defer server.Close()
+
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
+		testVersionStrategy(),
+		func() (s string, b bool) {
+			return cacheLocation, false
+		})
+
+	err := remoteFetchStrategy()
+
+	assert.EqualError(t, err, "downloaded checksums do not match")
+}
+
 func Test_defaultRemoteFetchStrategy(t *testing.T) {
 	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
