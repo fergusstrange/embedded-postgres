@@ -3,6 +3,9 @@ package embeddedpostgres
 import (
 	"archive/zip"
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,7 +22,8 @@ type RemoteFetchStrategy func() error
 func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionStrategy, cacheLocator CacheLocator) RemoteFetchStrategy {
 	return func() error {
 		operatingSystem, architecture, version := versionStrategy()
-		downloadURL := fmt.Sprintf("%s/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
+
+		jarDownloadURL := fmt.Sprintf("%s/io/zonky/test/postgres/embedded-postgres-binaries-%s-%s/%s/embedded-postgres-binaries-%s-%s-%s.jar",
 			remoteFetchHost,
 			operatingSystem,
 			architecture,
@@ -28,32 +32,50 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			architecture,
 			version)
 
-		resp, err := http.Get(downloadURL)
+		jarDownloadResponse, err := http.Get(jarDownloadURL)
 		if err != nil {
 			return fmt.Errorf("unable to connect to %s", remoteFetchHost)
 		}
 
-		defer func() {
-			if err := resp.Body.Close(); err != nil {
-				log.Fatal(err)
-			}
-		}()
+		defer closeBody(jarDownloadResponse)()
 
-		if resp.StatusCode != http.StatusOK {
+		if jarDownloadResponse.StatusCode != http.StatusOK {
 			return fmt.Errorf("no version found matching %s", version)
 		}
 
-		return decompressResponse(resp, cacheLocator, downloadURL)
+		jarBodyBytes, err := ioutil.ReadAll(jarDownloadResponse.Body)
+		if err != nil {
+			return errorFetchingPostgres(err)
+		}
+
+		shaDownloadURL := fmt.Sprintf("%s.sha256", jarDownloadURL)
+		shaDownloadResponse, err := http.Get(shaDownloadURL)
+
+		defer closeBody(shaDownloadResponse)()
+
+		if err == nil && shaDownloadResponse.StatusCode == http.StatusOK {
+			if shaBodyBytes, err := ioutil.ReadAll(shaDownloadResponse.Body); err == nil {
+				jarChecksum := sha256.Sum256(jarBodyBytes)
+				if !bytes.Equal(shaBodyBytes, []byte(hex.EncodeToString(jarChecksum[:]))) {
+					return errors.New("downloaded checksums do not match")
+				}
+			}
+		}
+
+		return decompressResponse(jarBodyBytes, jarDownloadResponse.ContentLength, cacheLocator, jarDownloadURL)
 	}
 }
 
-func decompressResponse(resp *http.Response, cacheLocator CacheLocator, downloadURL string) error {
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return errorFetchingPostgres(err)
+func closeBody(resp *http.Response) func() {
+	return func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Fatal(err)
+		}
 	}
+}
 
-	zipReader, err := zip.NewReader(bytes.NewReader(bodyBytes), resp.ContentLength)
+func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator CacheLocator, downloadURL string) error {
+	zipReader, err := zip.NewReader(bytes.NewReader(bodyBytes), contentLength)
 	if err != nil {
 		return errorFetchingPostgres(err)
 	}
