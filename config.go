@@ -16,6 +16,7 @@ type Config struct {
 	runtimePath         string
 	dataPath            string
 	binariesPath        string
+	cachePath           string
 	locale              string
 	binaryRepositoryURL string
 	startTimeout        time.Duration
@@ -91,6 +92,13 @@ func (c Config) DataPath(path string) Config {
 // If this option is left unset, the binaries will be downloaded.
 func (c Config) BinariesPath(path string) Config {
 	c.binariesPath = path
+	return c
+}
+
+// CachePath sets the path of pre-downloaded postgres cached archives.
+// If this option is left unset, a default cache in the $HOME will be used.
+func (c Config) CachePath(path string) Config {
+	c.cachePath = path
 	return c
 }
 

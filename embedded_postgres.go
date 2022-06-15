@@ -42,7 +42,7 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 		linuxMachineName,
 		shouldUseAlpineLinuxBuild,
 	)
-	cacheLocator := defaultCacheLocator(versionStrategy)
+	cacheLocator := defaultCacheLocator(config.cachePath, versionStrategy)
 	remoteFetchStrategy := defaultRemoteFetchStrategy(config.binaryRepositoryURL, versionStrategy, cacheLocator)
 
 	return &EmbeddedPostgres{
