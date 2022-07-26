@@ -12,7 +12,7 @@ import (
 )
 
 func Test_defaultInitDatabase_ErrorWhenCannotCreatePasswordFile(t *testing.T) {
-	err := defaultInitDatabase("path_not_exists", "path_not_exists", "path_not_exists", "Tom", "Beer", "", os.Stderr)
+	err := defaultInitDatabase("path_not_exists", "path_not_exists", "path_not_exists", "", "Tom", "Beer", "", os.Stderr)
 
 	assert.EqualError(t, err, "unable to write password file to path_not_exists/pwfile")
 }
@@ -38,7 +38,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 		}
 	}()
 
-	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", os.Stderr)
+	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "", "Tom", "Beer", "", os.Stderr)
 
 	assert.EqualError(t, err, fmt.Sprintf("unable to init database using: %s/bin/initdb -A password -U Tom -D %s/data --pwfile=%s/pwfile",
 		binTempDir,
@@ -59,7 +59,7 @@ func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
 		}
 	}()
 
-	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "en_XY", os.Stderr)
+	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "", "postgres", "postgres", "en_XY", os.Stderr)
 
 	assert.EqualError(t, err, fmt.Sprintf("unable to init database using: %s/bin/initdb -A password -U postgres -D %s/data --pwfile=%s/pwfile --locale=en_XY",
 		tempDir,

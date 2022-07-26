@@ -11,6 +11,7 @@ type Config struct {
 	version             PostgresVersion
 	port                uint32
 	database            string
+	runAsUser           string
 	username            string
 	password            string
 	runtimePath         string
@@ -58,6 +59,12 @@ func (c Config) Port(port uint32) Config {
 // Database sets the database name that will be created.
 func (c Config) Database(database string) Config {
 	c.database = database
+	return c
+}
+
+// RunAsUser sets the user that invoke the initdb command.
+func (c Config) RunAsUser(runAsUser string) Config {
+	c.runAsUser = runAsUser
 	return c
 }
 
