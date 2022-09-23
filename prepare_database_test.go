@@ -28,7 +28,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 		panic(err)
 	}
 
-	logFile, err := os.CreateTemp("", "prepare_database_test_log")
+	logFile, err := ioutil.TempFile("", "prepare_database_test_log")
 	if err != nil {
 		panic(err)
 	}
