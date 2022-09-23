@@ -45,7 +45,7 @@ func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username
 	postgresInitDBProcess.Stdout = logger
 
 	if err = postgresInitDBProcess.Run(); err != nil {
-		logContent, _ := os.ReadFile(logger.Name())
+		logContent, _ := ioutil.ReadFile(logger.Name())
 		return fmt.Errorf("unable to init database using '%s': %w\n%s", postgresInitDBProcess.String(), err, string(logContent))
 	}
 
