@@ -74,7 +74,7 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 
 			assert.Equal(t, expected[0], operatingSystem)
 			assert.Equal(t, expected[1], architecture)
-			assert.Equal(t, V12, postgresVersion)
+			assert.Equal(t, V14, postgresVersion)
 		})
 	}
 }
@@ -92,7 +92,7 @@ func Test_DefaultVersionStrategy_Linux_ARM32V6(t *testing.T) {
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "arm32v6", architecture)
-	assert.Equal(t, V12, postgresVersion)
+	assert.Equal(t, V14, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_Linux_ARM32V7(t *testing.T) {
@@ -108,7 +108,7 @@ func Test_DefaultVersionStrategy_Linux_ARM32V7(t *testing.T) {
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "arm32v7", architecture)
-	assert.Equal(t, V12, postgresVersion)
+	assert.Equal(t, V14, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
@@ -126,7 +126,7 @@ func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "amd64-alpine", architecture)
-	assert.Equal(t, V12, postgresVersion)
+	assert.Equal(t, V14, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_shouldUseAlpineLinuxBuild(t *testing.T) {
