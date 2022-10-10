@@ -46,18 +46,7 @@ func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username
 	postgresInitDBProcess.Stdout = logger
 
 	if err = postgresInitDBProcess.Run(); err != nil {
-		logContentChan := make(chan []byte, 1)
-		logContent := []byte("logs could not be read")
-		if logger != nil {
-			go func() {
-				actualLogContent, _ := ioutil.ReadFile(logger.Name())
-				logContentChan <- actualLogContent
-			}()
-			select {
-			case logContent = <-logContentChan:
-			case <-time.After(10 * time.Second):
-			}
-		}
+		logContent, _ := readLogsOrTimeout(logger) // we want to preserve the original error
 		return fmt.Errorf("unable to init database using '%s': %w\n%s", postgresInitDBProcess.String(), err, string(logContent))
 	}
 
@@ -113,6 +102,30 @@ func connectionClose(db io.Closer, err error) error {
 	}
 
 	return err
+}
+
+func readLogsOrTimeout(logger *os.File) (logContent []byte, err error) {
+	logContent = []byte("logs could not be read")
+
+	logContentChan := make(chan []byte, 1)
+	errChan := make(chan error, 1)
+
+	go func() {
+		if actualLogContent, err := ioutil.ReadFile(logger.Name()); err == nil {
+			logContentChan <- actualLogContent
+		} else {
+			errChan <- err
+		}
+	}()
+
+	select {
+	case logContent = <-logContentChan:
+	case err = <-errChan:
+	case <-time.After(10 * time.Second):
+		err = fmt.Errorf("timed out waiting for logs")
+	}
+
+	return logContent, err
 }
 
 func healthCheckDatabaseOrTimeout(config Config) error {
