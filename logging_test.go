@@ -78,5 +78,6 @@ func Test_readLogsOrTimeout(t *testing.T) {
 
 	require.NoError(t, os.Remove(logFile.Name()))
 	logContent, err = readLogsOrTimeout(logFile)
+	assert.Equal(t, []byte("logs could not be read"), logContent)
 	assert.EqualError(t, err, fmt.Sprintf("open %s: no such file or directory", logFile.Name()))
 }
