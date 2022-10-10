@@ -1,11 +1,13 @@
 package embeddedpostgres
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type customLogger struct {
@@ -73,4 +75,8 @@ func Test_readLogsOrTimeout(t *testing.T) {
 	logContent, err = readLogsOrTimeout(logFile)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("and here are the logs!"), logContent)
+
+	require.NoError(t, os.Remove(logFile.Name()))
+	logContent, err = readLogsOrTimeout(logFile)
+	assert.EqualError(t, err, fmt.Sprintf("open %s: no such file or directory", logFile.Name()))
 }
