@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/lib/pq"
 )
@@ -45,7 +46,18 @@ func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username
 	postgresInitDBProcess.Stdout = logger
 
 	if err = postgresInitDBProcess.Run(); err != nil {
-		logContent, _ := ioutil.ReadFile(logger.Name())
+		logContentChan := make(chan []byte, 1)
+		logContent := []byte("logs could not be read")
+		if logger != nil {
+			go func() {
+				actualLogContent, _ := ioutil.ReadFile(logger.Name())
+				logContentChan <- actualLogContent
+			}()
+			select {
+			case logContent = <-logContentChan:
+			case <-time.After(10 * time.Second):
+			}
+		}
 		return fmt.Errorf("unable to init database using '%s': %w\n%s", postgresInitDBProcess.String(), err, string(logContent))
 	}
 
