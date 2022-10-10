@@ -57,3 +57,20 @@ func Test_SyncedLogger_NoErrorDuringFlush(t *testing.T) {
 
 	assert.Equal(t, "some logs\non a new line", string(logger.logLines))
 }
+
+func Test_readLogsOrTimeout(t *testing.T) {
+	logFile, err := ioutil.TempFile("", "prepare_database_test_log")
+	if err != nil {
+		panic(err)
+	}
+
+	logContent, err := readLogsOrTimeout(logFile)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte(""), logContent)
+
+	_, _ = logFile.Write([]byte("and here are the logs!"))
+
+	logContent, err = readLogsOrTimeout(logFile)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("and here are the logs!"), logContent)
+}
