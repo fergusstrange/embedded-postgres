@@ -54,28 +54,42 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 		"windows/arm":     {"windows", "arm"},
 	}
 
+	versionDifferences := map[PostgresVersion]map[string][]string{
+		PostgresVersion("14.0.0"): {},
+		PostgresVersion("14.1.0"): {},
+		PostgresVersion("14.2.0"): {"darwin/arm64": {"darwin", "arm64v8"}},
+		V14:                       {"darwin/arm64": {"darwin", "arm64v8"}},
+	}
 	defaultConfig := DefaultConfig()
 
-	for dist, expected := range allGolangDistributions {
-		dist := dist
-		expected := expected
+	for version, differences := range versionDifferences {
+		defaultConfig.version = version
 
-		t.Run(fmt.Sprintf("DefaultVersionStrategy_%s", dist), func(t *testing.T) {
-			osArch := strings.Split(dist, "/")
+		for dist, expected := range allGolangDistributions {
+			dist := dist
+			expected := expected
 
-			operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
-				defaultConfig,
-				osArch[0],
-				osArch[1],
-				linuxMachineName,
-				func() bool {
-					return false
-				})()
+			if override, ok := differences[dist]; ok {
+				expected = override
+			}
 
-			assert.Equal(t, expected[0], operatingSystem)
-			assert.Equal(t, expected[1], architecture)
-			assert.Equal(t, V14, postgresVersion)
-		})
+			t.Run(fmt.Sprintf("DefaultVersionStrategy_%s", dist), func(t *testing.T) {
+				osArch := strings.Split(dist, "/")
+
+				operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
+					defaultConfig,
+					osArch[0],
+					osArch[1],
+					linuxMachineName,
+					func() bool {
+						return false
+					})()
+
+				assert.Equal(t, expected[0], operatingSystem)
+				assert.Equal(t, expected[1], architecture)
+				assert.Equal(t, version, postgresVersion)
+			})
+		}
 	}
 }
 
