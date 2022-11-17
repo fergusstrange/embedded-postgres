@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
@@ -201,7 +202,7 @@ func startPostgres(ctx context.Context, ep *EmbeddedPostgres) (*exec.Cmd, error)
 		return nil, fmt.Errorf("could not start postgres using %s", postgresProcess.String())
 	}
 
-	if err := waitForPostmasterReady(ctx, ep.config, 100*time.Millisecond); err != nil {
+	if err := waitForPostmasterReady(ctx, ep.config, 100*time.Millisecond, postgresProcess.Process.Pid); err != nil {
 		if stopErr := postgresProcess.Process.Signal(syscall.SIGINT); stopErr != nil {
 			return nil, fmt.Errorf("unable to stop database casused by error %s", err)
 		}
@@ -225,7 +226,13 @@ func ensurePortAvailable(port uint32) error {
 	return nil
 }
 
-func pgCtlStatus(config Config) error {
+type pgStatus struct {
+	Pid     int
+	Running bool
+	Output  string
+}
+
+func pgCtlStatus(config Config) (*pgStatus, error) {
 	cmd := exec.Command(filepath.Join(config.binariesPath, "bin/pg_ctl"),
 		"status",
 		"-D",
@@ -238,19 +245,36 @@ func pgCtlStatus(config Config) error {
 	err := cmd.Start()
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = cmd.Wait()
 
 	if err != nil {
-		return fmt.Errorf("%s exited with error %s: %s", cmd.String(), err, buf.String())
+		eErr := &exec.ExitError{}
+		if !errors.As(err, &eErr) {
+			return nil, fmt.Errorf("%s - %w: %s", cmd.String(), err, buf.String())
+		}
+	}
+	status := &pgStatus{Output: buf.String()}
+
+	// scanner to support windows
+	// The first line of a good response will be
+	// pg_ctl: server is running (PID: 12345)
+	sc := bufio.NewScanner(buf)
+	if sc.Scan() {
+		line := sc.Text()
+		if _, err := fmt.Sscanf(line, "pg_ctl: server is running (PID: %d)", &status.Pid); err != nil {
+			return status, nil
+		}
+		status.Running = true
+		return status, nil
 	}
 
-	return nil
+	return status, nil
 }
 
-func waitForPostmasterReady(ctx context.Context, config Config, interval time.Duration) (err error) {
+func waitForPostmasterReady(ctx context.Context, config Config, interval time.Duration, pid int) (err error) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -259,7 +283,13 @@ func waitForPostmasterReady(ctx context.Context, config Config, interval time.Du
 		case <-ctx.Done():
 			return fmt.Errorf("timed out waiting for database to become available: %w", err)
 		case <-ticker.C:
-			if err = pgCtlStatus(config); err == nil {
+			var status *pgStatus
+			status, err = pgCtlStatus(config)
+			fmt.Println(status)
+			if status != nil && status.Running {
+				if status.Pid != pid {
+					return fmt.Errorf("process running, but for wrong pid, expected %d, got %d", pid, status.Pid)
+				}
 				return nil
 			}
 		}
