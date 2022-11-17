@@ -202,6 +202,7 @@ func startPostgres(ctx context.Context, ep *EmbeddedPostgres) (*exec.Cmd, error)
 		return nil, fmt.Errorf("could not start postgres using %s", postgresProcess.String())
 	}
 
+	_ = ep.syncedLogger.flush()
 	if err := waitForPostmasterReady(ctx, ep.config, 100*time.Millisecond, postgresProcess.Process.Pid); err != nil {
 		if stopErr := postgresProcess.Process.Signal(syscall.SIGINT); stopErr != nil {
 			return nil, fmt.Errorf("unable to stop database casused by error %s", err)
