@@ -291,9 +291,11 @@ func (ep *EmbeddedPostgres) waitForPostmasterReady(ctx context.Context, interval
 
 			var status *pgStatus
 
-			status, err = pgCtlStatus(ep.config)
+			if ep.cmd.Process == nil {
+				return fmt.Errorf("no process found")
+			}
 
-			fmt.Println(status)
+			status, err = pgCtlStatus(ep.config)
 
 			if status != nil && status.Running {
 				if status.Pid != ep.cmd.Process.Pid {
