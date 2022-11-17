@@ -257,6 +257,7 @@ func pgCtlStatus(config Config) (*pgStatus, error) {
 			return nil, fmt.Errorf("%s - %w: %s", cmd.String(), err, buf.String())
 		}
 	}
+
 	status := &pgStatus{Output: buf.String()}
 
 	// scanner to support windows
@@ -268,7 +269,9 @@ func pgCtlStatus(config Config) (*pgStatus, error) {
 		if _, err := fmt.Sscanf(line, "pg_ctl: server is running (PID: %d)", &status.Pid); err != nil {
 			return status, nil
 		}
+
 		status.Running = true
+
 		return status, nil
 	}
 
@@ -285,13 +288,18 @@ func (ep *EmbeddedPostgres) waitForPostmasterReady(ctx context.Context, interval
 			return fmt.Errorf("timed out waiting for database to become available: %w", err)
 		case <-ticker.C:
 			_ = ep.syncedLogger.flush()
+
 			var status *pgStatus
+
 			status, err = pgCtlStatus(ep.config)
+
 			fmt.Println(status)
+
 			if status != nil && status.Running {
 				if status.Pid != ep.cmd.Process.Pid {
 					return fmt.Errorf("process running, but for wrong pid, expected %d, got %d", ep.cmd.Process.Pid, status.Pid)
 				}
+
 				return nil
 			}
 		}
