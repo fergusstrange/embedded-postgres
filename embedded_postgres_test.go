@@ -251,7 +251,7 @@ func Test_CustomConfig(t *testing.T) {
 		Username("gin").
 		Password("wine").
 		Database("beer").
-		Version(V12).
+		Version(V15).
 		RuntimePath(tempDir).
 		Port(9876).
 		StartTimeout(10 * time.Second).
@@ -496,7 +496,7 @@ func Test_CustomBinariesRepo(t *testing.T) {
 		Username("gin").
 		Password("wine").
 		Database("beer").
-		Version(V12).
+		Version(V15).
 		RuntimePath(tempDir).
 		BinaryRepositoryURL("https://repo.maven.apache.org/maven2").
 		Port(9876).

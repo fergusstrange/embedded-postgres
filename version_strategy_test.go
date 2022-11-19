@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//nolint:funlen
 func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 	allGolangDistributions := map[string][]string{
 		"aix/ppc64":       {"aix", "ppc64"},
@@ -17,7 +16,7 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 		"android/arm":     {"android", "arm"},
 		"android/arm64":   {"android", "arm64"},
 		"darwin/amd64":    {"darwin", "amd64"},
-		"darwin/arm64":    {"darwin", "amd64"},
+		"darwin/arm64":    {"darwin", "arm64v8"},
 		"dragonfly/amd64": {"dragonfly", "amd64"},
 		"freebsd/386":     {"freebsd", "386"},
 		"freebsd/amd64":   {"freebsd", "amd64"},
@@ -133,4 +132,39 @@ func Test_DefaultVersionStrategy_shouldUseAlpineLinuxBuild(t *testing.T) {
 	assert.NotPanics(t, func() {
 		shouldUseAlpineLinuxBuild()
 	})
+}
+
+func Test_VersionStrategy_MacOS(t *testing.T) {
+	macOSArchitectureVersions := map[string][]string{
+		fmt.Sprintf("%s_%s", "amd64", V13): {"amd64", string(V13)},
+		fmt.Sprintf("%s_%s", "arm64", V13): {"amd64", string(V13)},
+		fmt.Sprintf("%s_%s", "amd64", V14): {"amd64", string(V14)},
+		fmt.Sprintf("%s_%s", "arm64", V14): {"arm64v8", string(V14)},
+		fmt.Sprintf("%s_%s", "amd64", V15): {"amd64", string(V15)},
+		fmt.Sprintf("%s_%s", "arm64", V15): {"arm64v8", string(V15)},
+	}
+	for testCase, expected := range macOSArchitectureVersions {
+		os := "darwin"
+		testCase := testCase
+		expected := expected
+
+		t.Run(fmt.Sprintf("VersionStrategy_%s/%s", os, testCase), func(t *testing.T) {
+			archVersion := strings.Split(testCase, "_")
+			arch := archVersion[0]
+			version := archVersion[1]
+
+			operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
+				DefaultConfig().Version(PostgresVersion(version)),
+				os,
+				arch,
+				linuxMachineName,
+				func() bool {
+					return false
+				})()
+
+			assert.Equal(t, os, operatingSystem)
+			assert.Equal(t, expected[0], architecture)
+			assert.Equal(t, PostgresVersion(expected[1]), postgresVersion)
+		})
+	}
 }

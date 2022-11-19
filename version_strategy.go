@@ -1,9 +1,23 @@
 package embeddedpostgres
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+)
+
+const (
+	amd64   = "amd64"
+	arm     = "arm"
+	arm32v6 = "arm32v6"
+	arm32v7 = "arm32v7"
+	armv6   = "armv6"
+	armv7   = "armv7"
+	arm64   = "arm64"
+	darwin  = "darwin"
+	linux   = "linux"
+	v8      = "v8"
 )
 
 // VersionStrategy provides a strategy that can be used to determine which version of Postgres should be used based on
@@ -15,19 +29,19 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 		goos := goos
 		arch := arch
 
-		if goos == "linux" {
+		if goos == linux {
 			// the zonkyio/embedded-postgres-binaries project produces
 			// arm binaries with the following name schema:
 			// 32bit: arm32v6 / arm32v7
 			// 64bit (aarch64): arm64v8
-			if arch == "arm64" {
-				arch += "v8"
-			} else if arch == "arm" {
+			if arch == arm64 {
+				arch += v8
+			} else if arch == arm {
 				machineName := linuxMachineName()
-				if strings.HasPrefix(machineName, "armv7") {
-					arch += "32v7"
-				} else if strings.HasPrefix(machineName, "armv6") {
-					arch += "32v6"
+				if strings.HasPrefix(machineName, armv7) {
+					arch = arm32v7
+				} else if strings.HasPrefix(machineName, armv6) {
+					arch = arm32v6
 				}
 			}
 
@@ -36,9 +50,17 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 			}
 		}
 
-		// at this point, postgres is not available for macos on arm
-		if goos == "darwin" && arch == "arm64" {
-			arch = "amd64"
+		// if available, use postgres for macos on arm
+		if goos == darwin && arch == arm64 {
+			var majorVer, minorVer int
+
+			fmt.Sscanf(string(config.version), "%d.%d", &majorVer, &minorVer)
+
+			if majorVer >= 15 || (majorVer == 14 && minorVer >= 2) {
+				arch += v8
+			} else {
+				arch = amd64
+			}
 		}
 
 		return goos, arch, config.version
