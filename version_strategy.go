@@ -40,8 +40,8 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 		// if available, use postgres for macos on arm
 		if goos == "darwin" && arch == "arm64" {
 			var majorVer, minorVer int
-			fmt.Sscanf(string(config.version), "%d.%d", &majorVer, &minorVer)
 
+			fmt.Sscanf(string(config.version), "%d.%d", &majorVer, &minorVer)
 			if majorVer >= 15 || (majorVer == 14 && minorVer >= 2) {
 				arch += "v8"
 			} else {
