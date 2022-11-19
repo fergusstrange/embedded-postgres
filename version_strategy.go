@@ -42,6 +42,7 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 			var majorVer, minorVer int
 
 			fmt.Sscanf(string(config.version), "%d.%d", &majorVer, &minorVer)
+
 			if majorVer >= 15 || (majorVer == 14 && minorVer >= 2) {
 				arch += "v8"
 			} else {
