@@ -17,7 +17,7 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 		"android/arm":     {"android", "arm"},
 		"android/arm64":   {"android", "arm64"},
 		"darwin/amd64":    {"darwin", "amd64"},
-		"darwin/arm64":    {"darwin", "amd64"},
+		"darwin/arm64":    {"darwin", "arm64v8"},
 		"dragonfly/amd64": {"dragonfly", "amd64"},
 		"freebsd/386":     {"freebsd", "386"},
 		"freebsd/amd64":   {"freebsd", "amd64"},
