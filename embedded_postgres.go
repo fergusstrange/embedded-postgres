@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -171,49 +170,6 @@ func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
 	return nil
 }
 
-// Stop will try to stop the Postgres process gracefully returning an error when there were any problems.
-func (ep *EmbeddedPostgres) Stop() error {
-	if !ep.started {
-		return errors.New("server has not been started")
-	}
-
-	_ = ep.cmd.Process.Signal(syscall.SIGINT)
-	_ = ep.cmd.Wait()
-
-	ep.started = false
-
-	if err := ep.syncedLogger.flush(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (ep *EmbeddedPostgres) startPostgres(ctx context.Context) error {
-	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/postgres")
-	command := exec.Command(postgresBinary,
-		"-D", ep.config.dataPath,
-		"-p", fmt.Sprintf("%d", ep.config.port))
-	command.Stdout = ep.syncedLogger.file
-	command.Stderr = ep.syncedLogger.file
-
-	if err := command.Start(); err != nil {
-		return fmt.Errorf("could not start postgres using %s", command.String())
-	}
-
-	ep.cmd = command
-
-	if err := ep.waitForPostmasterReady(ctx, 100*time.Millisecond); err != nil {
-		if stopErr := command.Process.Signal(syscall.SIGINT); stopErr != nil {
-			return fmt.Errorf("unable to stop database casused by error %s", err)
-		}
-
-		return err
-	}
-
-	return nil
-}
-
 func ensurePortAvailable(port uint32) error {
 	conn, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
@@ -279,14 +235,14 @@ func pgCtlStatus(config Config) (*pgStatus, error) {
 }
 
 func (ep *EmbeddedPostgres) waitForPostmasterReady(ctx context.Context, interval time.Duration) (err error) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
+	statusTicker := time.NewTicker(interval)
+	defer statusTicker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return fmt.Errorf("timed out waiting for database to become available: %w", err)
-		case <-ticker.C:
+		case <-statusTicker.C:
 			_ = ep.syncedLogger.flush()
 
 			var status *pgStatus
