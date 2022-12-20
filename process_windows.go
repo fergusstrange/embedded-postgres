@@ -17,9 +17,9 @@ import (
 // So for now we just use pg_ctl on Windows since it does the hoop jumping.
 func (ep *EmbeddedPostgres) startPostgres(ctx context.Context) error {
 	pgCtlBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
-	ep.cmd = exec.Command(pgCtlBinary, "start",
+	ep.cmd = exec.Command(pgCtlBinary, "start", "-w",
 		"-D", ep.config.dataPath,
-		"-p", fmt.Sprintf("%d", ep.config.port))
+		"-o", fmt.Sprintf("-p %d", ep.config.port))
 	ep.cmd.Stdout = ep.syncedLogger.file
 	ep.cmd.Stderr = ep.syncedLogger.file
 
@@ -38,7 +38,7 @@ func (ep *EmbeddedPostgres) Stop() error {
 	}
 
 	pgCtlBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
-	ep.cmd = exec.Command(pgCtlBinary, "stop", "-D", ep.config.dataPath)
+	ep.cmd = exec.Command(pgCtlBinary, "stop", "-w", "-D", ep.config.dataPath)
 	ep.cmd.Stdout = ep.syncedLogger.file
 	ep.cmd.Stderr = ep.syncedLogger.file
 
