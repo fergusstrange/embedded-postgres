@@ -3,7 +3,13 @@
 
 package embeddedpostgres
 
-import "path/filepath"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"os/exec"
+	"path/filepath"
+)
 
 // startPostgres
 // On Windows, you need to jump through hoops to start the process as a restricted user.
