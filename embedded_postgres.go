@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 )
 
 // EmbeddedPostgres maintains all configuration and runtime functions for maintaining the lifecycle of one Postgres process.
@@ -25,7 +24,7 @@ type EmbeddedPostgres struct {
 	createDatabase      createDatabase
 	started             bool
 	syncedLogger        *syncedLogger
-	cmd                 *exec.Cmd
+	cmd                 *postgresProcess
 }
 
 // NewDatabase creates a new EmbeddedPostgres struct that can be used to start and stop a Postgres process.
@@ -126,7 +125,12 @@ func (ep *EmbeddedPostgres) Start() error {
 	ctx, cancelCtx := context.WithTimeout(context.Background(), ep.config.startTimeout)
 	defer cancelCtx()
 
-	if err = ep.startPostgres(ctx); err != nil {
+	ep.cmd = &postgresProcess{
+		Config: ep.config,
+		Logger: ep.syncedLogger,
+	}
+
+	if err = ep.cmd.Start(ctx); err != nil {
 		return err
 	}
 
@@ -183,6 +187,25 @@ func ensurePortAvailable(port uint32) error {
 	return nil
 }
 
+// Stop will try to stop the Postgres process gracefully returning an error when there were any problems.
+func (ep *EmbeddedPostgres) Stop() error {
+	if !ep.started {
+		return errors.New("server has not been started")
+	}
+
+	if err := ep.cmd.Stop(); err != nil {
+		return err
+	}
+
+	ep.started = false
+
+	if err := ep.syncedLogger.flush(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type pgStatus struct {
 	Pid     int
 	Running bool
@@ -232,36 +255,6 @@ func pgCtlStatus(config Config) (*pgStatus, error) {
 	}
 
 	return status, nil
-}
-
-func (ep *EmbeddedPostgres) waitForPostmasterReady(ctx context.Context, interval time.Duration) (err error) {
-	statusTicker := time.NewTicker(interval)
-	defer statusTicker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return fmt.Errorf("timed out waiting for database to become available: %w", err)
-		case <-statusTicker.C:
-			_ = ep.syncedLogger.flush()
-
-			var status *pgStatus
-
-			if ep.cmd.Process == nil {
-				return fmt.Errorf("no process found")
-			}
-
-			status, err = pgCtlStatus(ep.config)
-
-			if status != nil && status.Running {
-				if status.Pid != ep.cmd.Process.Pid {
-					return fmt.Errorf("process running, but for wrong pid, expected %d, got %d", ep.cmd.Process.Pid, status.Pid)
-				}
-
-				return nil
-			}
-		}
-	}
 }
 
 func dataDirIsValid(dataDir string, version PostgresVersion) bool {
