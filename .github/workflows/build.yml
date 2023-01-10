@@ -9,78 +9,94 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        id: go
-        uses: actions/checkout@v1
-      - name: Set Up Golang
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-      - name: Check Dependencies
-        run: |
-          go list -json -deps > go.list
-          for d in "." "examples" "platform-test"; do
-            pushd $d
-            go mod tidy
-            if [ ! -z "$(git status --porcelain go.mod)" ]; then
-              printf "go.mod has modifications\n"
-              git diff go.mod
-              exit 1
-            fi
-            if [ ! -z "$(git status --porcelain go.sum)" ]; then
-              printf "go.sum has modifications\n"
-              git diff go.sum
-              exit 1
-            fi
-            popd
-          done;
-      - name: Nancy Vulnerability
-        uses: sonatype-nexus-community/nancy-github-action@main
-        with:
-          nancyVersion: v1.0.36
-          nancyCommand: sleuth
-      - name: GolangCI Lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.42.1
-          /home/runner/go/bin/golangci-lint run
-      - name: Test
-        run: go test -v -test.timeout 0 -race -cover -covermode=atomic -coverprofile=coverage.out ./...
-      - name: Test Examples
-        run: |
-          pushd examples && \
-          go test -v ./... && \
+    - name: Checkout
+      id: go
+      uses: actions/checkout@v1
+    - name: Set Up Golang
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+    - name: Check Dependencies
+      run: |
+        go list -json -deps > go.list
+        for d in "." "examples" "platform-test"; do
+          pushd $d
+          go mod tidy
+          if [ ! -z "$(git status --porcelain go.mod)" ]; then
+            printf "go.mod has modifications\n"
+            git diff go.mod
+            exit 1
+          fi
+          if [ ! -z "$(git status --porcelain go.sum)" ]; then
+            printf "go.sum has modifications\n"
+            git diff go.sum
+            exit 1
+          fi
           popd
-      - name: Upload Coverage Report
-        env:
-          COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: GO111MODULE=off go get github.com/mattn/goveralls && $(go env GOPATH)/bin/goveralls -v -coverprofile=coverage.out -service=github
+        done;
+    - name: Nancy Vulnerability
+      uses: sonatype-nexus-community/nancy-github-action@main
+      with:
+        nancyVersion: v1.0.36
+        nancyCommand: sleuth
+    - name: GolangCI Lint
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.42.1
+        /home/runner/go/bin/golangci-lint run
+    - name: Test
+      run: go test -v -test.timeout 0 -race -cover -covermode=atomic -coverprofile=coverage.out ./...
+    - name: Test Examples
+      run: |
+        pushd examples && \
+        go test -v ./... && \
+        popd
+    - name: Upload Coverage Report
+      env:
+        COVERALLS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: GO111MODULE=off go get github.com/mattn/goveralls && $(go env GOPATH)/bin/goveralls -v -coverprofile=coverage.out -service=github
   alpine_tests:
     name: Alpine Linux Platform Tests
     runs-on: ubuntu-latest
     container:
       image: golang:1.13-alpine
     steps:
-      - uses: actions/checkout@v1
-      - name: Set Up
-        run: |
-          apk add --upgrade gcc g++ && \
-          adduser testuser -D
-      - name: All Tests
-        run: su - testuser -c 'export PATH=$PATH:/usr/local/go/bin; cd /__w/embedded-postgres/embedded-postgres && go test -v ./... && cd platform-test && go test -v ./...'
+    - uses: actions/checkout@v1
+    - name: Set Up
+      run: |
+        apk add --upgrade gcc g++ && \
+        adduser testuser -D
+    - name: All Tests
+      run: su - testuser -c 'export PATH=$PATH:/usr/local/go/bin; cd /__w/embedded-postgres/embedded-postgres && go test -v ./... && cd platform-test && go test -v ./...'
+  mac_tests:
+    name: Mac Platform tests
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Set Up Golang
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+    - name: Platform Tests
+      # MallocNanoZone=0 is from https://github.com/golang/go/issues/49138#issuecomment-951321823
+      # To avoid unknown class issues on Mac using go test -race
+      run: |
+        cd platform-test
+        MallocNanoZone=0 go test -v -race ./...
   platform_tests:
     name: Platform tests
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ ubuntu-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
-      - name: Set Up Golang
-        uses: actions/setup-go@v1
-        with:
-          go-version: 1.13
-      - name: Platform Tests
-        run: |
-          cd platform-test
-          go test -v -race ./...
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Set Up Golang
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.13
+    - name: Platform Tests
+      run: |
+        cd platform-test
+        go test -v -race ./...
