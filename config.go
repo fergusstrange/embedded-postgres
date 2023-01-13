@@ -17,6 +17,7 @@ type Config struct {
 	dataPath            string
 	binariesPath        string
 	locale              string
+	useUnixSocket       string
 	binaryRepositoryURL string
 	startTimeout        time.Duration
 	logger              io.Writer
@@ -38,6 +39,7 @@ func DefaultConfig() Config {
 		username:            "postgres",
 		password:            "postgres",
 		startTimeout:        15 * time.Second,
+		useUnixSocket:       "",
 		logger:              os.Stdout,
 		binaryRepositoryURL: "https://repo1.maven.org/maven2",
 	}
@@ -97,6 +99,12 @@ func (c Config) BinariesPath(path string) Config {
 // Locale sets the default locale for initdb
 func (c Config) Locale(locale string) Config {
 	c.locale = locale
+	return c
+}
+
+// Use the specified unix socket directory instead of a TCP socket.
+func (c Config) UseUnixSocket(useUnixSocket string) Config {
+	c.useUnixSocket = useUnixSocket
 	return c
 }
 

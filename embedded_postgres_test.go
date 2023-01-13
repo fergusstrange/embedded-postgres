@@ -123,7 +123,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, useUnixSocket string, logger *os.File) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -156,7 +156,7 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 		RuntimePath(extractPath).
 		StartTimeout(10 * time.Second))
 
-	database.createDatabase = func(port uint32, username, password, database string) error {
+	database.createDatabase = func(host string, port uint32, username, password, database string) error {
 		return errors.New("ah noes")
 	}
 
@@ -176,7 +176,7 @@ func Test_TimesOutWhenCannotStart(t *testing.T) {
 		Database("something-fancy").
 		StartTimeout(500 * time.Millisecond))
 
-	database.createDatabase = func(port uint32, username, password, database string) error {
+	database.createDatabase = func(host string, port uint32, username, password, database string) error {
 		return nil
 	}
 
@@ -226,7 +226,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, useUnixSocket string, logger *os.File) error {
 		return nil
 	}
 

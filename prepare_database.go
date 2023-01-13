@@ -19,21 +19,23 @@ const (
 	fmtAfterError  = "%v happened after error: %w"
 )
 
-type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
-type createDatabase func(port uint32, username, password, database string) error
+type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, useUnixSocket string, logger *os.File) error
+type createDatabase func(host string, port uint32, username, password, database string) error
 
-func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error {
+func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, useUnixSocket string, logger *os.File) error {
 	passwordFile, err := createPasswordFile(runtimePath, password)
 	if err != nil {
 		return err
 	}
 
-	args := []string{
-		"-A", "password",
-		"-U", username,
-		"-D", pgDataDir,
-		fmt.Sprintf("--pwfile=%s", passwordFile),
+	var args []string
+	if useUnixSocket != "" {
+		args = append(args, "-A trust")
+	} else {
+		args = append(args, "-A password")
+		args = append(args, fmt.Sprintf("--pwfile=%s", passwordFile))
 	}
+	args = append(args, []string{"-U", username, "-D", pgDataDir}...)
 
 	if locale != "" {
 		args = append(args, fmt.Sprintf("--locale=%s", locale))
@@ -52,6 +54,24 @@ func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username
 		return fmt.Errorf("unable to remove password file '%v': %w", passwordFile, err)
 	}
 
+	if useUnixSocket != "" {
+		f, err := os.OpenFile(filepath.Join(pgDataDir, "postgresql.conf"), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+		if err != nil {
+			return fmt.Errorf("unable to open postgresql.conf for appension: %v", err)
+		}
+		defer f.Close()
+		if _, err = fmt.Fprintf(f, `
+# Note: Unix socket paths must be <103 bytes on macOS.
+unix_socket_directories = '%s'
+# Disable TCP listening.
+listen_addresses = ''
+# Ensure we have enough Postgres connections for Sourcegraph to run.
+max_connections = 250
+`, useUnixSocket); err != nil {
+			return fmt.Errorf("unable to append to postgresql.conf: %v", err)
+		}
+	}
+
 	return nil
 }
 
@@ -64,12 +84,12 @@ func createPasswordFile(runtimePath, password string) (string, error) {
 	return passwordFileLocation, nil
 }
 
-func defaultCreateDatabase(port uint32, username, password, database string) (err error) {
+func defaultCreateDatabase(host string, port uint32, username, password, database string) (err error) {
 	if database == "postgres" {
 		return nil
 	}
 
-	conn, err := openDatabaseConnection(port, username, password, "postgres")
+	conn, err := openDatabaseConnection(host, port, username, password, "postgres")
 	if err != nil {
 		return errorCustomDatabase(database, err)
 	}
@@ -113,7 +133,11 @@ func healthCheckDatabaseOrTimeout(config Config) error {
 
 	go func() {
 		for timeout.Err() == nil {
-			if err := healthCheckDatabase(config.port, config.database, config.username, config.password); err != nil {
+			host := "localhost"
+			if config.useUnixSocket != "" {
+				host = config.useUnixSocket
+			}
+			if err := healthCheckDatabase(host, config.port, config.database, config.username, config.password); err != nil {
 				continue
 			}
 			healthCheckSignal <- true
@@ -130,8 +154,8 @@ func healthCheckDatabaseOrTimeout(config Config) error {
 	}
 }
 
-func healthCheckDatabase(port uint32, database, username, password string) (err error) {
-	conn, err := openDatabaseConnection(port, username, password, database)
+func healthCheckDatabase(host string, port uint32, database, username, password string) (err error) {
+	conn, err := openDatabaseConnection(host, port, username, password, database)
 	if err != nil {
 		return err
 	}
@@ -148,8 +172,9 @@ func healthCheckDatabase(port uint32, database, username, password string) (err 
 	return nil
 }
 
-func openDatabaseConnection(port uint32, username string, password string, database string) (*pq.Connector, error) {
-	conn, err := pq.NewConnector(fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
+func openDatabaseConnection(host string, port uint32, username string, password string, database string) (*pq.Connector, error) {
+	conn, err := pq.NewConnector(fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host,
 		port,
 		username,
 		password,

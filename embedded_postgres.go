@@ -57,14 +57,17 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 
 // Start will try to start the configured Postgres process returning an error when there were any problems with invocation.
 // If any error occurs Start will try to also Stop the Postgres process in order to not leave any sub-process running.
+//
 //nolint:funlen
 func (ep *EmbeddedPostgres) Start() error {
 	if ep.started {
 		return errors.New("server is already started")
 	}
 
-	if err := ensurePortAvailable(ep.config.port); err != nil {
-		return err
+	if ep.config.useUnixSocket == "" {
+		if err := ensurePortAvailable(ep.config.port); err != nil {
+			return err
+		}
 	}
 
 	logger, err := newSyncedLogger("", ep.config.logger)
@@ -117,6 +120,8 @@ func (ep *EmbeddedPostgres) Start() error {
 		}
 	}
 
+	// In case it is already running, try to stop it.
+	_ = stopPostgres(ep)
 	if err := startPostgres(ep); err != nil {
 		return err
 	}
@@ -128,7 +133,11 @@ func (ep *EmbeddedPostgres) Start() error {
 	ep.started = true
 
 	if !reuseData {
-		if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
+		host := "localhost"
+		if ep.config.useUnixSocket != "" {
+			host = ep.config.useUnixSocket
+		}
+		if err := ep.createDatabase(host, ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
 			if stopErr := stopPostgres(ep); stopErr != nil {
 				return fmt.Errorf("unable to stop database casused by error %s", err)
 			}
@@ -153,7 +162,8 @@ func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
 		return fmt.Errorf("unable to clean up data directory %s with error: %s", ep.config.dataPath, err)
 	}
 
-	if err := ep.initDatabase(ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.syncedLogger.file); err != nil {
+	c := ep.config
+	if err := ep.initDatabase(c.binariesPath, c.runtimePath, c.dataPath, c.username, c.password, c.locale, c.useUnixSocket, ep.syncedLogger.file); err != nil {
 		return err
 	}
 
