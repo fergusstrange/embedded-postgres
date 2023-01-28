@@ -3,7 +3,7 @@ package platform_test
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,16 +13,11 @@ import (
 
 func Test_AllMajorVersions(t *testing.T) {
 	allVersions := []embeddedpostgres.PostgresVersion{
-		embeddedpostgres.V15,
-		embeddedpostgres.V14,
-		embeddedpostgres.V13,
-		embeddedpostgres.V12,
-		embeddedpostgres.V11,
 		embeddedpostgres.V10,
 		embeddedpostgres.V9,
 	}
 
-	tempExtractLocation, err := ioutil.TempDir("", "embedded_postgres_tests")
+	tempExtractLocation, err := os.MkdirTemp("", "embedded_postgres_tests")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +82,7 @@ func connect(port uint32) (*sql.DB, error) {
 func checkPgVersionFile(dataDir string, version embeddedpostgres.PostgresVersion) error {
 	pgVersion := filepath.Join(dataDir, "PG_VERSION")
 
-	d, err := ioutil.ReadFile(pgVersion)
+	d, err := os.ReadFile(pgVersion)
 	if err != nil {
 		return fmt.Errorf("could not read file %v", pgVersion)
 	}

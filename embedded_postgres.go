@@ -3,7 +3,6 @@ package embeddedpostgres
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -225,7 +224,7 @@ func ensurePortAvailable(port uint32) error {
 func dataDirIsValid(dataDir string, version PostgresVersion) bool {
 	pgVersion := filepath.Join(dataDir, "PG_VERSION")
 
-	d, err := ioutil.ReadFile(pgVersion)
+	d, err := os.ReadFile(pgVersion)
 	if err != nil {
 		return false
 	}
