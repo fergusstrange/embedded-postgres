@@ -15,7 +15,7 @@ jobs:
       - name: Set Up Golang
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.18
       - name: Check Dependencies
         run: |
           go list -json -deps > go.list
@@ -58,7 +58,7 @@ jobs:
     name: Alpine Linux Platform Tests
     runs-on: ubuntu-latest
     container:
-      image: golang:1.13-alpine
+      image: golang:1.18-alpine
     steps:
       - uses: actions/checkout@v1
       - name: Set Up
@@ -79,7 +79,7 @@ jobs:
       - name: Set Up Golang
         uses: actions/setup-go@v3
         with:
-          go-version: 1.13
+          go-version: 1.18
       - name: Platform Tests
         run: |
           cd platform-test
