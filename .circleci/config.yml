@@ -17,7 +17,7 @@ jobs:
       - restore_cache:
           keys:
             - embedded-postgres-{{ checksum "/home/circleci/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
-      - run: cd platform-test && go test -v -race ./...
+      - run: cd platform-test && go mod download && go test -v -race ./...
       - save_cache:
           key: embedded-postgres-{{ checksum "/home/circleci/go/src/github.com/fergusstrange/embedded-postgres/go.mod" }}
           paths:
