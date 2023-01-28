@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//nolint:funlen
 func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 	allGolangDistributions := map[string][]string{
 		"aix/ppc64":       {"aix", "ppc64"},

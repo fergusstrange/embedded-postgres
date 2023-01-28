@@ -40,9 +40,8 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 		// postgres below version 14.2 is not available for macos on arm
 		if goos == "darwin" && arch == "arm64" {
 			var majorVer, minorVer int
-			fmt.Sscanf(string(config.version), "%d.%d", &majorVer, &minorVer)
-
-			if majorVer < 14 || (majorVer == 14 && minorVer < 2) {
+			if _, err := fmt.Sscanf(string(config.version), "%d.%d", &majorVer, &minorVer); err == nil &&
+				(majorVer < 14 || (majorVer == 14 && minorVer < 2)) {
 				arch = "amd64"
 			} else {
 				arch += "v8"
