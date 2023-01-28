@@ -3,7 +3,6 @@ package embeddedpostgres
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 )
 
@@ -14,7 +13,7 @@ type syncedLogger struct {
 }
 
 func newSyncedLogger(dir string, logger io.Writer) (*syncedLogger, error) {
-	file, err := ioutil.TempFile(dir, "embedded_postgres_log")
+	file, err := os.CreateTemp(dir, "embedded_postgres_log")
 	if err != nil {
 		return nil, err
 	}

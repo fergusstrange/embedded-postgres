@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -43,7 +43,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			return fmt.Errorf("no version found matching %s", version)
 		}
 
-		jarBodyBytes, err := ioutil.ReadAll(jarDownloadResponse.Body)
+		jarBodyBytes, err := io.ReadAll(jarDownloadResponse.Body)
 		if err != nil {
 			return errorFetchingPostgres(err)
 		}
@@ -54,7 +54,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 		defer closeBody(shaDownloadResponse)()
 
 		if err == nil && shaDownloadResponse.StatusCode == http.StatusOK {
-			if shaBodyBytes, err := ioutil.ReadAll(shaDownloadResponse.Body); err == nil {
+			if shaBodyBytes, err := io.ReadAll(shaDownloadResponse.Body); err == nil {
 				jarChecksum := sha256.Sum256(jarBodyBytes)
 				if !bytes.Equal(shaBodyBytes, []byte(hex.EncodeToString(jarChecksum[:]))) {
 					return errors.New("downloaded checksums do not match")
@@ -87,7 +87,7 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 				return errorExtractingPostgres(err)
 			}
 
-			archiveBytes, err := ioutil.ReadAll(archiveReader)
+			archiveBytes, err := io.ReadAll(archiveReader)
 			if err != nil {
 				return errorExtractingPostgres(err)
 			}
@@ -98,7 +98,7 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 				return errorExtractingPostgres(err)
 			}
 
-			if err := ioutil.WriteFile(cacheLocation, archiveBytes, file.FileHeader.Mode()); err != nil {
+			if err := os.WriteFile(cacheLocation, archiveBytes, file.FileHeader.Mode()); err != nil {
 				return errorExtractingPostgres(err)
 			}
 

@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -135,7 +134,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 			return
 		}
 
-		bytes, err := ioutil.ReadFile(jarFile)
+		bytes, err := os.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
 		}
@@ -174,7 +173,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 			return
 		}
 
-		bytes, err := ioutil.ReadFile(jarFile)
+		bytes, err := os.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
 		}
@@ -212,7 +211,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 			return
 		}
 
-		bytes, err := ioutil.ReadFile(jarFile)
+		bytes, err := os.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
 		}
@@ -240,7 +239,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenSHA256NotMatch(t *testing.T) {
 	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_location", "cache.jar")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		bytes, err := ioutil.ReadFile(jarFile)
+		bytes, err := os.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
 		}
@@ -278,7 +277,7 @@ func Test_defaultRemoteFetchStrategy(t *testing.T) {
 	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_location", "cache.jar")
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		bytes, err := ioutil.ReadFile(jarFile)
+		bytes, err := os.ReadFile(jarFile)
 		if err != nil {
 			panic(err)
 		}
