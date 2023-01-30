@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"time"
 )

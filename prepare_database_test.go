@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
