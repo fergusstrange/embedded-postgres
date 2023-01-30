@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -14,7 +13,7 @@ import (
 )
 
 func Test_decompressTarXz(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "temp_tar_test")
+	tempDir, err := os.MkdirTemp("", "temp_tar_test")
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +28,7 @@ func Test_decompressTarXz(t *testing.T) {
 	expectedExtractedFileLocation := filepath.Join(tempDir, "dir1", "dir2", "some_content")
 	assert.FileExists(t, expectedExtractedFileLocation)
 
-	fileContentBytes, err := ioutil.ReadFile(expectedExtractedFileLocation)
+	fileContentBytes, err := os.ReadFile(expectedExtractedFileLocation)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "b33r is g00d", string(fileContentBytes))
@@ -42,7 +41,7 @@ func Test_decompressTarXz_ErrorWhenFileNotExists(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenErrorDuringRead(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "temp_tar_test")
+	tempDir, err := os.MkdirTemp("", "temp_tar_test")
 	if err != nil {
 		panic(err)
 	}
@@ -60,7 +59,7 @@ func Test_decompressTarXz_ErrorWhenErrorDuringRead(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenFailedToReadFileToCopy(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "temp_tar_test")
+	tempDir, err := os.MkdirTemp("", "temp_tar_test")
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +69,7 @@ func Test_decompressTarXz_ErrorWhenFailedToReadFileToCopy(t *testing.T) {
 
 	blockingFile := filepath.Join(tempDir, "blocking")
 
-	if err = ioutil.WriteFile(blockingFile, []byte("wazz"), 0000); err != nil {
+	if err = os.WriteFile(blockingFile, []byte("wazz"), 0000); err != nil {
 		panic(err)
 	}
 
@@ -100,7 +99,7 @@ func Test_decompressTarXz_ErrorWhenFailedToReadFileToCopy(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenFileToCopyToNotExists(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "temp_tar_test")
+	tempDir, err := os.MkdirTemp("", "temp_tar_test")
 	if err != nil {
 		panic(err)
 	}
@@ -134,7 +133,7 @@ func Test_decompressTarXz_ErrorWhenFileToCopyToNotExists(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenArchiveCorrupted(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "temp_tar_test")
+	tempDir, err := os.MkdirTemp("", "temp_tar_test")
 	if err != nil {
 		panic(err)
 	}

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/user"
@@ -107,7 +106,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 	jarFile, cleanUp := createTempXzArchive()
 	defer cleanUp()
 
-	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
+	extractPath, err := os.MkdirTemp(filepath.Dir(jarFile), "extract")
 	if err != nil {
 		panic(err)
 	}
@@ -143,7 +142,7 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 
 	defer cleanUp()
 
-	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
+	extractPath, err := os.MkdirTemp(filepath.Dir(jarFile), "extract")
 
 	if err != nil {
 		panic(err)
@@ -214,7 +213,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 
 	defer cleanUp()
 
-	extractPath, err := ioutil.TempDir(filepath.Dir(jarFile), "extract")
+	extractPath, err := os.MkdirTemp(filepath.Dir(jarFile), "extract")
 	if err != nil {
 		panic(err)
 	}
@@ -237,7 +236,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 }
 
 func Test_CustomConfig(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
+	tempDir, err := os.MkdirTemp("", "embedded_postgres_test")
 	if err != nil {
 		panic(err)
 	}
@@ -252,7 +251,7 @@ func Test_CustomConfig(t *testing.T) {
 		Username("gin").
 		Password("wine").
 		Database("beer").
-		Version(V12).
+		Version(V15).
 		RuntimePath(tempDir).
 		Port(9876).
 		StartTimeout(10 * time.Second).
@@ -282,7 +281,7 @@ func Test_CustomConfig(t *testing.T) {
 }
 
 func Test_CustomLog(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
+	tempDir, err := os.MkdirTemp("", "embedded_postgres_test")
 	if err != nil {
 		panic(err)
 	}
@@ -402,9 +401,8 @@ func Test_CanStartAndStopTwice(t *testing.T) {
 	}
 }
 
-//nolint:funlen
 func Test_ReuseData(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
+	tempDir, err := os.MkdirTemp("", "embedded_postgres_test")
 	if err != nil {
 		panic(err)
 	}
@@ -482,7 +480,7 @@ func Test_ReuseData(t *testing.T) {
 }
 
 func Test_CustomBinariesRepo(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "embedded_postgres_test")
+	tempDir, err := os.MkdirTemp("", "embedded_postgres_test")
 	if err != nil {
 		panic(err)
 	}
@@ -497,7 +495,7 @@ func Test_CustomBinariesRepo(t *testing.T) {
 		Username("gin").
 		Password("wine").
 		Database("beer").
-		Version(V12).
+		Version(V15).
 		RuntimePath(tempDir).
 		BinaryRepositoryURL("https://repo.maven.apache.org/maven2").
 		Port(9876).
@@ -528,7 +526,7 @@ func Test_CustomBinariesRepo(t *testing.T) {
 }
 
 func Test_CustomBinariesLocation(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "prepare_database_test")
+	tempDir, err := os.MkdirTemp("", "prepare_database_test")
 	if err != nil {
 		panic(err)
 	}
@@ -566,12 +564,12 @@ func Test_CustomBinariesLocation(t *testing.T) {
 }
 
 func Test_PrefetchedBinaries(t *testing.T) {
-	binTempDir, err := ioutil.TempDir("", "prepare_database_test_bin")
+	binTempDir, err := os.MkdirTemp("", "prepare_database_test_bin")
 	if err != nil {
 		panic(err)
 	}
 
-	runtimeTempDir, err := ioutil.TempDir("", "prepare_database_test_runtime")
+	runtimeTempDir, err := os.MkdirTemp("", "prepare_database_test_runtime")
 	if err != nil {
 		panic(err)
 	}
@@ -618,7 +616,7 @@ func Test_PrefetchedBinaries(t *testing.T) {
 }
 
 func Test_RunningInParallel(t *testing.T) {
-	tempPath, err := ioutil.TempDir("", "parallel_tests_path")
+	tempPath, err := os.MkdirTemp("", "parallel_tests_path")
 	if err != nil {
 		panic(err)
 	}

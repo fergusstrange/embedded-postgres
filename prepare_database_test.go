@@ -3,7 +3,6 @@ package embeddedpostgres
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,12 +17,12 @@ func Test_defaultInitDatabase_ErrorWhenCannotCreatePasswordFile(t *testing.T) {
 }
 
 func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
-	binTempDir, err := ioutil.TempDir("", "prepare_database_test_bin")
+	binTempDir, err := os.MkdirTemp("", "prepare_database_test_bin")
 	if err != nil {
 		panic(err)
 	}
 
-	runtimeTempDir, err := ioutil.TempDir("", "prepare_database_test_runtime")
+	runtimeTempDir, err := os.MkdirTemp("", "prepare_database_test_runtime")
 	if err != nil {
 		panic(err)
 	}
@@ -61,7 +60,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 }
 
 func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "prepare_database_test")
+	tempDir, err := os.MkdirTemp("", "prepare_database_test")
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +81,7 @@ func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
 }
 
 func Test_defaultInitDatabase_PwFileRemoved(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "prepare_database_test")
+	tempDir, err := os.MkdirTemp("", "prepare_database_test")
 	if err != nil {
 		panic(err)
 	}

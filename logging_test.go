@@ -49,7 +49,7 @@ func Test_SyncedLogger_NoErrorDuringFlush(t *testing.T) {
 
 	assert.NoError(t, slErr)
 
-	err := ioutil.WriteFile(sl.file.Name(), []byte("some logs\non a new line"), os.ModeAppend)
+	err := os.WriteFile(sl.file.Name(), []byte("some logs\non a new line"), os.ModeAppend)
 
 	assert.NoError(t, err)
 

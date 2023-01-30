@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -36,9 +37,15 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 			}
 		}
 
-		// at this point, postgres is not available for macos on arm
+		// postgres below version 14.2 is not available for macos on arm
 		if goos == "darwin" && arch == "arm64" {
-			arch = "amd64"
+			var majorVer, minorVer int
+			if _, err := fmt.Sscanf(string(config.version), "%d.%d", &majorVer, &minorVer); err == nil &&
+				(majorVer < 14 || (majorVer == 14 && minorVer < 2)) {
+				arch = "amd64"
+			} else {
+				arch += "v8"
+			}
 		}
 
 		return goos, arch, config.version

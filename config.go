@@ -24,7 +24,7 @@ type Config struct {
 
 // DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
 // The following can be assumed as defaults:
-// Version:      12
+// Version:      14
 // Port:         5432
 // Database:     postgres
 // Username:     postgres
@@ -32,7 +32,7 @@ type Config struct {
 // StartTimeout: 15 Seconds
 func DefaultConfig() Config {
 	return Config{
-		version:             V12,
+		version:             V14,
 		port:                5432,
 		database:            "postgres",
 		username:            "postgres",
@@ -123,10 +123,11 @@ type PostgresVersion string
 
 // Predefined supported Postgres versions.
 const (
-	V14 = PostgresVersion("14.3.0")
-	V13 = PostgresVersion("13.7.0")
-	V12 = PostgresVersion("12.11.0")
-	V11 = PostgresVersion("11.16.0")
-	V10 = PostgresVersion("10.21.0")
+	V15 = PostgresVersion("15.1.0")
+	V14 = PostgresVersion("14.6.0")
+	V13 = PostgresVersion("13.9.0")
+	V12 = PostgresVersion("12.13.0")
+	V11 = PostgresVersion("11.18.0")
+	V10 = PostgresVersion("10.23.0")
 	V9  = PostgresVersion("9.6.24")
 )

@@ -2,7 +2,6 @@ package embeddedpostgres
 
 import (
 	"encoding/base64"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -18,7 +17,7 @@ func createTempZipArchive() (string, func()) {
 }
 
 func writeFileWithBase64Content(filename, base64Content string) (string, func()) {
-	tempFile, err := ioutil.TempFile("", filename)
+	tempFile, err := os.CreateTemp("", filename)
 	if err != nil {
 		panic(err)
 	}
@@ -28,7 +27,7 @@ func writeFileWithBase64Content(filename, base64Content string) (string, func())
 		panic(err)
 	}
 
-	if err := ioutil.WriteFile(tempFile.Name(), byteContent, 0666); err != nil {
+	if err := os.WriteFile(tempFile.Name(), byteContent, 0666); err != nil {
 		panic(err)
 	}
 

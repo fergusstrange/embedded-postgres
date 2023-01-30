@@ -3,7 +3,6 @@ package embeddedpostgres
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -57,6 +56,7 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 
 // Start will try to start the configured Postgres process returning an error when there were any problems with invocation.
 // If any error occurs Start will try to also Stop the Postgres process in order to not leave any sub-process running.
+//
 //nolint:funlen
 func (ep *EmbeddedPostgres) Start() error {
 	if ep.started {
@@ -227,7 +227,7 @@ func ensurePortAvailable(port uint32) error {
 func dataDirIsValid(dataDir string, version PostgresVersion) bool {
 	pgVersion := filepath.Join(dataDir, "PG_VERSION")
 
-	d, err := ioutil.ReadFile(pgVersion)
+	d, err := os.ReadFile(pgVersion)
 	if err != nil {
 		return false
 	}
