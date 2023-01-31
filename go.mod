@@ -7,6 +7,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8
 	go.uber.org/goleak v1.1.12
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
 require (

@@ -13,10 +13,14 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/sync/singleflight"
 )
 
 // RemoteFetchStrategy provides a strategy to fetch a Postgres binary so that it is available for use.
 type RemoteFetchStrategy func() error
+
+var g singleflight.Group
 
 //nolint:funlen
 func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionStrategy, cacheLocator CacheLocator) RemoteFetchStrategy {
@@ -32,37 +36,40 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 			architecture,
 			version)
 
-		jarDownloadResponse, err := http.Get(jarDownloadURL)
-		if err != nil {
-			return fmt.Errorf("unable to connect to %s", remoteFetchHost)
-		}
+		_, err, _ := g.Do(jarDownloadURL, func() (interface{}, error) {
+			jarDownloadResponse, err := http.Get(jarDownloadURL)
+			if err != nil {
+				return -1, fmt.Errorf("unable to connect to %s", remoteFetchHost)
+			}
 
-		defer closeBody(jarDownloadResponse)()
+			defer closeBody(jarDownloadResponse)()
 
-		if jarDownloadResponse.StatusCode != http.StatusOK {
-			return fmt.Errorf("no version found matching %s", version)
-		}
+			if jarDownloadResponse.StatusCode != http.StatusOK {
+				return -1, fmt.Errorf("no version found matching %s", version)
+			}
 
-		jarBodyBytes, err := io.ReadAll(jarDownloadResponse.Body)
-		if err != nil {
-			return errorFetchingPostgres(err)
-		}
+			jarBodyBytes, err := io.ReadAll(jarDownloadResponse.Body)
+			if err != nil {
+				return -1, errorFetchingPostgres(err)
+			}
 
-		shaDownloadURL := fmt.Sprintf("%s.sha256", jarDownloadURL)
-		shaDownloadResponse, err := http.Get(shaDownloadURL)
+			shaDownloadURL := fmt.Sprintf("%s.sha256", jarDownloadURL)
+			shaDownloadResponse, err := http.Get(shaDownloadURL)
 
-		defer closeBody(shaDownloadResponse)()
+			defer closeBody(shaDownloadResponse)()
 
-		if err == nil && shaDownloadResponse.StatusCode == http.StatusOK {
-			if shaBodyBytes, err := io.ReadAll(shaDownloadResponse.Body); err == nil {
-				jarChecksum := sha256.Sum256(jarBodyBytes)
-				if !bytes.Equal(shaBodyBytes, []byte(hex.EncodeToString(jarChecksum[:]))) {
-					return errors.New("downloaded checksums do not match")
+			if err == nil && shaDownloadResponse.StatusCode == http.StatusOK {
+				if shaBodyBytes, err := io.ReadAll(shaDownloadResponse.Body); err == nil {
+					jarChecksum := sha256.Sum256(jarBodyBytes)
+					if !bytes.Equal(shaBodyBytes, []byte(hex.EncodeToString(jarChecksum[:]))) {
+						return -1, errors.New("downloaded checksums do not match")
+					}
 				}
 			}
-		}
 
-		return decompressResponse(jarBodyBytes, jarDownloadResponse.ContentLength, cacheLocator, jarDownloadURL)
+			return jarDownloadResponse.ContentLength, decompressResponse(jarBodyBytes, jarDownloadResponse.ContentLength, cacheLocator, jarDownloadURL)
+		})
+		return err
 	}
 }
 
