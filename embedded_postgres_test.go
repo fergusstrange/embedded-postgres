@@ -416,6 +416,41 @@ func Test_ConcurrentStart(t *testing.T) {
 	wg.Wait()
 }
 
+func Test_CustomStartParameters(t *testing.T) {
+	//database := NewDatabase(DefaultConfig())
+	database := NewDatabase(DefaultConfig().StartParameters(map[string]string{
+		"max_connections": "101",
+		"shared_buffers":  "16 MB", // Ensure a parameter with spaces encodes correctly.
+	}))
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	row := db.QueryRow("SHOW max_connections")
+	var res string
+	if err := row.Scan(&res); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+	assert.Equal(t, "101", res)
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
 func Test_CanStartAndStopTwice(t *testing.T) {
 	database := NewDatabase()
 
