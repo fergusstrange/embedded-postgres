@@ -41,7 +41,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", "", os.Stderr)
 
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password -U Tom -D %s/data --pwfile=%s/pwfile'",
+	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password --pwfile=%s/pwfile -U Tom -D %s/data'",
 		binTempDir,
 		runtimeTempDir,
 		runtimeTempDir))
@@ -63,7 +63,7 @@ func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
 	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "en_XY", "", os.Stderr)
 
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password -U postgres -D %s/data --pwfile=%s/pwfile --locale=en_XY'",
+	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password --pwfile=%s/pwfile -U postgres -D %s/data --locale=en_XY'",
 		tempDir,
 		tempDir,
 		tempDir))
