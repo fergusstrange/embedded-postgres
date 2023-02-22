@@ -232,7 +232,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 
 	err = database.Start()
 
-	assert.EqualError(t, err, fmt.Sprintf(`could not start postgres using %s/bin/pg_ctl start -w -D %s/data -o "-p 5432"`, extractPath, extractPath))
+	assert.Contains(t, err.Error(), fmt.Sprintf(`could not start postgres using %s/bin/postgres -D %s/data -p 5432`, extractPath, extractPath))
 }
 
 func Test_CustomConfig(t *testing.T) {
