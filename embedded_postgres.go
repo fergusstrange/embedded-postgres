@@ -179,11 +179,20 @@ func (ep *EmbeddedPostgres) Stop() error {
 	return nil
 }
 
+func encodeOptions(port uint32, parameters map[string]string) string {
+	options := []string{fmt.Sprintf("-p %d", port)}
+	for k, v := range parameters {
+		// Single-quote parameter values - they may have spaces.
+		options = append(options, fmt.Sprintf("-c %s='%s'", k, v))
+	}
+	return strings.Join(options, " ")
+}
+
 func startPostgres(ep *EmbeddedPostgres) error {
 	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
 	postgresProcess := exec.Command(postgresBinary, "start", "-w",
 		"-D", ep.config.dataPath,
-		"-o", fmt.Sprintf(`"-p %d"`, ep.config.port))
+		"-o", encodeOptions(ep.config.port, ep.config.startParameters))
 	postgresProcess.Stdout = ep.syncedLogger.file
 	postgresProcess.Stderr = ep.syncedLogger.file
 

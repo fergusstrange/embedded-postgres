@@ -17,6 +17,7 @@ type Config struct {
 	dataPath            string
 	binariesPath        string
 	locale              string
+	startParameters     map[string]string
 	binaryRepositoryURL string
 	startTimeout        time.Duration
 	logger              io.Writer
@@ -97,6 +98,15 @@ func (c Config) BinariesPath(path string) Config {
 // Locale sets the default locale for initdb
 func (c Config) Locale(locale string) Config {
 	c.locale = locale
+	return c
+}
+
+// StartParameters sets run-time parameters when starting Postgres (passed to Postgres via "-c").
+//
+// These parameters can be used to override the default configuration values in postgres.conf such
+// as max_connections=100. See https://www.postgresql.org/docs/current/runtime-config.html
+func (c Config) StartParameters(parameters map[string]string) Config {
+	c.startParameters = parameters
 	return c
 }
 
