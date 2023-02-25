@@ -188,7 +188,10 @@ func startPostgres(ep *EmbeddedPostgres) error {
 	postgresProcess.Stderr = ep.syncedLogger.file
 
 	if err := postgresProcess.Run(); err != nil {
-		return fmt.Errorf("could not start postgres using %s", postgresProcess.String())
+		_ = ep.syncedLogger.flush()
+		logContent, _ := readLogsOrTimeout(ep.syncedLogger.file)
+
+		return fmt.Errorf("could not start postgres using %s:\n%s", postgresProcess.String(), string(logContent))
 	}
 
 	return nil

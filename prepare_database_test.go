@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -27,6 +28,11 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 		panic(err)
 	}
 
+	logFile, err := ioutil.TempFile("", "prepare_database_test_log")
+	if err != nil {
+		panic(err)
+	}
+
 	defer func() {
 		if err := os.RemoveAll(binTempDir); err != nil {
 			panic(err)
@@ -35,15 +41,22 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 		if err := os.RemoveAll(runtimeTempDir); err != nil {
 			panic(err)
 		}
+
+		if err := os.Remove(logFile.Name()); err != nil {
+			panic(err)
+		}
 	}()
 
-	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", os.Stderr)
+	_, _ = logFile.Write([]byte("and here are the logs!"))
+
+	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", logFile)
 
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password -U Tom -D %s/data --pwfile=%s/pwfile'",
 		binTempDir,
 		runtimeTempDir,
 		runtimeTempDir))
+	assert.Contains(t, err.Error(), "and here are the logs!")
 	assert.FileExists(t, filepath.Join(runtimeTempDir, "pwfile"))
 }
 

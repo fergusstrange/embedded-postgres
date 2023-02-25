@@ -1,10 +1,13 @@
 package embeddedpostgres
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type customLogger struct {
@@ -55,4 +58,26 @@ func Test_SyncedLogger_NoErrorDuringFlush(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "some logs\non a new line", string(logger.logLines))
+}
+
+func Test_readLogsOrTimeout(t *testing.T) {
+	logFile, err := ioutil.TempFile("", "prepare_database_test_log")
+	if err != nil {
+		panic(err)
+	}
+
+	logContent, err := readLogsOrTimeout(logFile)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte(""), logContent)
+
+	_, _ = logFile.Write([]byte("and here are the logs!"))
+
+	logContent, err = readLogsOrTimeout(logFile)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("and here are the logs!"), logContent)
+
+	require.NoError(t, os.Remove(logFile.Name()))
+	logContent, err = readLogsOrTimeout(logFile)
+	assert.Equal(t, []byte("logs could not be read"), logContent)
+	assert.EqualError(t, err, fmt.Sprintf("open %s: no such file or directory", logFile.Name()))
 }
