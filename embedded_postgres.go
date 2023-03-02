@@ -233,6 +233,7 @@ func dataDirIsValid(dataDir string, version PostgresVersion) bool {
 	}
 
 	v := strings.TrimSuffix(string(d), "\n")
-
+	// In PostgreSQL 10 and later, the version is always a single number:
+	v = strings.Split(v, ".")[0]
 	return strings.HasPrefix(string(version), v)
 }
