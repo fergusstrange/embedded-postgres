@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 // EmbeddedPostgres maintains all configuration and runtime functions for maintaining the lifecycle of one Postgres process.
@@ -20,6 +21,8 @@ type EmbeddedPostgres struct {
 	createDatabase      createDatabase
 	started             bool
 	syncedLogger        *syncedLogger
+
+	mu sync.Mutex
 }
 
 // NewDatabase creates a new EmbeddedPostgres struct that can be used to start and stop a Postgres process.
@@ -92,6 +95,9 @@ func (ep *EmbeddedPostgres) Start() error {
 		ep.config.binariesPath = ep.config.runtimePath
 	}
 
+	// lock to prevent collisions with duplicate downloads
+	ep.mu.Lock()
+
 	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin"))
 	if os.IsNotExist(binDirErr) {
 		if !cacheExists {
@@ -104,6 +110,9 @@ func (ep *EmbeddedPostgres) Start() error {
 			return err
 		}
 	}
+
+	// unlock
+	ep.mu.Unlock()
 
 	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
 		return fmt.Errorf("unable to create runtime directory %s with error: %s", ep.config.runtimePath, err)
