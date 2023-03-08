@@ -355,6 +355,46 @@ func Test_CustomLocaleConfig(t *testing.T) {
 	}
 }
 
+func Test_ConcurrentStart(t *testing.T) {
+	var wg sync.WaitGroup
+
+	database := NewDatabase()
+	cacheLocation, _ := database.cacheLocator()
+	if err := os.RemoveAll(cacheLocation); err != nil {
+		panic(err)
+	}
+
+	port := 5432
+	for i := 1; i <= 5; i++ {
+		port = port + 1
+		wg.Add(1)
+
+		go func(p int) {
+			defer wg.Done()
+			tempDir, err := os.MkdirTemp("", "embedded_postgres_test")
+			assert.NoError(t, err)
+
+			database := NewDatabase(
+				DefaultConfig().
+					Port(uint32(p)).
+					DataPath(tempDir).
+					RuntimePath(tempDir),
+			)
+
+			if err := database.Start(); err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+			if err := database.Stop(); err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+		}(port)
+	}
+
+	wg.Wait()
+}
+
 func Test_CanStartAndStopTwice(t *testing.T) {
 	database := NewDatabase()
 

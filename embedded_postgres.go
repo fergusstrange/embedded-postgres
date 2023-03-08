@@ -95,8 +95,9 @@ func (ep *EmbeddedPostgres) Start() error {
 		ep.config.binariesPath = ep.config.runtimePath
 	}
 
-	// lock to prevent collisions with duplicate downloads
-	ep.mu.Lock()
+	if err := ep.downloadAndExtractBinary(cacheExists, cacheLocation); err != nil {
+		return err
+	}
 
 	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin"))
 	if os.IsNotExist(binDirErr) {
@@ -110,9 +111,6 @@ func (ep *EmbeddedPostgres) Start() error {
 			return err
 		}
 	}
-
-	// unlock
-	ep.mu.Unlock()
 
 	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
 		return fmt.Errorf("unable to create runtime directory %s with error: %s", ep.config.runtimePath, err)
@@ -154,6 +152,26 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
+	return nil
+}
+
+func (ep *EmbeddedPostgres) downloadAndExtractBinary(cacheExists bool, cacheLocation string) error {
+	// lock to prevent collisions with duplicate downloads
+	ep.mu.Lock()
+	defer ep.mu.Unlock()
+
+	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin"))
+	if os.IsNotExist(binDirErr) {
+		if !cacheExists {
+			if err := ep.remoteFetchStrategy(); err != nil {
+				return err
+			}
+		}
+
+		if err := decompressTarXz(defaultTarReader, cacheLocation, ep.config.binariesPath); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
