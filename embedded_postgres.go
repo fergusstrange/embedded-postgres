@@ -12,6 +12,8 @@ import (
 	"sync"
 )
 
+var mu sync.Mutex
+
 // EmbeddedPostgres maintains all configuration and runtime functions for maintaining the lifecycle of one Postgres process.
 type EmbeddedPostgres struct {
 	config              Config
@@ -21,8 +23,6 @@ type EmbeddedPostgres struct {
 	createDatabase      createDatabase
 	started             bool
 	syncedLogger        *syncedLogger
-
-	mu sync.Mutex
 }
 
 // NewDatabase creates a new EmbeddedPostgres struct that can be used to start and stop a Postgres process.
@@ -157,8 +157,8 @@ func (ep *EmbeddedPostgres) Start() error {
 
 func (ep *EmbeddedPostgres) downloadAndExtractBinary(cacheExists bool, cacheLocation string) error {
 	// lock to prevent collisions with duplicate downloads
-	ep.mu.Lock()
-	defer ep.mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
 
 	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin"))
 	if os.IsNotExist(binDirErr) {
