@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_DefaultConfig(t *testing.T) {
@@ -360,9 +361,8 @@ func Test_ConcurrentStart(t *testing.T) {
 
 	database := NewDatabase()
 	cacheLocation, _ := database.cacheLocator()
-	if err := os.RemoveAll(cacheLocation); err != nil {
-		panic(err)
-	}
+	err := os.RemoveAll(cacheLocation)
+	require.NoError(t, err)
 
 	port := 5432
 	for i := 1; i <= 5; i++ {
@@ -372,16 +372,37 @@ func Test_ConcurrentStart(t *testing.T) {
 		go func(p int) {
 			defer wg.Done()
 			tempDir, err := os.MkdirTemp("", "embedded_postgres_test")
-			assert.NoError(t, err)
+			if err != nil {
+				panic(err)
+			}
 
-			database := NewDatabase(
-				DefaultConfig().
-					Port(uint32(p)).
-					DataPath(tempDir).
-					RuntimePath(tempDir),
-			)
+			defer func() {
+				if err := os.RemoveAll(tempDir); err != nil {
+					panic(err)
+				}
+			}()
+
+			database := NewDatabase(DefaultConfig().
+				RuntimePath(tempDir).
+				Port(uint32(port)))
 
 			if err := database.Start(); err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+			db, err := sql.Open(
+				"postgres",
+				fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=postgres sslmode=disable", port),
+			)
+			if err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+			if err = db.Ping(); err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+			if err := db.Close(); err != nil {
 				shutdownDBAndFail(t, err, database)
 			}
 
