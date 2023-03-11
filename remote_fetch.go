@@ -13,8 +13,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/natefinch/atomic"
 )
 
 // RemoteFetchStrategy provides a strategy to fetch a Postgres binary so that it is available for use.
@@ -94,13 +92,21 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 				return errorExtractingPostgres(err)
 			}
 
-			cacheLocation, _ := cacheLocator()
+			tmp, err := os.CreateTemp("", "embedded_postgres")
+			if err != nil {
+				return errorExtractingPostgres(err)
+			}
 
+			if err := os.WriteFile(tmp.Name(), archiveBytes, file.FileHeader.Mode()); err != nil {
+				return errorExtractingPostgres(err)
+			}
+
+			cacheLocation, _ := cacheLocator()
 			if err := os.MkdirAll(filepath.Dir(cacheLocation), 0755); err != nil {
 				return errorExtractingPostgres(err)
 			}
 
-			if err := atomic.WriteFile(cacheLocation, bytes.NewReader(archiveBytes)); err != nil {
+			if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
 				return errorExtractingPostgres(err)
 			}
 
