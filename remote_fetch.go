@@ -109,11 +109,10 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 			}
 
 			if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
-				if err := os.Remove(cacheLocation); err != nil {
-					return errorExtractingPostgres(err)
-				}
-
-				if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
+				// if we failed to rename then check if the cache location already exists.
+				// if it does then we can assume that the file has previously been downloaded and can ignore the
+				// original error
+				if _, err := os.Stat(cacheLocation); err != nil {
 					return errorExtractingPostgres(err)
 				}
 			}
