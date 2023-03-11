@@ -92,6 +92,8 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 				return errorExtractingPostgres(err)
 			}
 
+			// to prevent file corruption when multiple processes attempt to download at the same time we download
+			// first to a cache location, and then move the file into place.
 			tmp, err := os.CreateTemp("", "embedded_postgres")
 			if err != nil {
 				return errorExtractingPostgres(err)

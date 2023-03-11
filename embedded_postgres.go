@@ -99,19 +99,6 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
-	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin"))
-	if os.IsNotExist(binDirErr) {
-		if !cacheExists {
-			if err := ep.remoteFetchStrategy(); err != nil {
-				return err
-			}
-		}
-
-		if err := decompressTarXz(defaultTarReader, cacheLocation, ep.config.binariesPath); err != nil {
-			return err
-		}
-	}
-
 	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
 		return fmt.Errorf("unable to create runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
