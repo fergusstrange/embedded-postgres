@@ -109,7 +109,13 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 			}
 
 			if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
-				return errorExtractingPostgres(err)
+				if err := os.Remove(cacheLocation); err != nil {
+					return errorExtractingPostgres(err)
+				}
+
+				if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
+					return errorExtractingPostgres(err)
+				}
 			}
 
 			return nil
