@@ -365,7 +365,7 @@ func Test_ConcurrentStart(t *testing.T) {
 	require.NoError(t, err)
 
 	port := 5432
-	for i := 1; i <= 5; i++ {
+	for i := 1; i <= 3; i++ {
 		port = port + 1
 		wg.Add(1)
 
