@@ -384,7 +384,7 @@ func Test_ConcurrentStart(t *testing.T) {
 
 			database := NewDatabase(DefaultConfig().
 				RuntimePath(tempDir).
-				Port(uint32(port)))
+				Port(uint32(p)))
 
 			if err := database.Start(); err != nil {
 				shutdownDBAndFail(t, err, database)
@@ -392,7 +392,7 @@ func Test_ConcurrentStart(t *testing.T) {
 
 			db, err := sql.Open(
 				"postgres",
-				fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=postgres sslmode=disable", port),
+				fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=postgres sslmode=disable", p),
 			)
 			if err != nil {
 				shutdownDBAndFail(t, err, database)
