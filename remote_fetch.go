@@ -108,8 +108,15 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 				return errorExtractingPostgres(err)
 			}
 
-			if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
-				return errorExtractingPostgres(err)
+			// @TODO - add comments to what this is doing.
+			if _, err := os.Stat(cacheLocation); errors.Is(err, os.ErrNotExist) {
+				if err := os.WriteFile(cacheLocation, archiveBytes, file.FileHeader.Mode()); err != nil {
+					return errorExtractingPostgres(err)
+				}
+			} else {
+				if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
+					return errorExtractingPostgres(err)
+				}
 			}
 
 			return nil
