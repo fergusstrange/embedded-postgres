@@ -225,7 +225,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		func() (s string, b bool) {
-			return cacheLocation, false
+			return "/\\000", false
 		})
 
 	err := remoteFetchStrategy()
