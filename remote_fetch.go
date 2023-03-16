@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 // RemoteFetchStrategy provides a strategy to fetch a Postgres binary so that it is available for use.
@@ -108,17 +109,16 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 				return errorExtractingPostgres(err)
 			}
 
-			if _, err := os.Stat(cacheLocation); errors.Is(err, os.ErrNotExist) {
-				if err := os.WriteFile(cacheLocation, archiveBytes, file.FileHeader.Mode()); err != nil {
-					return errorExtractingPostgres(err)
+			if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
+				// if the error is due to syscall.EEXIST then this is most likely windows, and a race condition with
+				// multiple downloads of the file. We assume that the existing file is the correct one and ignore the
+				// error
+				if errors.Is(err, syscall.EEXIST) {
+					return nil
 				}
-			} else {
-				if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
-					return errorExtractingPostgres(err)
-				}
-			}
 
-			fmt.Println(os.Stat(cacheLocation))
+				return errorExtractingPostgres(err)
+			}
 
 			return nil
 		}
