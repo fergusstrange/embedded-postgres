@@ -59,8 +59,13 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 		}
 
 		targetPath := filepath.Join(tempExtractPath, header.Name)
+		finalPath := filepath.Join(extractPath, header.Name)
 
 		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+			return errorExtractingPostgres(err)
+		}
+
+		if err := os.MkdirAll(filepath.Dir(finalPath), 0755); err != nil {
 			return errorExtractingPostgres(err)
 		}
 
@@ -86,23 +91,30 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 			if err := os.Symlink(header.Linkname, targetPath); err != nil {
 				return errorExtractingPostgres(err)
 			}
-		}
-	}
 
-	if err := os.Rename(tempExtractPath, extractPath); err != nil {
-		// if the error is due to syscall.EEXIST then this is most likely windows, and a race condition with
-		// multiple downloads of the file. We assume that the existing file is the correct one and ignore the
-		// error
-		if errors.Is(err, syscall.EEXIST) {
-			return nil
+		case tar.TypeDir:
+			if err := os.MkdirAll(finalPath, os.FileMode(header.Mode)); err != nil {
+				return errorExtractingPostgres(err)
+			}
+			continue
 		}
 
-		// this is not a good fix - but want to check if the concept works
-		if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process.") {
-			return nil
+		if err := os.Rename(targetPath, finalPath); err != nil {
+			// if the error is due to syscall.EEXIST then this is most likely windows, and a race condition with
+			// multiple downloads of the file. We assume that the existing file is the correct one and ignore the
+			// error
+			if errors.Is(err, syscall.EEXIST) {
+				return nil
+			}
+
+			// this is not a good fix - but want to check if the concept works
+			if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process.") {
+				return nil
+			}
+
+			return errorExtractingPostgres(err)
 		}
 
-		return errorExtractingPostgres(err)
 	}
 
 	return nil
