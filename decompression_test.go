@@ -176,3 +176,11 @@ func Test_decompressTarXz_ErrorWhenArchiveCorrupted(t *testing.T) {
 
 	assert.EqualError(t, err, "unable to extract postgres archive: xz: data is corrupt")
 }
+
+func Test_decompressTarXz_ErrorWithInvalidDestination(t *testing.T) {
+	archive, cleanUp := createTempXzArchive()
+	defer cleanUp()
+
+	err := decompressTarXz(defaultTarReader, archive, string(rune(0)))
+	assert.EqualError(t, err, "unable to extract postgres archive: mkdir \x00: invalid argument")
+}
