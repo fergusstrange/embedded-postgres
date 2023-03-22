@@ -1,6 +1,7 @@
 package atomic
 
 import (
+	"fmt"
 	"os"
 	"syscall"
 )
@@ -16,6 +17,7 @@ const (
 // source.  It is guaranteed to either replace the target file entirely, or not
 // change either file.
 func ReplaceFile(source, destination string) error {
+	fmt.Println("=>=>=>=>", "Replace WINDOWS")
 	src, err := syscall.UTF16PtrFromString(source)
 	if err != nil {
 		return &os.LinkError{"replace", source, destination, err}

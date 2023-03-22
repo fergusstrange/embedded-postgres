@@ -106,7 +106,7 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 			}
 
 			cacheLocation, _ := cacheLocator()
-			if err := os.MkdirAll(filepath.Dir(cacheLocation), os.ModePerm); err != nil {
+			if err := os.MkdirAll(filepath.Dir(cacheLocation), 0755); err != nil {
 				return errorExtractingPostgres(err)
 			}
 

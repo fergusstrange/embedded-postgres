@@ -1,8 +1,9 @@
-// +build !windows
+//go:build !windows
 
 package atomic
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -10,5 +11,6 @@ import (
 // source.  It is guaranteed to either replace the target file entirely, or not
 // change either file.
 func ReplaceFile(source, destination string) error {
+	fmt.Println("=>=>=>=>", "Replace UNIX")
 	return os.Rename(source, destination)
 }
