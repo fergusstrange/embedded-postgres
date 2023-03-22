@@ -97,7 +97,7 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 			continue
 		}
 
-		if err := atomic.ReplaceFile(targetPath, finalPath); err != nil {
+		if err := atomic.Rename(targetPath, finalPath); err != nil {
 			return errorExtractingPostgres(err)
 		}
 

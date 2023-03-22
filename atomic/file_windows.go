@@ -1,9 +1,11 @@
+//go:build windows
+
 package atomic
 
 import (
 	"fmt"
-	"os"
 	"syscall"
+	"unsafe"
 )
 
 const (
@@ -13,23 +15,41 @@ const (
 
 //sys moveFileEx(lpExistingFileName *uint16, lpNewFileName *uint16, dwFlags uint32) (err error) = MoveFileExW
 
-// ReplaceFile atomically replaces the destination file or directory with the
+// Rename atomically replaces the destination file or directory with the
 // source.  It is guaranteed to either replace the target file entirely, or not
 // change either file.
-func ReplaceFile(source, destination string) error {
+func Rename(src, dst string) error {
 	fmt.Println("=>=>=>=>", "Replace WINDOWS")
-	src, err := syscall.UTF16PtrFromString(source)
+	kernel32, err := syscall.LoadLibrary("kernel32.dll")
 	if err != nil {
-		return &os.LinkError{"replace", source, destination, err}
+		return err
 	}
-	dest, err := syscall.UTF16PtrFromString(destination)
+	defer syscall.FreeLibrary(kernel32)
+	moveFileExUnicode, err := syscall.GetProcAddress(kernel32, "MoveFileExW")
 	if err != nil {
-		return &os.LinkError{"replace", source, destination, err}
+		return err
 	}
 
-	// see http://msdn.microsoft.com/en-us/library/windows/desktop/aa365240(v=vs.85).aspx
-	if err := moveFileEx(src, dest, movefile_replace_existing|movefile_write_through); err != nil {
-		return &os.LinkError{"replace", source, destination, err}
+	srcString, err := syscall.UTF16PtrFromString(src)
+	if err != nil {
+		return err
 	}
+
+	dstString, err := syscall.UTF16PtrFromString(dst)
+	if err != nil {
+		return err
+	}
+
+	srcPtr := uintptr(unsafe.Pointer(srcString))
+	dstPtr := uintptr(unsafe.Pointer(dstString))
+
+	MOVEFILE_REPLACE_EXISTING := 0x1
+	flag := uintptr(MOVEFILE_REPLACE_EXISTING)
+
+	_, _, callErr := syscall.Syscall(uintptr(moveFileExUnicode), 3, srcPtr, dstPtr, flag)
+	if callErr != 0 {
+		return callErr
+	}
+
 	return nil
 }
