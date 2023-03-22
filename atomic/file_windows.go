@@ -3,7 +3,6 @@
 package atomic
 
 import (
-	"fmt"
 	"syscall"
 	"unsafe"
 )
@@ -19,7 +18,6 @@ const (
 // source.  It is guaranteed to either replace the target file entirely, or not
 // change either file.
 func Rename(src, dst string) error {
-	fmt.Println("=>=>=>=>", "Replace WINDOWS")
 	kernel32, err := syscall.LoadLibrary("kernel32.dll")
 	if err != nil {
 		return err

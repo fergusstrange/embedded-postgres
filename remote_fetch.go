@@ -13,8 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/fergusstrange/embedded-postgres/atomic"
+	"syscall"
 )
 
 // RemoteFetchStrategy provides a strategy to fetch a Postgres binary so that it is available for use.
@@ -112,14 +111,14 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 			}
 
 			if err := tmp.Close(); err != nil {
-				fmt.Println("error closing temp file")
 				return errorExtractingPostgres(err)
 			}
-			
-			if err := atomic.Rename(tmp.Name(), cacheLocation); err != nil {
-				fmt.Println("=>=>=>=>=>", "2")
-				if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process") {
-					fmt.Printf("WARN: %v\n", err)
+
+			if err := os.Rename(tmp.Name(), cacheLocation); err != nil {
+				// if the error is due to syscall.EEXIST then this is most likely windows, and a race condition with
+				// multiple downloads of the file. We assume that the existing file is the correct one and ignore the
+				// error
+				if errors.Is(err, syscall.EEXIST) {
 					return nil
 				}
 

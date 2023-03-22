@@ -24,12 +24,12 @@ func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() 
 func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), func() io.Reader), path, extractPath string) error {
 	tempExtractPath, err := os.MkdirTemp("", "embedded_postgres")
 	if err != nil {
-		return errorUnableToExtract(path, extractPath, err, "mkdirTemp")
+		return errorUnableToExtract(path, extractPath, err)
 	}
 
 	tarFile, err := os.Open(path)
 	if err != nil {
-		return errorUnableToExtract(path, extractPath, err, "open")
+		return errorUnableToExtract(path, extractPath, err)
 	}
 
 	defer func() {
@@ -40,7 +40,7 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 
 	xzReader, err := xz.NewReader(tarFile, 0)
 	if err != nil {
-		return errorUnableToExtract(path, extractPath, err, "read")
+		return errorUnableToExtract(path, extractPath, err)
 	}
 
 	readNext, reader := tarReader(xzReader)
@@ -106,14 +106,10 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 	return nil
 }
 
-func errorUnableToExtract(cacheLocation, binariesPath string, err error, action string) error {
-	return fmt.Errorf(
-		"unable to extract postgres archive %s to %s, "+
-			"if running parallel tests, configure RuntimePath to isolate testing directories, %w. "+
-			"Action: %s",
+func errorUnableToExtract(cacheLocation, binariesPath string, err error) error {
+	return fmt.Errorf("unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories, %w",
 		cacheLocation,
 		binariesPath,
 		err,
-		action,
 	)
 }
