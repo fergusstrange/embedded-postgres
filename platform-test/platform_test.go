@@ -72,8 +72,8 @@ func Test_AllMajorVersions(t *testing.T) {
 }
 
 func shutdownDBAndFail(t *testing.T, err error, db *embeddedpostgres.EmbeddedPostgres, version embeddedpostgres.PostgresVersion) {
-	if err := db.Stop(); err != nil {
-		t.Fatalf("Failed for version %s with error %s", version, err)
+	if err2 := db.Stop(); err2 != nil {
+		t.Fatalf("Failed for version %s with error %s, original error %s", version, err2, err)
 	}
 
 	t.Fatalf("Failed for version %s with error %s", version, err)
