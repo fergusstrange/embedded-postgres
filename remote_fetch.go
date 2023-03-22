@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -112,26 +111,11 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 				return errorExtractingPostgres(err)
 			}
 
-			tmp2, err := os.MkdirTemp("", "embedded_postgres")
-			if err != nil {
+			if err := tmp.Close(); err != nil {
+				fmt.Println("error closing temp file")
 				return errorExtractingPostgres(err)
 			}
-
-			tm, err := os.CreateTemp("", "test")
-			if err != nil {
-				return errorExtractingPostgres(err)
-			}
-
-			if err := atomic.Rename(tm.Name(), path.Join(tmp2, "temp")); err != nil {
-				fmt.Println("=>=>=>=>=>", "TEST FAIL")
-				if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process") {
-					fmt.Printf("WARN: %v\n", err)
-					return nil
-				}
-
-				return errorExtractingPostgres(err)
-			}
-
+			
 			if err := atomic.Rename(tmp.Name(), cacheLocation); err != nil {
 				fmt.Println("=>=>=>=>=>", "2")
 				if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process") {
