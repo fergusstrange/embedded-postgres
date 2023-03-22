@@ -123,12 +123,6 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
 
-	dirBlockingExtract := filepath.Join(filepath.Dir(jarFile), "some_dir")
-
-	if err := os.MkdirAll(dirBlockingExtract, 0400); err != nil {
-		panic(err)
-	}
-
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.RequestURI, ".sha256") {
 			w.WriteHeader(http.StatusNotFound)
@@ -148,7 +142,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		func() (s string, b bool) {
-			return dirBlockingExtract, false
+			return filepath.FromSlash("/invalid"), false
 		})
 
 	err := remoteFetchStrategy()
