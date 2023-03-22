@@ -2,12 +2,13 @@ package embeddedpostgres
 
 import (
 	"archive/tar"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 
-	"github.com/fergusstrange/embedded-postgres/atomic"
 	"github.com/xi2/xz"
 )
 
@@ -97,7 +98,14 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 			continue
 		}
 
-		if err := atomic.Rename(targetPath, finalPath); err != nil {
+		if err := os.Rename(targetPath, finalPath); err != nil {
+			// if the error is due to syscall.EEXIST then this is most likely windows, and a race condition with
+			// multiple downloads of the file. We assume that the existing file is the correct one and ignore the
+			// error
+			if errors.Is(err, syscall.EEXIST) {
+				return nil
+			}
+
 			return errorExtractingPostgres(err)
 		}
 
