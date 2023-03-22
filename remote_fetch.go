@@ -111,6 +111,10 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 			}
 
 			if err := atomic.ReplaceFile(tmp.Name(), cacheLocation); err != nil {
+				if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process") {
+					return nil
+				}
+
 				return errorExtractingPostgres(err)
 			}
 
