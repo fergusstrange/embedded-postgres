@@ -2,14 +2,12 @@ package embeddedpostgres
 
 import (
 	"archive/tar"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
-	"syscall"
 
+	"github.com/fergusstrange/embedded-postgres/atomic"
 	"github.com/xi2/xz"
 )
 
@@ -99,19 +97,7 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 			continue
 		}
 
-		if err := os.Rename(targetPath, finalPath); err != nil {
-			// if the error is due to syscall.EEXIST then this is most likely windows, and a race condition with
-			// multiple downloads of the file. We assume that the existing file is the correct one and ignore the
-			// error
-			if errors.Is(err, syscall.EEXIST) {
-				return nil
-			}
-
-			// this is not a good fix - but want to check if the concept works
-			if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process.") {
-				return nil
-			}
-
+		if err := atomic.ReplaceFile(targetPath, finalPath); err != nil {
 			return errorExtractingPostgres(err)
 		}
 
