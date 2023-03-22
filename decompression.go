@@ -2,10 +2,13 @@ package embeddedpostgres
 
 import (
 	"archive/tar"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"syscall"
 
 	"github.com/xi2/xz"
 )
@@ -21,6 +24,11 @@ func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() 
 }
 
 func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), func() io.Reader), path, extractPath string) error {
+	tempExtractPath, err := os.MkdirTemp("", "embedded_postgres")
+	if err != nil {
+		return errorUnableToExtract(path, extractPath, err)
+	}
+
 	tarFile, err := os.Open(path)
 	if err != nil {
 		return errorUnableToExtract(path, extractPath, err)
@@ -43,14 +51,14 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 		header, err := readNext()
 
 		if err == io.EOF {
-			return nil
+			break
 		}
 
 		if err != nil {
 			return errorExtractingPostgres(err)
 		}
 
-		targetPath := filepath.Join(extractPath, header.Name)
+		targetPath := filepath.Join(tempExtractPath, header.Name)
 
 		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
 			return errorExtractingPostgres(err)
@@ -80,6 +88,24 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 			}
 		}
 	}
+
+	if err := os.Rename(tempExtractPath, extractPath); err != nil {
+		// if the error is due to syscall.EEXIST then this is most likely windows, and a race condition with
+		// multiple downloads of the file. We assume that the existing file is the correct one and ignore the
+		// error
+		if errors.Is(err, syscall.EEXIST) {
+			return nil
+		}
+
+		// this is not a good fix - but want to check if the concept works
+		if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process.") {
+			return nil
+		}
+
+		return errorExtractingPostgres(err)
+	}
+
+	return nil
 }
 
 func errorUnableToExtract(cacheLocation, binariesPath string, err error) error {
