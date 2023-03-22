@@ -117,6 +117,11 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 					return nil
 				}
 
+				// this is not a good fix - but want to check if the concept works
+				if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process.") {
+					return nil
+				}
+
 				return errorExtractingPostgres(err)
 			}
 
