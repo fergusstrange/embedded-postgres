@@ -196,7 +196,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 
 	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_directory", "cache_file.jar")
 
-	if err := os.MkdirAll(cacheLocation, 0755); err != nil {
+	if err := os.MkdirAll(cacheLocation, os.ModePerm); err != nil {
 		panic(err)
 	}
 

@@ -106,12 +106,13 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 			}
 
 			cacheLocation, _ := cacheLocator()
-			if err := os.MkdirAll(filepath.Dir(cacheLocation), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(cacheLocation), os.ModePerm); err != nil {
 				return errorExtractingPostgres(err)
 			}
 
 			if err := atomic.ReplaceFile(tmp.Name(), cacheLocation); err != nil {
 				if strings.Contains(err.Error(), "The process cannot access the file because it is being used by another process") {
+					fmt.Printf("WARN: %v\n", err)
 					return nil
 				}
 

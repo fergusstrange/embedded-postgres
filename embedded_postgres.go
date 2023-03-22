@@ -99,7 +99,7 @@ func (ep *EmbeddedPostgres) Start() error {
 		return err
 	}
 
-	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
+	if err := os.MkdirAll(ep.config.runtimePath, os.ModePerm); err != nil {
 		return fmt.Errorf("unable to create runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
 

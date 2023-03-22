@@ -59,11 +59,11 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 		targetPath := filepath.Join(tempExtractPath, header.Name)
 		finalPath := filepath.Join(extractPath, header.Name)
 
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
 			return errorExtractingPostgres(err)
 		}
 
-		if err := os.MkdirAll(filepath.Dir(finalPath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(finalPath), os.ModePerm); err != nil {
 			return errorExtractingPostgres(err)
 		}
 
