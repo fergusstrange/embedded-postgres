@@ -21,10 +21,15 @@ func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() 
 }
 
 func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), func() io.Reader), path, extractPath string) error {
-	tempExtractPath, err := os.MkdirTemp("", "embedded_postgres")
+	tempExtractPath, err := os.MkdirTemp(filepath.Dir(extractPath), "temp_")
 	if err != nil {
 		return errorUnableToExtract(path, extractPath, err)
 	}
+	defer func() {
+		if err := os.RemoveAll(tempExtractPath); err != nil {
+			panic(err)
+		}
+	}()
 
 	tarFile, err := os.Open(path)
 	if err != nil {

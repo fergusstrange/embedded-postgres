@@ -80,51 +80,72 @@ func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator Cach
 		return errorFetchingPostgres(err)
 	}
 
+	cacheLocation, _ := cacheLocator()
+
+	if err := os.MkdirAll(filepath.Dir(cacheLocation), 0755); err != nil {
+		return errorExtractingPostgres(err)
+	}
+
 	for _, file := range zipReader.File {
 		if !file.FileHeader.FileInfo().IsDir() && strings.HasSuffix(file.FileHeader.Name, ".txz") {
-			archiveReader, err := file.Open()
-			if err != nil {
-				return errorExtractingPostgres(err)
+			if err := decompressSingleFile(file, cacheLocation); err != nil {
+				return err
 			}
 
-			archiveBytes, err := io.ReadAll(archiveReader)
-			if err != nil {
-				return errorExtractingPostgres(err)
-			}
-
-			// if multiple processes attempt to extract
-			// to prevent file corruption when multiple processes attempt to extract at the same time
-			// first to a cache location, and then move the file into place.
-			tmp, err := os.CreateTemp("", "embedded_postgres")
-			if err != nil {
-				return errorExtractingPostgres(err)
-			}
-
-			if err := os.WriteFile(tmp.Name(), archiveBytes, file.FileHeader.Mode()); err != nil {
-				return errorExtractingPostgres(err)
-			}
-
-			cacheLocation, _ := cacheLocator()
-
-			if err := os.MkdirAll(filepath.Dir(cacheLocation), 0755); err != nil {
-				return errorExtractingPostgres(err)
-			}
-
-			// Windows cannot rename a file if is it still open.
-			// The file needs to be manually closed to allow the rename to happen
-			if err := tmp.Close(); err != nil {
-				return errorExtractingPostgres(err)
-			}
-
-			if err := renameOrIgnore(tmp.Name(), cacheLocation); err != nil {
-				return errorExtractingPostgres(err)
-			}
-
+			// we have successfully found the file, return early
 			return nil
 		}
 	}
 
 	return fmt.Errorf("error fetching postgres: cannot find binary in archive retrieved from %s", downloadURL)
+}
+
+func decompressSingleFile(file *zip.File, cacheLocation string) error {
+	renamed := false
+
+	archiveReader, err := file.Open()
+	if err != nil {
+		return errorExtractingPostgres(err)
+	}
+
+	archiveBytes, err := io.ReadAll(archiveReader)
+	if err != nil {
+		return errorExtractingPostgres(err)
+	}
+
+	// if multiple processes attempt to extract
+	// to prevent file corruption when multiple processes attempt to extract at the same time
+	// first to a cache location, and then move the file into place.
+	tmp, err := os.CreateTemp(filepath.Dir(cacheLocation), "temp_")
+	if err != nil {
+		return errorExtractingPostgres(err)
+	}
+	defer func() {
+		// if anything failed before the rename then the temporary file should be cleaned up.
+		// if the rename was successful then there is no temporary file to remove.
+		if !renamed {
+			if err := os.Remove(tmp.Name()); err != nil {
+				panic(err)
+			}
+		}
+	}()
+
+	if err := os.WriteFile(tmp.Name(), archiveBytes, file.FileHeader.Mode()); err != nil {
+		return errorExtractingPostgres(err)
+	}
+
+	// Windows cannot rename a file if is it still open.
+	// The file needs to be manually closed to allow the rename to happen
+	if err := tmp.Close(); err != nil {
+		return errorExtractingPostgres(err)
+	}
+
+	if err := renameOrIgnore(tmp.Name(), cacheLocation); err != nil {
+		return errorExtractingPostgres(err)
+	}
+	renamed = true
+
+	return nil
 }
 
 func errorExtractingPostgres(err error) error {
