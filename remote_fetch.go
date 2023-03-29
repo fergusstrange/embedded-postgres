@@ -130,7 +130,7 @@ func decompressSingleFile(file *zip.File, cacheLocation string) error {
 		}
 	}()
 
-	if err := os.WriteFile(tmp.Name(), archiveBytes, file.FileHeader.Mode()); err != nil {
+	if _, err := tmp.Write(archiveBytes); err != nil {
 		return errorExtractingPostgres(err)
 	}
 
