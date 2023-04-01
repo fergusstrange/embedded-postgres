@@ -103,6 +103,10 @@ func (ep *EmbeddedPostgres) Start() error {
 		if err := decompressTarXz(defaultTarReader, cacheLocation, ep.config.binariesPath); err != nil {
 			return err
 		}
+
+		if err := patchBinaries(ep.config.binariesPath, ep.config.binariesInterpreter); err != nil {
+			return err
+		}
 	}
 
 	if err := os.MkdirAll(ep.config.runtimePath, 0755); err != nil {
@@ -153,7 +157,7 @@ func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
 		return fmt.Errorf("unable to clean up data directory %s with error: %s", ep.config.dataPath, err)
 	}
 
-	if err := ep.initDatabase(ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.syncedLogger.file); err != nil {
+	if err := ep.initDatabase(ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.syncedLogger.file, ep.config.binariesEnv); err != nil {
 		return err
 	}
 

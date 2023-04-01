@@ -2,12 +2,16 @@ package main
 
 import (
 	"log"
+    "os"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 )
 
 func main() {
-	embeddedPostgres := embeddedpostgres.NewDatabase()
+    config := embeddedpostgres.DefaultConfig();
+    config = config.BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER"))
+
+	embeddedPostgres := embeddedpostgres.NewDatabase(config)
 	if err := embeddedPostgres.Start(); err != nil {
 		log.Fatal(err)
 	}

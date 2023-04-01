@@ -20,7 +20,7 @@ import (
 func Test_DefaultConfig(t *testing.T) {
 	defer verifyLeak(t)
 
-	database := NewDatabase()
+	database := NewDatabase(DefaultConfig().BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
@@ -56,6 +56,7 @@ func Test_ErrorWhenPortAlreadyTaken(t *testing.T) {
 	}()
 
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Port(9887))
 
 	err = database.Start()
@@ -64,7 +65,7 @@ func Test_ErrorWhenPortAlreadyTaken(t *testing.T) {
 }
 
 func Test_ErrorWhenRemoteFetchError(t *testing.T) {
-	database := NewDatabase()
+	database := NewDatabase(DefaultConfig().BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 	database.cacheLocator = func() (string, bool) {
 		return "", false
 	}
@@ -82,6 +83,7 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 	defer cleanUp()
 
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Username("gin").
 		Password("wine").
 		Database("beer").
@@ -112,6 +114,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 	}
 
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Username("gin").
 		Password("wine").
 		Database("beer").
@@ -122,7 +125,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File, env []string) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -149,6 +152,7 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 	}
 
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Username("gin").
 		Password("wine").
 		Database("beer").
@@ -172,6 +176,7 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 
 func Test_TimesOutWhenCannotStart(t *testing.T) {
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Database("something-fancy").
 		StartTimeout(500 * time.Millisecond))
 
@@ -185,7 +190,7 @@ func Test_TimesOutWhenCannotStart(t *testing.T) {
 }
 
 func Test_ErrorWhenStopCalledBeforeStart(t *testing.T) {
-	database := NewDatabase()
+	database := NewDatabase(DefaultConfig().BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 
 	err := database.Stop()
 
@@ -193,7 +198,7 @@ func Test_ErrorWhenStopCalledBeforeStart(t *testing.T) {
 }
 
 func Test_ErrorWhenStartCalledWhenAlreadyStarted(t *testing.T) {
-	database := NewDatabase()
+	database := NewDatabase(DefaultConfig().BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 
 	defer func() {
 		if err := database.Stop(); err != nil {
@@ -219,13 +224,14 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 	}
 
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		RuntimePath(extractPath))
 
 	database.cacheLocator = func() (string, bool) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File, env []string) error {
 		_, _ = logger.Write([]byte("ah it did not work"))
 		return nil
 	}
@@ -248,6 +254,7 @@ func Test_CustomConfig(t *testing.T) {
 	}()
 
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Username("gin").
 		Password("wine").
 		Database("beer").
@@ -295,6 +302,7 @@ func Test_CustomLog(t *testing.T) {
 	logger := customLogger{}
 
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Logger(&logger))
 
 	if err := database.Start(); err != nil {
@@ -332,7 +340,7 @@ func Test_CustomLog(t *testing.T) {
 
 func Test_CustomLocaleConfig(t *testing.T) {
 	// C is the only locale we can guarantee to always work
-	database := NewDatabase(DefaultConfig().Locale("C"))
+	database := NewDatabase(DefaultConfig().Locale("C").BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
@@ -356,7 +364,7 @@ func Test_CustomLocaleConfig(t *testing.T) {
 }
 
 func Test_CanStartAndStopTwice(t *testing.T) {
-	database := NewDatabase()
+	database := NewDatabase(DefaultConfig().BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
@@ -413,7 +421,7 @@ func Test_ReuseData(t *testing.T) {
 		}
 	}()
 
-	database := NewDatabase(DefaultConfig().DataPath(tempDir))
+	database := NewDatabase(DefaultConfig().DataPath(tempDir).BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
@@ -440,7 +448,7 @@ func Test_ReuseData(t *testing.T) {
 		shutdownDBAndFail(t, err, database)
 	}
 
-	database = NewDatabase(DefaultConfig().DataPath(tempDir))
+	database = NewDatabase(DefaultConfig().DataPath(tempDir).BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
@@ -498,6 +506,7 @@ func Test_CustomBinariesRepo(t *testing.T) {
 		Version(V15).
 		RuntimePath(tempDir).
 		BinaryRepositoryURL("https://repo.maven.apache.org/maven2").
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Port(9876).
 		StartTimeout(10 * time.Second).
 		Locale("C").
@@ -538,6 +547,7 @@ func Test_CustomBinariesLocation(t *testing.T) {
 	}()
 
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		BinariesPath(tempDir))
 
 	if err := database.Start(); err != nil {
@@ -598,6 +608,10 @@ func Test_PrefetchedBinaries(t *testing.T) {
 		panic(err)
 	}
 
+	if err := patchBinaries(binTempDir, os.Getenv("POSTGRES_INTERPRETER")); err != nil {
+		panic(err)
+	}
+
 	// Expect everything to work without cacheLocator and/or remoteFetch abilities.
 	database.cacheLocator = func() (string, bool) {
 		return "", false
@@ -627,7 +641,7 @@ func Test_RunningInParallel(t *testing.T) {
 	runTestWithPortAndPath := func(port uint32, path string) {
 		defer waitGroup.Done()
 
-		database := NewDatabase(DefaultConfig().Port(port).RuntimePath(path))
+		database := NewDatabase(DefaultConfig().Port(port).RuntimePath(path).BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 		if err := database.Start(); err != nil {
 			shutdownDBAndFail(t, err, database)
 		}

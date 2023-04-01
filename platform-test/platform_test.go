@@ -35,6 +35,7 @@ func Test_AllMajorVersions(t *testing.T) {
 			runtimePath := filepath.Join(tempExtractLocation, string(version))
 
 			database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
+                BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 				Version(version).
 				Port(port).
 				RuntimePath(runtimePath))

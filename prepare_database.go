@@ -18,10 +18,10 @@ const (
 	fmtAfterError  = "%v happened after error: %w"
 )
 
-type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
+type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File, env []string) error
 type createDatabase func(port uint32, username, password, database string) error
 
-func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error {
+func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File, env []string) error {
 	passwordFile, err := createPasswordFile(runtimePath, password)
 	if err != nil {
 		return err
@@ -42,6 +42,9 @@ func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username
 	postgresInitDBProcess := exec.Command(postgresInitDBBinary, args...)
 	postgresInitDBProcess.Stderr = logger
 	postgresInitDBProcess.Stdout = logger
+	if env != nil {
+		postgresInitDBProcess.Env = append(os.Environ(), env...)
+	}
 
 	if err = postgresInitDBProcess.Run(); err != nil {
 		logContent, readLogsErr := readLogsOrTimeout(logger) // we want to preserve the original error

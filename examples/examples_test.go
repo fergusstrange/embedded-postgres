@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+    "os"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/jmoiron/sqlx"
@@ -15,8 +16,12 @@ import (
 	"go.uber.org/zap/zapio"
 )
 
+func MakeConfig() embeddedpostgres.Config {
+    return embeddedpostgres.DefaultConfig().BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER"))
+}
+
 func Test_GooseMigrations(t *testing.T) {
-	database := embeddedpostgres.NewDatabase()
+	database := embeddedpostgres.NewDatabase(MakeConfig())
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +50,7 @@ func Test_ZapioLogger(t *testing.T) {
 
 	w := &zapio.Writer{Log: logger}
 
-	database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
+	database := embeddedpostgres.NewDatabase(MakeConfig().
 		Logger(w))
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
@@ -68,7 +73,7 @@ func Test_ZapioLogger(t *testing.T) {
 }
 
 func Test_Sqlx_SelectOne(t *testing.T) {
-	database := embeddedpostgres.NewDatabase()
+	database := embeddedpostgres.NewDatabase(MakeConfig())
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +102,7 @@ func Test_Sqlx_SelectOne(t *testing.T) {
 }
 
 func Test_ManyTestsAgainstOneDatabase(t *testing.T) {
-	database := embeddedpostgres.NewDatabase()
+	database := embeddedpostgres.NewDatabase(MakeConfig())
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +165,7 @@ func Test_ManyTestsAgainstOneDatabase(t *testing.T) {
 }
 
 func Test_SimpleHttpWebApp(t *testing.T) {
-	database := embeddedpostgres.NewDatabase()
+	database := embeddedpostgres.NewDatabase(MakeConfig())
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
 	}

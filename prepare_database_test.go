@@ -12,7 +12,7 @@ import (
 )
 
 func Test_defaultInitDatabase_ErrorWhenCannotCreatePasswordFile(t *testing.T) {
-	err := defaultInitDatabase("path_not_exists", "path_not_exists", "path_not_exists", "Tom", "Beer", "", os.Stderr)
+	err := defaultInitDatabase("path_not_exists", "path_not_exists", "path_not_exists", "Tom", "Beer", "", os.Stderr, nil)
 
 	assert.EqualError(t, err, "unable to write password file to path_not_exists/pwfile")
 }
@@ -49,7 +49,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 
 	_, _ = logFile.Write([]byte("and here are the logs!"))
 
-	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", logFile)
+	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", logFile, nil)
 
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password -U Tom -D %s/data --pwfile=%s/pwfile'",
@@ -72,7 +72,7 @@ func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
 		}
 	}()
 
-	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "en_XY", os.Stderr)
+	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "en_XY", os.Stderr, nil)
 
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password -U postgres -D %s/data --pwfile=%s/pwfile --locale=en_XY'",
@@ -93,7 +93,7 @@ func Test_defaultInitDatabase_PwFileRemoved(t *testing.T) {
 		}
 	}()
 
-	database := NewDatabase(DefaultConfig().RuntimePath(tempDir))
+	database := NewDatabase(DefaultConfig().RuntimePath(tempDir).BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")))
 	if err := database.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -118,6 +118,7 @@ func Test_defaultCreateDatabase_ErrorWhenSQLOpenError(t *testing.T) {
 
 func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
 	database := NewDatabase(DefaultConfig().
+		BinariesInterpreter(os.Getenv("POSTGRES_INTERPRETER")).
 		Port(9831).
 		Database("b33r"))
 	if err := database.Start(); err != nil {

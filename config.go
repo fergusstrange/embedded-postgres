@@ -16,6 +16,8 @@ type Config struct {
 	runtimePath         string
 	dataPath            string
 	binariesPath        string
+	binariesInterpreter string
+	binariesEnv         []string
 	locale              string
 	binaryRepositoryURL string
 	startTimeout        time.Duration
@@ -91,6 +93,21 @@ func (c Config) DataPath(path string) Config {
 // If this option is left unset, the binaries will be downloaded.
 func (c Config) BinariesPath(path string) Config {
 	c.binariesPath = path
+	return c
+}
+
+// BinariesPath sets the interpreter of the pre-downloaded postgres binaries using patchelf.
+// If this option is set, patchelf must be in the PATH
+// If this option is left unset the binaries are not patched.
+func (c Config) BinariesInterpreter(path string) Config {
+	c.binariesInterpreter = path
+	return c
+}
+
+// BinariesEnv adds/overrides environment variables in the binaries exec environments
+// If this option is left unset the binaries environment variables are unchanged.
+func (c Config) BinariesEnv(env []string) Config {
+	c.binariesEnv = env
 	return c
 }
 
