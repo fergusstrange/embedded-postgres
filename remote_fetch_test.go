@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -122,12 +123,6 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 	jarFile, cleanUp := createTempZipArchive()
 	defer cleanUp()
 
-	dirBlockingExtract := filepath.Join(filepath.Dir(jarFile), "some_dir")
-
-	if err := os.MkdirAll(dirBlockingExtract, 0400); err != nil {
-		panic(err)
-	}
-
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.RequestURI, ".sha256") {
 			w.WriteHeader(http.StatusNotFound)
@@ -147,7 +142,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		func() (s string, b bool) {
-			return dirBlockingExtract, false
+			return filepath.FromSlash("/invalid"), false
 		})
 
 	err := remoteFetchStrategy()
@@ -201,7 +196,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 
 	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_directory", "cache_file.jar")
 
-	if err := os.MkdirAll(cacheLocation, 0755); err != nil {
+	if err := os.MkdirAll(cacheLocation, os.ModePerm); err != nil {
 		panic(err)
 	}
 
@@ -224,7 +219,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
 		testVersionStrategy(),
 		func() (s string, b bool) {
-			return cacheLocation, false
+			return "/\\000", false
 		})
 
 	err := remoteFetchStrategy()
@@ -308,4 +303,70 @@ func Test_defaultRemoteFetchStrategy(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.FileExists(t, cacheLocation)
+}
+
+func Test_defaultRemoteFetchStrategyWithExistingDownload(t *testing.T) {
+	jarFile, cleanUp := createTempZipArchive()
+	defer cleanUp()
+
+	// create a temp directory for testing
+	tempFile, err := os.MkdirTemp("", "cache_output")
+	if err != nil {
+		panic(err)
+	}
+	// clean up once the test is finished.
+	defer func() {
+		if err := os.RemoveAll(tempFile); err != nil {
+			panic(err)
+		}
+	}()
+
+	cacheLocation := path.Join(tempFile, "temp.jar")
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bytes, err := os.ReadFile(jarFile)
+		if err != nil {
+			panic(err)
+		}
+
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(200)
+			contentHash := sha256.Sum256(bytes)
+			if _, err := w.Write([]byte(hex.EncodeToString(contentHash[:]))); err != nil {
+				panic(err)
+			}
+
+			return
+		}
+
+		if _, err := w.Write(bytes); err != nil {
+			panic(err)
+		}
+	}))
+	defer server.Close()
+
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
+		testVersionStrategy(),
+		func() (s string, b bool) {
+			return cacheLocation, false
+		})
+
+	// call it the remoteFetchStrategy(). The output location should be empty and a new file created
+	err = remoteFetchStrategy()
+	assert.NoError(t, err)
+	assert.FileExists(t, cacheLocation)
+	out1, err := os.ReadFile(cacheLocation)
+
+	// write some bad data to the file, this helps us test that the file is overwritten
+	err = os.WriteFile(cacheLocation, []byte("invalid"), 0600)
+	assert.NoError(t, err)
+
+	// call the remoteFetchStrategy() again, this time the file should be overwritten
+	err = remoteFetchStrategy()
+	assert.NoError(t, err)
+	assert.FileExists(t, cacheLocation)
+
+	// ensure that the file contents are the same from both downloads, and that it doesn't contain the `invalid` data.
+	out2, err := os.ReadFile(cacheLocation)
+	assert.Equal(t, out1, out2)
 }

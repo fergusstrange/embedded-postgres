@@ -3,18 +3,25 @@ package embeddedpostgres
 import (
 	"archive/tar"
 	"errors"
+	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
+	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/xi2/xz"
 )
 
 func Test_decompressTarXz(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "temp_tar_test")
 	if err != nil {
+		panic(err)
+	}
+	if err := syscall.Rmdir(tempDir); err != nil {
 		panic(err)
 	}
 
@@ -37,12 +44,20 @@ func Test_decompressTarXz(t *testing.T) {
 func Test_decompressTarXz_ErrorWhenFileNotExists(t *testing.T) {
 	err := decompressTarXz(defaultTarReader, "/does-not-exist", "/also-fake")
 
-	assert.EqualError(t, err, "unable to extract postgres archive /does-not-exist to /also-fake, if running parallel tests, configure RuntimePath to isolate testing directories")
+	assert.Error(t, err)
+	assert.Contains(
+		t,
+		err.Error(),
+		"unable to extract postgres archive /does-not-exist to /also-fake, if running parallel tests, configure RuntimePath to isolate testing directories",
+	)
 }
 
 func Test_decompressTarXz_ErrorWhenErrorDuringRead(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "temp_tar_test")
 	if err != nil {
+		panic(err)
+	}
+	if err := syscall.Rmdir(tempDir); err != nil {
 		panic(err)
 	}
 
@@ -103,6 +118,9 @@ func Test_decompressTarXz_ErrorWhenFileToCopyToNotExists(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	if err := syscall.Rmdir(tempDir); err != nil {
+		panic(err)
+	}
 
 	archive, cleanUp := createTempXzArchive()
 	defer cleanUp()
@@ -137,6 +155,9 @@ func Test_decompressTarXz_ErrorWhenArchiveCorrupted(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+	if err := syscall.Rmdir(tempDir); err != nil {
+		panic(err)
+	}
 
 	archive, cleanup := createTempXzArchive()
 
@@ -162,4 +183,24 @@ func Test_decompressTarXz_ErrorWhenArchiveCorrupted(t *testing.T) {
 	err = decompressTarXz(defaultTarReader, archive, tempDir)
 
 	assert.EqualError(t, err, "unable to extract postgres archive: xz: data is corrupt")
+}
+
+func Test_decompressTarXz_ErrorWithInvalidDestination(t *testing.T) {
+	archive, cleanUp := createTempXzArchive()
+	defer cleanUp()
+
+	tempDir, err := os.MkdirTemp("", "temp_tar_test")
+	require.NoError(t, err)
+	defer func() {
+		os.RemoveAll(tempDir)
+	}()
+
+	op := fmt.Sprintf(path.Join(tempDir, "%c"), rune(0))
+
+	err = decompressTarXz(defaultTarReader, archive, op)
+	assert.EqualError(
+		t,
+		err,
+		fmt.Sprintf("unable to extract postgres archive: mkdir %s: invalid argument", op),
+	)
 }

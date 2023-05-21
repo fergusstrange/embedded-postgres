@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_DefaultConfig(t *testing.T) {
@@ -99,7 +100,7 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 		}
 	}
 
-	assert.EqualError(t, err, fmt.Sprintf(`unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories`, jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
+	assert.EqualError(t, err, fmt.Sprintf(`unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories, xz: file format not recognized`, jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
 }
 
 func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
@@ -353,6 +354,66 @@ func Test_CustomLocaleConfig(t *testing.T) {
 	if err := database.Stop(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
+}
+
+func Test_ConcurrentStart(t *testing.T) {
+	var wg sync.WaitGroup
+
+	database := NewDatabase()
+	cacheLocation, _ := database.cacheLocator()
+	err := os.RemoveAll(cacheLocation)
+	require.NoError(t, err)
+
+	port := 5432
+	for i := 1; i <= 3; i++ {
+		port = port + 1
+		wg.Add(1)
+
+		go func(p int) {
+			defer wg.Done()
+			tempDir, err := os.MkdirTemp("", "embedded_postgres_test")
+			if err != nil {
+				panic(err)
+			}
+
+			defer func() {
+				if err := os.RemoveAll(tempDir); err != nil {
+					panic(err)
+				}
+			}()
+
+			database := NewDatabase(DefaultConfig().
+				RuntimePath(tempDir).
+				Port(uint32(p)))
+
+			if err := database.Start(); err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+			db, err := sql.Open(
+				"postgres",
+				fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=postgres sslmode=disable", p),
+			)
+			if err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+			if err = db.Ping(); err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+			if err := db.Close(); err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+			if err := database.Stop(); err != nil {
+				shutdownDBAndFail(t, err, database)
+			}
+
+		}(port)
+	}
+
+	wg.Wait()
 }
 
 func Test_CanStartAndStopTwice(t *testing.T) {

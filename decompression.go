@@ -21,9 +21,19 @@ func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() 
 }
 
 func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), func() io.Reader), path, extractPath string) error {
+	tempExtractPath, err := os.MkdirTemp(filepath.Dir(extractPath), "temp_")
+	if err != nil {
+		return errorUnableToExtract(path, extractPath, err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tempExtractPath); err != nil {
+			panic(err)
+		}
+	}()
+
 	tarFile, err := os.Open(path)
 	if err != nil {
-		return errorUnableToExtract(path, extractPath)
+		return errorUnableToExtract(path, extractPath, err)
 	}
 
 	defer func() {
@@ -34,7 +44,7 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 
 	xzReader, err := xz.NewReader(tarFile, 0)
 	if err != nil {
-		return errorUnableToExtract(path, extractPath)
+		return errorUnableToExtract(path, extractPath, err)
 	}
 
 	readNext, reader := tarReader(xzReader)
@@ -43,16 +53,21 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 		header, err := readNext()
 
 		if err == io.EOF {
-			return nil
+			break
 		}
 
 		if err != nil {
 			return errorExtractingPostgres(err)
 		}
 
-		targetPath := filepath.Join(extractPath, header.Name)
+		targetPath := filepath.Join(tempExtractPath, header.Name)
+		finalPath := filepath.Join(extractPath, header.Name)
 
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
+			return errorExtractingPostgres(err)
+		}
+
+		if err := os.MkdirAll(filepath.Dir(finalPath), os.ModePerm); err != nil {
 			return errorExtractingPostgres(err)
 		}
 
@@ -78,10 +93,26 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 			if err := os.Symlink(header.Linkname, targetPath); err != nil {
 				return errorExtractingPostgres(err)
 			}
+
+		case tar.TypeDir:
+			if err := os.MkdirAll(finalPath, os.FileMode(header.Mode)); err != nil {
+				return errorExtractingPostgres(err)
+			}
+			continue
+		}
+
+		if err := renameOrIgnore(targetPath, finalPath); err != nil {
+			return errorExtractingPostgres(err)
 		}
 	}
+
+	return nil
 }
 
-func errorUnableToExtract(cacheLocation, binariesPath string) error {
-	return fmt.Errorf("unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories", cacheLocation, binariesPath)
+func errorUnableToExtract(cacheLocation, binariesPath string, err error) error {
+	return fmt.Errorf("unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories, %w",
+		cacheLocation,
+		binariesPath,
+		err,
+	)
 }
