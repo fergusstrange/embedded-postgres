@@ -57,7 +57,7 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 		PostgresVersion("14.0.0"): {},
 		PostgresVersion("14.1.0"): {},
 		PostgresVersion("14.2.0"): {"darwin/arm64": {"darwin", "arm64v8"}},
-		V14:                       {"darwin/arm64": {"darwin", "arm64v8"}},
+		V15:                       {"darwin/arm64": {"darwin", "arm64v8"}},
 	}
 	defaultConfig := DefaultConfig()
 
@@ -105,7 +105,7 @@ func Test_DefaultVersionStrategy_Linux_ARM32V6(t *testing.T) {
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "arm32v6", architecture)
-	assert.Equal(t, V14, postgresVersion)
+	assert.Equal(t, V15, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_Linux_ARM32V7(t *testing.T) {
@@ -121,7 +121,7 @@ func Test_DefaultVersionStrategy_Linux_ARM32V7(t *testing.T) {
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "arm32v7", architecture)
-	assert.Equal(t, V14, postgresVersion)
+	assert.Equal(t, V15, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
@@ -139,7 +139,7 @@ func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "amd64-alpine", architecture)
-	assert.Equal(t, V14, postgresVersion)
+	assert.Equal(t, V15, postgresVersion)
 }
 
 func Test_DefaultVersionStrategy_shouldUseAlpineLinuxBuild(t *testing.T) {
