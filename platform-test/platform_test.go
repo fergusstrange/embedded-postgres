@@ -18,7 +18,9 @@ func Test_AllMajorVersions(t *testing.T) {
 		embeddedpostgres.V14,
 	}
 
-	if runtime.GOOS != "darwin" && runtime.GOARCH == "arm64" {
+	isLikelyAppleSilicon := runtime.GOOS == "darwin" && runtime.GOARCH == "arm64"
+
+	if !isLikelyAppleSilicon {
 		allVersions = append(allVersions,
 			embeddedpostgres.V13,
 			embeddedpostgres.V12,

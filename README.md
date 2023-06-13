@@ -87,6 +87,7 @@ RuntimePath("/tmp").
 BinaryRepositoryURL("https://repo.local/central.proxy").	
 Port(9876).
 StartTimeout(45 * time.Second).
+StartParameters(map[string]string{"max_connections": "200"}).	
 Logger(logger))
 err := postgres.Start()
 
