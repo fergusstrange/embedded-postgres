@@ -22,7 +22,7 @@ jobs:
       - when:
           condition:
             equal:
-              - <<parameters.executor>>
+              - <<pipeline.parameters.executor>>
               - apple-m1
           steps:
             - go/install
