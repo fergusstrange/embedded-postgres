@@ -20,7 +20,7 @@ jobs:
     steps:
       - checkout
       - go/install:
-          version: 1.18
+          version: "1.18"
       - restore_cache:
           keys:
             - embedded-postgres-{{ checksum "go.mod" }}
