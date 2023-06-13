@@ -2,9 +2,14 @@ version: 2.1
 executors:
   linux-arm64:
     machine:
-      image: ubuntu-2004:202104-01
+      image: ubuntu-2004:2022.04.1
     resource_class: arm.medium
     working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
+  apple-m1:
+    resource_class: macos.m1.medium.gen1
+    working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
+    macos:
+      xcode: 14.3.1
 
 jobs:
   platform_test:
@@ -30,4 +35,4 @@ workflows:
       - platform_test:
           matrix:
             parameters:
-              executor: [ linux-arm64 ]
+              executor: [ linux-arm64, apple-m1 ]
