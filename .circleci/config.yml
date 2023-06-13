@@ -19,16 +19,11 @@ jobs:
     executor: << parameters.executor >>
     steps:
       - checkout
-      - go/install:
-          version: "1.18"
-      - restore_cache:
-          keys:
-            - embedded-postgres-{{ checksum "go.mod" }}
+      - go/install
+      - go/load-cache
+      - go/mod-download
+      - go/save-cache
       - run: cd platform-test && go mod download && go test -v -race ./...
-      - save_cache:
-          key: embedded-postgres-{{ checksum "go.mod" }}
-          paths:
-            - /home/circleci/go/pkg
 
 workflows:
   version: 2
