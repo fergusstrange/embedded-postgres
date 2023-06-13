@@ -34,4 +34,6 @@ workflows:
       - platform_test:
           matrix:
             parameters:
-              executor: [ linux-arm64, apple-m1 ]
+              executor:
+                - linux-arm64
+                - apple-m1
