@@ -9,7 +9,6 @@ executors:
     resource_class: macos.m1.large.gen1
     macos:
       xcode: "14.2.0"
-    working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
 
 jobs:
   platform_test:
