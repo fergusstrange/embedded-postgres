@@ -5,7 +5,7 @@ executors:
       image: ubuntu-2004:2022.04.1
     resource_class: arm.medium
     working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
-  apple-m1:
+  apple-m1: &macos-executor
     resource_class: macos.m1.medium.gen1
     macos:
       xcode: "14.2.0"
@@ -21,9 +21,7 @@ jobs:
       - checkout
       - when:
           condition:
-            equal:
-              - <<pipeline.parameters.executor>>
-              - apple-m1
+            equal: [ *macos-executor, << parameters.executor >> ]
           steps:
             - go/install
       - go/load-cache
