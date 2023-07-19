@@ -620,6 +620,30 @@ func Test_CustomBinariesRepo(t *testing.T) {
 	}
 }
 
+func Test_CachePath(t *testing.T) {
+	cacheTempDir, err := os.MkdirTemp("", "prepare_database_test_cache")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(cacheTempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	database := NewDatabase(DefaultConfig().
+		CachePath(cacheTempDir))
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
 func Test_CustomBinariesLocation(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "prepare_database_test")
 	if err != nil {

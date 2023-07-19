@@ -10,11 +10,13 @@ import (
 // The result of whether this cache is present will be returned to exists.
 type CacheLocator func() (location string, exists bool)
 
-func defaultCacheLocator(versionStrategy VersionStrategy) CacheLocator {
+func defaultCacheLocator(cacheDirectory string, versionStrategy VersionStrategy) CacheLocator {
 	return func() (string, bool) {
-		cacheDirectory := ".embedded-postgres-go"
-		if userHome, err := os.UserHomeDir(); err == nil {
-			cacheDirectory = filepath.Join(userHome, ".embedded-postgres-go")
+		if cacheDirectory == "" {
+			cacheDirectory = ".embedded-postgres-go"
+			if userHome, err := os.UserHomeDir(); err == nil {
+				cacheDirectory = filepath.Join(userHome, ".embedded-postgres-go")
+			}
 		}
 
 		operatingSystem, architecture, version := versionStrategy()

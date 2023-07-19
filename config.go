@@ -14,6 +14,7 @@ type Config struct {
 	database            string
 	username            string
 	password            string
+	cachePath           string
 	runtimePath         string
 	dataPath            string
 	binariesPath        string
@@ -79,6 +80,13 @@ func (c Config) Password(password string) Config {
 // If Postgres data directory is not set with DataPath(), this directory is also used as data directory.
 func (c Config) RuntimePath(path string) Config {
 	c.runtimePath = path
+	return c
+}
+
+// CachePath sets the path that will be used for storing Postgres binaries archive.
+// If this option is not set, ~/.go-embedded-postgres will be used.
+func (c Config) CachePath(path string) Config {
+	c.cachePath = path
 	return c
 }
 
