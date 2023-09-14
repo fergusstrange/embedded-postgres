@@ -75,7 +75,14 @@ func closeBody(resp *http.Response) func() {
 }
 
 func decompressResponse(bodyBytes []byte, contentLength int64, cacheLocator CacheLocator, downloadURL string) error {
-	zipReader, err := zip.NewReader(bytes.NewReader(bodyBytes), contentLength)
+	size := contentLength
+	// if the content length is not set (i.e. chunked encoding),
+	// we need to use the length of the bodyBytes otherwise
+	// the unzip operation will fail
+	if contentLength < 0 {
+		size = int64(len(bodyBytes))
+	}
+	zipReader, err := zip.NewReader(bytes.NewReader(bodyBytes), size)
 	if err != nil {
 		return errorFetchingPostgres(err)
 	}
