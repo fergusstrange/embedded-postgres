@@ -116,6 +116,20 @@ func Test_defaultCreateDatabase_ErrorWhenSQLOpenError(t *testing.T) {
 	assert.EqualError(t, err, "unable to connect to create database with custom name database with the following error: client_encoding must be absent or 'UTF8'")
 }
 
+func Test_defaultCreateDatabase_DashesInName(t *testing.T) {
+	database := NewDatabase(DefaultConfig().
+		Port(9832).
+		Database("my-cool-database"))
+
+	if err := database.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := database.Stop(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
 	database := NewDatabase(DefaultConfig().
 		Port(9831).
