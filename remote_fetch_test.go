@@ -4,6 +4,8 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
+	"github.com/stretchr/testify/require"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -369,4 +371,49 @@ func Test_defaultRemoteFetchStrategyWithExistingDownload(t *testing.T) {
 	// ensure that the file contents are the same from both downloads, and that it doesn't contain the `invalid` data.
 	out2, err := os.ReadFile(cacheLocation)
 	assert.Equal(t, out1, out2)
+}
+
+func Test_defaultRemoteFetchStrategy_whenContentLengthNotSet(t *testing.T) {
+	jarFile, cleanUp := createTempZipArchive()
+	defer cleanUp()
+
+	cacheLocation := filepath.Join(filepath.Dir(jarFile), "extract_location", "cache.jar")
+
+	bytes, err := os.ReadFile(jarFile)
+	if err != nil {
+		require.NoError(t, err)
+	}
+	contentHash := sha256.Sum256(bytes)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.RequestURI, ".sha256") {
+			w.WriteHeader(200)
+			if _, err := w.Write([]byte(hex.EncodeToString(contentHash[:]))); err != nil {
+				panic(err)
+			}
+
+			return
+		}
+
+		f, err := os.Open(jarFile)
+		if err != nil {
+			panic(err)
+		}
+
+		// stream the file back so that Go uses
+		// chunked encoding and never sets Content-Length
+		_, _ = io.Copy(w, f)
+	}))
+	defer server.Close()
+
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2",
+		testVersionStrategy(),
+		func() (s string, b bool) {
+			return cacheLocation, false
+		})
+
+	err = remoteFetchStrategy()
+
+	assert.NoError(t, err)
+	assert.FileExists(t, cacheLocation)
 }
