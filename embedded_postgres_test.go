@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -156,7 +157,7 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 		RuntimePath(extractPath).
 		StartTimeout(10 * time.Second))
 
-	database.createDatabase = func(port uint32, username, password, database string) error {
+	database.createDatabase = func(ctx context.Context, port uint32, username, password, database string) error {
 		return errors.New("ah noes")
 	}
 
@@ -176,7 +177,7 @@ func Test_TimesOutWhenCannotStart(t *testing.T) {
 		Database("something-fancy").
 		StartTimeout(500 * time.Millisecond))
 
-	database.createDatabase = func(port uint32, username, password, database string) error {
+	database.createDatabase = func(ctx context.Context, port uint32, username, password, database string) error {
 		return nil
 	}
 
@@ -233,7 +234,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 
 	err = database.Start()
 
-	assert.EqualError(t, err, fmt.Sprintf("could not start postgres using %s/bin/pg_ctl start -w -D %s/data -o -p 5432:\nah it did not work", extractPath, extractPath))
+	assert.EqualError(t, err, fmt.Sprintf("could not start postgres using %s/bin/postgres -D %s/data -p 5432:\nah it did not work", extractPath, extractPath))
 }
 
 func Test_CustomConfig(t *testing.T) {
@@ -326,9 +327,18 @@ func Test_CustomLog(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Contains(t, lines, fmt.Sprintf("The files belonging to this database system will be owned by user \"%s\".", current.Username))
 	assert.Contains(t, lines, "syncing data to disk ... ok")
-	assert.Contains(t, lines, "server stopped")
+
+	lastLine := ""
+	for i := len(lines) - 1; i > 0; i-- {
+		lastLine = strings.TrimSpace(lines[i])
+		if len(lastLine) > 0 {
+			break
+		}
+	}
+
+	assert.True(t, strings.HasSuffix(lastLine, "database system is shut down"))
 	assert.Less(t, len(lines), 55)
-	assert.Greater(t, len(lines), 40)
+	assert.Greater(t, len(lines), 36)
 }
 
 func Test_CustomLocaleConfig(t *testing.T) {

@@ -1,6 +1,9 @@
 package embeddedpostgres
 
 import (
+	"bufio"
+	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -23,6 +26,7 @@ type EmbeddedPostgres struct {
 	createDatabase      createDatabase
 	started             bool
 	syncedLogger        *syncedLogger
+	cmd                 *postgresProcess
 }
 
 // NewDatabase creates a new EmbeddedPostgres struct that can be used to start and stop a Postgres process.
@@ -111,7 +115,15 @@ func (ep *EmbeddedPostgres) Start() error {
 		}
 	}
 
-	if err := startPostgres(ep); err != nil {
+	ctx, cancelCtx := context.WithTimeout(context.Background(), ep.config.startTimeout)
+	defer cancelCtx()
+
+	ep.cmd = &postgresProcess{
+		Config: ep.config,
+		Logger: ep.syncedLogger,
+	}
+
+	if err = ep.cmd.Start(ctx); err != nil {
 		return err
 	}
 
@@ -122,8 +134,8 @@ func (ep *EmbeddedPostgres) Start() error {
 	ep.started = true
 
 	if !reuseData {
-		if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
-			if stopErr := stopPostgres(ep); stopErr != nil {
+		if err := ep.createDatabase(ctx, ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
+			if stopErr := ep.Stop(); stopErr != nil {
 				return fmt.Errorf("unable to stop database casused by error %s", err)
 			}
 
@@ -131,8 +143,8 @@ func (ep *EmbeddedPostgres) Start() error {
 		}
 	}
 
-	if err := healthCheckDatabaseOrTimeout(ep.config); err != nil {
-		if stopErr := stopPostgres(ep); stopErr != nil {
+	if err := healthCheckDatabaseOrTimeout(ctx, ep.config); err != nil {
+		if stopErr := ep.Stop(); stopErr != nil {
 			return fmt.Errorf("unable to stop database casused by error %s", err)
 		}
 
@@ -168,66 +180,7 @@ func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
 	}
 
 	if err := ep.initDatabase(ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath, ep.config.username, ep.config.password, ep.config.locale, ep.syncedLogger.file); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// Stop will try to stop the Postgres process gracefully returning an error when there were any problems.
-func (ep *EmbeddedPostgres) Stop() error {
-	if !ep.started {
-		return errors.New("server has not been started")
-	}
-
-	if err := stopPostgres(ep); err != nil {
-		return err
-	}
-
-	ep.started = false
-
-	if err := ep.syncedLogger.flush(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func encodeOptions(port uint32, parameters map[string]string) string {
-	options := []string{fmt.Sprintf("-p %d", port)}
-	for k, v := range parameters {
-		// Single-quote parameter values - they may have spaces.
-		options = append(options, fmt.Sprintf("-c %s='%s'", k, v))
-	}
-	return strings.Join(options, " ")
-}
-
-func startPostgres(ep *EmbeddedPostgres) error {
-	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
-	postgresProcess := exec.Command(postgresBinary, "start", "-w",
-		"-D", ep.config.dataPath,
-		"-o", encodeOptions(ep.config.port, ep.config.startParameters))
-	postgresProcess.Stdout = ep.syncedLogger.file
-	postgresProcess.Stderr = ep.syncedLogger.file
-
-	if err := postgresProcess.Run(); err != nil {
 		_ = ep.syncedLogger.flush()
-		logContent, _ := readLogsOrTimeout(ep.syncedLogger.file)
-
-		return fmt.Errorf("could not start postgres using %s:\n%s", postgresProcess.String(), string(logContent))
-	}
-
-	return nil
-}
-
-func stopPostgres(ep *EmbeddedPostgres) error {
-	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
-	postgresProcess := exec.Command(postgresBinary, "stop", "-w",
-		"-D", ep.config.dataPath)
-	postgresProcess.Stderr = ep.syncedLogger.file
-	postgresProcess.Stdout = ep.syncedLogger.file
-
-	if err := postgresProcess.Run(); err != nil {
 		return err
 	}
 
@@ -245,6 +198,76 @@ func ensurePortAvailable(port uint32) error {
 	}
 
 	return nil
+}
+
+// Stop will try to stop the Postgres process gracefully returning an error when there were any problems.
+func (ep *EmbeddedPostgres) Stop() error {
+	if !ep.started {
+		return errors.New("server has not been started")
+	}
+
+	if err := ep.cmd.Stop(); err != nil {
+		return err
+	}
+
+	ep.started = false
+
+	if err := ep.syncedLogger.flush(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type pgStatus struct {
+	Pid     int
+	Running bool
+	Output  string
+}
+
+func pgCtlStatus(config Config) (*pgStatus, error) {
+	cmd := exec.Command(filepath.Join(config.binariesPath, "bin/pg_ctl"),
+		"status",
+		"-D",
+		config.dataPath,
+	)
+	buf := &bytes.Buffer{}
+	cmd.Stdout = buf
+	cmd.Stderr = buf
+
+	err := cmd.Start()
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = cmd.Wait()
+
+	if err != nil {
+		eErr := &exec.ExitError{}
+		if !errors.As(err, &eErr) {
+			return nil, fmt.Errorf("%s - %w: %s", cmd.String(), err, buf.String())
+		}
+	}
+
+	status := &pgStatus{Output: buf.String()}
+
+	// scanner to support windows
+	// The first line of a good response will be
+	// pg_ctl: server is running (PID: 12345)
+	sc := bufio.NewScanner(buf)
+	if sc.Scan() {
+		line := sc.Text()
+		if _, err := fmt.Sscanf(line, "pg_ctl: server is running (PID: %d)", &status.Pid); err != nil {
+			return status, nil
+		}
+
+		status.Running = true
+
+		return status, nil
+	}
+
+	return status, nil
 }
 
 func dataDirIsValid(dataDir string, version PostgresVersion) bool {

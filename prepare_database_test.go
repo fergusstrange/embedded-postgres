@@ -1,12 +1,14 @@
 package embeddedpostgres
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -111,7 +113,10 @@ func Test_defaultInitDatabase_PwFileRemoved(t *testing.T) {
 }
 
 func Test_defaultCreateDatabase_ErrorWhenSQLOpenError(t *testing.T) {
-	err := defaultCreateDatabase(1234, "user client_encoding=lol", "password", "database")
+	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cncl()
+
+	err := defaultCreateDatabase(ctx, 1234, "user client_encoding=lol", "password", "database")
 
 	assert.EqualError(t, err, "unable to connect to create database with custom name database with the following error: client_encoding must be absent or 'UTF8'")
 }
@@ -144,7 +149,11 @@ func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
 		}
 	}()
 
-	err := defaultCreateDatabase(9831, "postgres", "postgres", "b33r")
+	ctx, cncl := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cncl()
+
+	err := defaultCreateDatabase(ctx, 9831, "postgres", "postgres", "b33r")
 
 	assert.EqualError(t, err, `unable to connect to create database with custom name b33r with the following error: pq: database "b33r" already exists`)
 }

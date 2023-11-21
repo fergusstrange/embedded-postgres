@@ -39,6 +39,7 @@ func writeFileWithBase64Content(filename, base64Content string) (string, func())
 }
 
 func shutdownDBAndFail(t *testing.T, err error, db *EmbeddedPostgres) {
+	t.Helper()
 	if db.started {
 		if stopErr := db.Stop(); stopErr != nil {
 			t.Errorf("Failed to shutdown server with error %s", stopErr)

@@ -19,7 +19,7 @@ const (
 )
 
 type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
-type createDatabase func(port uint32, username, password, database string) error
+type createDatabase func(ctx context.Context, port uint32, username, password, database string) error
 
 func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error {
 	passwordFile, err := createPasswordFile(runtimePath, password)
@@ -67,7 +67,7 @@ func createPasswordFile(runtimePath, password string) (string, error) {
 	return passwordFileLocation, nil
 }
 
-func defaultCreateDatabase(port uint32, username, password, database string) (err error) {
+func defaultCreateDatabase(ctx context.Context, port uint32, username, password, database string) (err error) {
 	if database == "postgres" {
 		return nil
 	}
@@ -82,7 +82,7 @@ func defaultCreateDatabase(port uint32, username, password, database string) (er
 		err = connectionClose(db, err)
 	}()
 
-	if _, err := db.Exec(fmt.Sprintf("CREATE DATABASE \"%s\"", database)); err != nil {
+	if _, err := db.ExecContext(ctx, fmt.Sprintf("CREATE DATABASE \"%s\"", database)); err != nil {
 		return errorCustomDatabase(database, err)
 	}
 
@@ -105,17 +105,13 @@ func connectionClose(db io.Closer, err error) error {
 	return err
 }
 
-func healthCheckDatabaseOrTimeout(config Config) error {
+func healthCheckDatabaseOrTimeout(ctx context.Context, config Config) error {
 	healthCheckSignal := make(chan bool)
 
 	defer close(healthCheckSignal)
 
-	timeout, cancelFunc := context.WithTimeout(context.Background(), config.startTimeout)
-
-	defer cancelFunc()
-
 	go func() {
-		for timeout.Err() == nil {
+		for ctx.Err() == nil {
 			if err := healthCheckDatabase(config.port, config.database, config.username, config.password); err != nil {
 				continue
 			}
@@ -128,7 +124,7 @@ func healthCheckDatabaseOrTimeout(config Config) error {
 	select {
 	case <-healthCheckSignal:
 		return nil
-	case <-timeout.Done():
+	case <-ctx.Done():
 		return errors.New("timed out waiting for database to become available")
 	}
 }
