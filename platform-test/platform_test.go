@@ -14,6 +14,7 @@ import (
 
 func Test_AllMajorVersions(t *testing.T) {
 	allVersions := []embeddedpostgres.PostgresVersion{
+		embeddedpostgres.V16,
 		embeddedpostgres.V15,
 		embeddedpostgres.V14,
 	}

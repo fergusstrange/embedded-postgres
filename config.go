@@ -27,7 +27,7 @@ type Config struct {
 
 // DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
 // The following can be assumed as defaults:
-// Version:      14
+// Version:      15
 // Port:         5432
 // Database:     postgres
 // Username:     postgres
@@ -146,6 +146,7 @@ type PostgresVersion string
 
 // Predefined supported Postgres versions.
 const (
+	V16 = PostgresVersion("16.2.0")
 	V15 = PostgresVersion("15.3.0")
 	V14 = PostgresVersion("14.8.0")
 	V13 = PostgresVersion("13.11.0")

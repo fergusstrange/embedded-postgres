@@ -41,7 +41,7 @@ This library aims to require as little configuration as possible, favouring over
 | Username            | postgres                                        |
 | Password            | postgres                                        |
 | Database            | postgres                                        |
-| Version             | 12.1.0                                          |
+| Version             | 15.3.0                                          |
 | CachePath           | $USER_HOME/.embedded-postgres-go/               |
 | RuntimePath         | $USER_HOME/.embedded-postgres-go/extracted      |
 | DataPath            | $USER_HOME/.embedded-postgres-go/extracted/data |
