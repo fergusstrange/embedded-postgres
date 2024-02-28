@@ -150,7 +150,7 @@ const (
 	V15 = PostgresVersion("15.6.0")
 	V14 = PostgresVersion("14.11.0")
 	V13 = PostgresVersion("13.14.0")
-	V12 = PostgresVersion("12.18.0")
+	V12 = PostgresVersion("12.17.0")
 	V11 = PostgresVersion("11.22.0")
 	V10 = PostgresVersion("10.23.0")
 	V9  = PostgresVersion("9.6.24")
