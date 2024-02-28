@@ -123,7 +123,7 @@ func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, encoding string, logger *os.File) error {
 		return errors.New("ah it did not work")
 	}
 
@@ -226,7 +226,7 @@ func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {
 		return jarFile, true
 	}
 
-	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, logger *os.File) error {
+	database.initDatabase = func(binaryExtractLocation, runtimePath, dataLocation, username, password, locale string, encoding string, logger *os.File) error {
 		_, _ = logger.Write([]byte("ah it did not work"))
 		return nil
 	}
@@ -257,6 +257,7 @@ func Test_CustomConfig(t *testing.T) {
 		Port(9876).
 		StartTimeout(10 * time.Second).
 		Locale("C").
+		Encoding("UTF8").
 		Logger(nil))
 
 	if err := database.Start(); err != nil {
@@ -346,6 +347,36 @@ func Test_CustomLocaleConfig(t *testing.T) {
 	if err = db.Ping(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_CustomEncodingConfig(t *testing.T) {
+	database := NewDatabase(DefaultConfig().Encoding("UTF8"))
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	db, err := sql.Open("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	rows := db.QueryRow("SHOW SERVER_ENCODING;")
+
+	var (
+		value string
+	)
+	if err := rows.Scan(&value); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+	assert.Equal(t, "UTF8", value)
 
 	if err := db.Close(); err != nil {
 		shutdownDBAndFail(t, err, database)
