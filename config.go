@@ -19,6 +19,7 @@ type Config struct {
 	dataPath            string
 	binariesPath        string
 	locale              string
+	encoding            string
 	startParameters     map[string]string
 	binaryRepositoryURL string
 	startTimeout        time.Duration
@@ -107,6 +108,12 @@ func (c Config) BinariesPath(path string) Config {
 // Locale sets the default locale for initdb
 func (c Config) Locale(locale string) Config {
 	c.locale = locale
+	return c
+}
+
+// Encoding sets the default character set for initdb
+func (c Config) Encoding(encoding string) Config {
+	c.encoding = encoding
 	return c
 }
 

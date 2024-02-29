@@ -12,7 +12,7 @@ import (
 )
 
 func Test_defaultInitDatabase_ErrorWhenCannotCreatePasswordFile(t *testing.T) {
-	err := defaultInitDatabase("path_not_exists", "path_not_exists", "path_not_exists", "Tom", "Beer", "", os.Stderr)
+	err := defaultInitDatabase("path_not_exists", "path_not_exists", "path_not_exists", "Tom", "Beer", "", "", os.Stderr)
 
 	assert.EqualError(t, err, "unable to write password file to path_not_exists/pwfile")
 }
@@ -49,7 +49,7 @@ func Test_defaultInitDatabase_ErrorWhenCannotStartInitDBProcess(t *testing.T) {
 
 	_, _ = logFile.Write([]byte("and here are the logs!"))
 
-	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", logFile)
+	err = defaultInitDatabase(binTempDir, runtimeTempDir, filepath.Join(runtimeTempDir, "data"), "Tom", "Beer", "", "", logFile)
 
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password -U Tom -D %s/data --pwfile=%s/pwfile'",
@@ -72,10 +72,31 @@ func Test_defaultInitDatabase_ErrorInvalidLocaleSetting(t *testing.T) {
 		}
 	}()
 
-	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "en_XY", os.Stderr)
+	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "en_XY", "", os.Stderr)
 
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password -U postgres -D %s/data --pwfile=%s/pwfile --locale=en_XY'",
+		tempDir,
+		tempDir,
+		tempDir))
+}
+
+func Test_defaultInitDatabase_ErrorInvalidEncodingSetting(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "prepare_database_test")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	err = defaultInitDatabase(tempDir, tempDir, filepath.Join(tempDir, "data"), "postgres", "postgres", "", "invalid", os.Stderr)
+
+	assert.NotNil(t, err)
+	assert.Contains(t, err.Error(), fmt.Sprintf("unable to init database using '%s/bin/initdb -A password -U postgres -D %s/data --pwfile=%s/pwfile --encoding=invalid'",
 		tempDir,
 		tempDir,
 		tempDir))

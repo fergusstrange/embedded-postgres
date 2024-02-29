@@ -18,10 +18,10 @@ const (
 	fmtAfterError  = "%v happened after error: %w"
 )
 
-type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error
+type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, encoding string, logger *os.File) error
 type createDatabase func(port uint32, username, password, database string) error
 
-func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, logger *os.File) error {
+func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, encoding string, logger *os.File) error {
 	passwordFile, err := createPasswordFile(runtimePath, password)
 	if err != nil {
 		return err
@@ -36,6 +36,10 @@ func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username
 
 	if locale != "" {
 		args = append(args, fmt.Sprintf("--locale=%s", locale))
+	}
+
+	if encoding != "" {
+		args = append(args, fmt.Sprintf("--encoding=%s", encoding))
 	}
 
 	postgresInitDBBinary := filepath.Join(binaryExtractLocation, "bin/initdb")
