@@ -774,3 +774,50 @@ func Test_RunningInParallel(t *testing.T) {
 
 	waitGroup.Wait()
 }
+
+func TestGetConnectionURL(t *testing.T) {
+	config := DefaultConfig().Database("mydb").Username("myuser").Password("mypass")
+	expect := "postgresql://myuser:mypass@localhost:5432/mydb"
+
+	database := NewDatabase(config)
+
+	got, err := database.GetConnectionURL()
+	if err != nil {
+		t.Errorf("error getting connection url %v", err)
+	}
+	if got != expect {
+		t.Errorf("expected \"%s\" got \"%s\"", expect, got)
+	}
+}
+
+func Test_DynamicPortAllocation(t *testing.T) {
+	defer verifyLeak(t)
+
+	database := NewDatabase(DefaultConfig().Port(0))
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	port := database.GetPort()
+	if port == 0 {
+		shutdownDBAndFail(t, errors.New("port should have been allocated dynamically by now"), database)
+	}
+
+	dataSourceName := fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=postgres sslmode=disable", port)
+	db, err := sql.Open("postgres", dataSourceName)
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}

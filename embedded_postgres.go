@@ -14,6 +14,8 @@ import (
 
 var mu sync.Mutex
 
+const dynamicallyAllocatedPort = 0
+
 // EmbeddedPostgres maintains all configuration and runtime functions for maintaining the lifecycle of one Postgres process.
 type EmbeddedPostgres struct {
 	config              Config
@@ -66,8 +68,17 @@ func (ep *EmbeddedPostgres) Start() error {
 		return errors.New("server is already started")
 	}
 
-	if err := ensurePortAvailable(ep.config.port); err != nil {
-		return err
+	if ep.config.port == dynamicallyAllocatedPort {
+		port, err := allocatePort()
+		if err != nil {
+			return err
+		}
+
+		ep.config.port = port
+	} else {
+		if err := ensurePortAvailable(ep.config.port); err != nil {
+			return err
+		}
 	}
 
 	logger, err := newSyncedLogger("", ep.config.logger)
@@ -174,6 +185,17 @@ func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
 	return nil
 }
 
+func (ep *EmbeddedPostgres) GetConnectionURL() (string, error) {
+	if ep.config.port == dynamicallyAllocatedPort {
+		return "", errors.New("server has to have started to get a connection URL with a dynamically allocated port")
+	}
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", ep.config.username, ep.config.password, "localhost", ep.config.port, ep.config.database), nil
+}
+
+func (ep *EmbeddedPostgres) GetPort() uint32 {
+	return ep.config.port
+}
+
 // Stop will try to stop the Postgres process gracefully returning an error when there were any problems.
 func (ep *EmbeddedPostgres) Stop() error {
 	if !ep.started {
@@ -245,6 +267,19 @@ func ensurePortAvailable(port uint32) error {
 	}
 
 	return nil
+}
+
+func allocatePort() (uint32, error) {
+	conn, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		return 0, fmt.Errorf("unable to dynamically allocate port %w", err)
+	}
+	port := uint32(conn.Addr().(*net.TCPAddr).Port)
+	if err := conn.Close(); err != nil {
+		return port, fmt.Errorf("unable to free dynamically allocate port %d for postgres to use", port)
+	}
+
+	return port, nil
 }
 
 func dataDirIsValid(dataDir string, version PostgresVersion) bool {
