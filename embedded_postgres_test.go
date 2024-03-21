@@ -100,7 +100,7 @@ func Test_ErrorWhenUnableToUnArchiveFile_WrongFormat(t *testing.T) {
 		}
 	}
 
-	assert.EqualError(t, err, fmt.Sprintf(`unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories, xz: file format not recognized`, jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
+	assert.EqualError(t, err, fmt.Sprintf(`unable to extract postgres archive %s to %s, if running parallel tests, configure RuntimePath to isolate testing directories, xz: invalid header magic bytes`, jarFile, filepath.Join(filepath.Dir(jarFile), "extracted")))
 }
 
 func Test_ErrorWhenUnableToInitDatabase(t *testing.T) {

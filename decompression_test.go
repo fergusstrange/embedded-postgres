@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xi2/xz"
+	"github.com/ulikunitz/xz"
 )
 
 func Test_decompressTarXz(t *testing.T) {
@@ -182,7 +182,7 @@ func Test_decompressTarXz_ErrorWhenArchiveCorrupted(t *testing.T) {
 
 	err = decompressTarXz(defaultTarReader, archive, tempDir)
 
-	assert.EqualError(t, err, "unable to extract postgres archive: xz: data is corrupt")
+	assert.EqualError(t, err, "unable to extract postgres archive: writeMatch: distance out of range")
 }
 
 func Test_decompressTarXz_ErrorWithInvalidDestination(t *testing.T) {
