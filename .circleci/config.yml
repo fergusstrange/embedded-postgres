@@ -2,7 +2,7 @@ version: 2.1
 executors:
   linux-arm64:
     machine:
-      image: ubuntu-2004:2022.04.1
+      image: ubuntu-2204:2024.01.2
     resource_class: arm.medium
     working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
   apple-m1: &macos-executor
@@ -10,7 +10,7 @@ executors:
     macos:
       xcode: "14.2.0"
 orbs:
-  go: circleci/go@1.7.3
+  go: circleci/go@1.11.0
 jobs:
   platform_test:
     parameters:
