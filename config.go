@@ -1,6 +1,7 @@
 package embeddedpostgres
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -134,6 +135,14 @@ func (c Config) Logger(logger io.Writer) Config {
 func (c Config) BinaryRepositoryURL(binaryRepositoryURL string) Config {
 	c.binaryRepositoryURL = binaryRepositoryURL
 	return c
+}
+
+// GetConnectionURL returns the connection URL
+//
+// The form of the URL  is postgresql://user:password@localhost:port/database
+// In conjunction with dynamic port allocation it will not return the actually allocated port. See EmbeddedPostgres.GetPort instead.
+func (c Config) GetConnectionURL() string {
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", c.username, c.password, "localhost", c.port, c.database)
 }
 
 // PostgresVersion represents the semantic version used to fetch and run the Postgres process.

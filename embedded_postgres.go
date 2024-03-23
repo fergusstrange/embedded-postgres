@@ -185,13 +185,9 @@ func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
 	return nil
 }
 
-func (ep *EmbeddedPostgres) GetConnectionURL() (string, error) {
-	if ep.config.port == dynamicallyAllocatedPort {
-		return "", errors.New("server has to have started to get a connection URL with a dynamically allocated port")
-	}
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", ep.config.username, ep.config.password, "localhost", ep.config.port, ep.config.database), nil
-}
-
+// GetPort returns the port postgres is listening on.
+//
+// Has to be called when dynamic port allocation is used to get the actually allocated port.
 func (ep *EmbeddedPostgres) GetPort() uint32 {
 	return ep.config.port
 }

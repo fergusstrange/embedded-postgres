@@ -775,21 +775,6 @@ func Test_RunningInParallel(t *testing.T) {
 	waitGroup.Wait()
 }
 
-func TestGetConnectionURL(t *testing.T) {
-	config := DefaultConfig().Database("mydb").Username("myuser").Password("mypass")
-	expect := "postgresql://myuser:mypass@localhost:5432/mydb"
-
-	database := NewDatabase(config)
-
-	got, err := database.GetConnectionURL()
-	if err != nil {
-		t.Errorf("error getting connection url %v", err)
-	}
-	if got != expect {
-		t.Errorf("expected \"%s\" got \"%s\"", expect, got)
-	}
-}
-
 func Test_DynamicPortAllocation(t *testing.T) {
 	defer verifyLeak(t)
 
