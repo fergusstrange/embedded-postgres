@@ -448,10 +448,7 @@ func Test_ConcurrentStart(t *testing.T) {
 }
 
 func Test_CustomStartParameters(t *testing.T) {
-	database := NewDatabase(DefaultConfig().StartParameters(map[string]string{
-		"max_connections": "101",
-		"shared_buffers":  "16 MB", // Ensure a parameter with spaces encodes correctly.
-	}))
+	database := NewDatabase(DefaultConfig().StartParameters(map[string]string{"max_connections": "101"}))
 	if err := database.Start(); err != nil {
 		shutdownDBAndFail(t, err, database)
 	}

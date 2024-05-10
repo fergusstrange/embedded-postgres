@@ -28,7 +28,7 @@ type Config struct {
 
 // DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
 // The following can be assumed as defaults:
-// Version:      15
+// Version:      16
 // Port:         5432
 // Database:     postgres
 // Username:     postgres

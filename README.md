@@ -42,6 +42,9 @@ This library aims to require as little configuration as possible, favouring over
 | Password            | postgres                                        |
 | Database            | postgres                                        |
 | Version             | 15.3.0                                          |
+| Encoding            | UTF8                                            |
+| Locale              | C                                               |
+| Version             | 15.3.0                                          |
 | CachePath           | $USER_HOME/.embedded-postgres-go/               |
 | RuntimePath         | $USER_HOME/.embedded-postgres-go/extracted      |
 | DataPath            | $USER_HOME/.embedded-postgres-go/extracted/data |
@@ -49,6 +52,7 @@ This library aims to require as little configuration as possible, favouring over
 | BinaryRepositoryURL | https://repo1.maven.org/maven2                  |
 | Port                | 5432                                            |
 | StartTimeout        | 15 Seconds                                      |
+| StartParameters     | map[string]string{"max_connections": "101"}     |
 
 The *RuntimePath* directory is erased and recreated at each `Start()` and therefore not suitable for persistent data.
 
@@ -85,10 +89,10 @@ Password("wine").
 Database("gin").
 Version(V12).
 RuntimePath("/tmp").
-BinaryRepositoryURL("https://repo.local/central.proxy").	
+BinaryRepositoryURL("https://repo.local/central.proxy").
 Port(9876).
 StartTimeout(45 * time.Second).
-StartParameters(map[string]string{"max_connections": "200"}).	
+StartParameters(map[string]string{"max_connections": "200"}).
 Logger(logger))
 err := postgres.Start()
 
