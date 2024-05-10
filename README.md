@@ -54,6 +54,8 @@ This library aims to require as little configuration as possible, favouring over
 | StartTimeout        | 15 Seconds                                      |
 | StartParameters     | map[string]string{"max_connections": "101"}     |
 
+Port can be set to 0 for dynamic port allocation.
+
 The *RuntimePath* directory is erased and recreated at each `Start()` and therefore not suitable for persistent data.
 
 If a persistent data location is required, set *DataPath* to a directory outside *RuntimePath*.
