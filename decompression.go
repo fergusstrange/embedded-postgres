@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/xi2/xz"
+	"github.com/ulikunitz/xz"
 )
 
 func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() io.Reader) {
@@ -42,7 +42,7 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 		}
 	}()
 
-	xzReader, err := xz.NewReader(tarFile, 0)
+	xzReader, err := xz.NewReader(tarFile)
 	if err != nil {
 		return errorUnableToExtract(path, extractPath, err)
 	}
