@@ -71,7 +71,7 @@ jobs:
     name: Platform tests
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-11 ]
+        os: [ ubuntu-latest, windows-latest, macos-14 ]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
