@@ -53,7 +53,7 @@ func (c Config) Version(version PostgresVersion) Config {
 	return c
 }
 
-// Port sets the runtime port that Postgres can be accessed on.
+// Port sets the runtime port that Postgres can be accessed on. Can be set to 0 for dynamic port allocation.
 func (c Config) Port(port uint32) Config {
 	c.port = port
 	return c
@@ -144,6 +144,10 @@ func (c Config) BinaryRepositoryURL(binaryRepositoryURL string) Config {
 	return c
 }
 
+// GetConnectionURL returns the connection URL
+//
+// The form of the URL  is postgresql://user:password@localhost:port/database
+// In conjunction with dynamic port allocation it will not return the actually allocated port. See EmbeddedPostgres.GetPort instead.
 func (c Config) GetConnectionURL() string {
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", c.username, c.password, "localhost", c.port, c.database)
 }
