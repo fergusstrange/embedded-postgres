@@ -190,7 +190,7 @@ func Test_ErrorWhenStopCalledBeforeStart(t *testing.T) {
 
 	err := database.Stop()
 
-	assert.EqualError(t, err, "server has not been started")
+	assert.ErrorIs(t, err, ErrServerNotStarted)
 }
 
 func Test_ErrorWhenStartCalledWhenAlreadyStarted(t *testing.T) {
@@ -206,7 +206,7 @@ func Test_ErrorWhenStartCalledWhenAlreadyStarted(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = database.Start()
-	assert.EqualError(t, err, "server is already started")
+	assert.ErrorIs(t, err, ErrServerAlreadyStarted)
 }
 
 func Test_ErrorWhenCannotStartPostgresProcess(t *testing.T) {

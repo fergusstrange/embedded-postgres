@@ -14,6 +14,11 @@ import (
 
 var mu sync.Mutex
 
+var (
+	ErrServerNotStarted     = errors.New("server has not been started")
+	ErrServerAlreadyStarted = errors.New("server is already started")
+)
+
 // EmbeddedPostgres maintains all configuration and runtime functions for maintaining the lifecycle of one Postgres process.
 type EmbeddedPostgres struct {
 	config              Config
@@ -63,7 +68,7 @@ func newDatabaseWithConfig(config Config) *EmbeddedPostgres {
 //nolint:funlen
 func (ep *EmbeddedPostgres) Start() error {
 	if ep.started {
-		return errors.New("server is already started")
+		return ErrServerAlreadyStarted
 	}
 
 	if err := ensurePortAvailable(ep.config.port); err != nil {
@@ -124,7 +129,7 @@ func (ep *EmbeddedPostgres) Start() error {
 	if !reuseData {
 		if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
 			if stopErr := stopPostgres(ep); stopErr != nil {
-				return fmt.Errorf("unable to stop database casused by error %s", err)
+				return fmt.Errorf("unable to stop database caused by error %s", err)
 			}
 
 			return err
@@ -133,7 +138,7 @@ func (ep *EmbeddedPostgres) Start() error {
 
 	if err := healthCheckDatabaseOrTimeout(ep.config); err != nil {
 		if stopErr := stopPostgres(ep); stopErr != nil {
-			return fmt.Errorf("unable to stop database casused by error %s", err)
+			return fmt.Errorf("unable to stop database caused by error %s", err)
 		}
 
 		return err
@@ -177,7 +182,7 @@ func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
 // Stop will try to stop the Postgres process gracefully returning an error when there were any problems.
 func (ep *EmbeddedPostgres) Stop() error {
 	if !ep.started {
-		return errors.New("server has not been started")
+		return ErrServerNotStarted
 	}
 
 	if err := stopPostgres(ep); err != nil {
