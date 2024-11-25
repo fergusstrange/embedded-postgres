@@ -152,7 +152,7 @@ func (ep *EmbeddedPostgres) downloadAndExtractBinary(cacheExists bool, cacheLoca
 	mu.Lock()
 	defer mu.Unlock()
 
-	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin"))
+	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin", "pg_ctl"))
 	if os.IsNotExist(binDirErr) {
 		if !cacheExists {
 			if err := ep.remoteFetchStrategy(); err != nil {
