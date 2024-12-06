@@ -201,6 +201,7 @@ func (ep *EmbeddedPostgres) Stop() error {
 func encodeOptions(port uint32, parameters map[string]string) string {
 	options := []string{fmt.Sprintf("-p %d", port)}
 	stringDelimitingChar := "'"
+	// CMD on Windows uses double quotes to delimit strings. It treats single quotes as regular characters.
 	if runtime.GOOS == "windows" {
 		stringDelimitingChar = `"`
 	}
