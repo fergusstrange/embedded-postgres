@@ -200,9 +200,13 @@ func (ep *EmbeddedPostgres) Stop() error {
 
 func encodeOptions(port uint32, parameters map[string]string) string {
 	options := []string{fmt.Sprintf("-p %d", port)}
+	stringDelimitingChar := "'"
+	if runtime.GOOS == "windows" {
+		stringDelimitingChar = `"`
+	}
 	for k, v := range parameters {
 		// Single-quote parameter values - they may have spaces.
-		options = append(options, fmt.Sprintf("-c %s='%s'", k, v))
+		options = append(options, fmt.Sprintf("-c %s=%s%s%s", k, stringDelimitingChar, v, stringDelimitingChar))
 	}
 	return strings.Join(options, " ")
 }
