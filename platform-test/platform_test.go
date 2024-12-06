@@ -42,10 +42,14 @@ func Test_AllMajorVersions(t *testing.T) {
 			port := uint32(5555 + testNumber)
 			runtimePath := filepath.Join(tempExtractLocation, string(version))
 
+			maxConnections := 150
 			database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
 				Version(version).
 				Port(port).
-				RuntimePath(runtimePath))
+				RuntimePath(runtimePath).
+				StartParameters(map[string]string{
+					"max_connections": fmt.Sprintf("%d", maxConnections),
+				}))
 
 			if err := database.Start(); err != nil {
 				shutdownDBAndFail(t, err, database, version)
@@ -59,6 +63,24 @@ func Test_AllMajorVersions(t *testing.T) {
 			rows, err := db.Query("SELECT 1")
 			if err != nil {
 				shutdownDBAndFail(t, err, database, version)
+			}
+			if err := rows.Close(); err != nil {
+				shutdownDBAndFail(t, err, database, version)
+			}
+
+			rows, err = db.Query(`SELECT setting::int max_conn FROM pg_settings WHERE name = 'max_connections';`)
+			if err != nil {
+				shutdownDBAndFail(t, err, database, version)
+			}
+			if !rows.Next() {
+				shutdownDBAndFail(t, fmt.Errorf("no rows returned for max_connections"), database, version)
+			}
+			var maxConnReturned int
+			if err := rows.Scan(&maxConnReturned); err != nil {
+				shutdownDBAndFail(t, err, database, version)
+			}
+			if maxConnReturned != maxConnections {
+				shutdownDBAndFail(t, fmt.Errorf("max_connections is %d, not %d as expected", maxConnReturned, maxConnections), database, version)
 			}
 			if err := rows.Close(); err != nil {
 				shutdownDBAndFail(t, err, database, version)
