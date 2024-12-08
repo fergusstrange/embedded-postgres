@@ -201,8 +201,10 @@ func (ep *EmbeddedPostgres) Stop() error {
 func encodeOptions(port uint32, parameters map[string]string) string {
 	options := []string{fmt.Sprintf("-p %d", port)}
 	for k, v := range parameters {
-		// Single-quote parameter values - they may have spaces.
-		options = append(options, fmt.Sprintf("-c %s='%s'", k, v))
+		// Double-quote parameter values - they may have spaces.
+		// Careful: CMD on Windows uses only double quotes to delimit strings.
+		// It treats single quotes as regular characters.
+		options = append(options, fmt.Sprintf("-c %s=\"%s\"", k, v))
 	}
 	return strings.Join(options, " ")
 }
