@@ -8,7 +8,7 @@ executors:
   apple-m2: &macos-executor
     resource_class: m2pro.medium
     macos:
-      xcode: "14.4.0"
+      xcode: "15.4.0"
 orbs:
   go: circleci/go@1.11.0
 jobs:
