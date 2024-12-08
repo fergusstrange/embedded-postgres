@@ -5,10 +5,10 @@ executors:
       image: ubuntu-2204:2024.01.2
     resource_class: arm.medium
     working_directory: /home/circleci/go/src/github.com/fergusstrange/embedded-postgres
-  apple-m1: &macos-executor
-    resource_class: macos.m1.medium.gen1
+  apple-m2: &macos-executor
+    resource_class: m2pro.medium
     macos:
-      xcode: "14.2.0"
+      xcode: "15.4.0"
 orbs:
   go: circleci/go@1.11.0
 jobs:
@@ -38,4 +38,4 @@ workflows:
             parameters:
               executor:
                 - linux-arm64
-                - apple-m1
+                - apple-m2
