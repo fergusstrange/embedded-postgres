@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"testing"
 
@@ -27,7 +28,7 @@ func Test_GooseMigrations(t *testing.T) {
 		}
 	}()
 
-	db, err := connect()
+	db, err := connect(database.GetConnectionURL())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +58,7 @@ func Test_ZapioLogger(t *testing.T) {
 		}
 	}()
 
-	db, err := connect()
+	db, err := connect(database.GetConnectionURL())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +80,36 @@ func Test_Sqlx_SelectOne(t *testing.T) {
 		}
 	}()
 
-	db, err := connect()
+	db, err := connect(database.GetConnectionURL())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rows := make([]int32, 0)
+
+	err = db.Select(&rows, "SELECT 1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(rows) != 1 {
+		t.Fatal("Expected one row returned")
+	}
+}
+
+func Test_UnixSocket_Sqlx_SelectOne(t *testing.T) {
+	database := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().WithoutTcp())
+	if err := database.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := database.Stop(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	db, err := connect(database.GetConnectionURL())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -108,7 +138,7 @@ func Test_ManyTestsAgainstOneDatabase(t *testing.T) {
 		}
 	}()
 
-	db, err := connect()
+	db, err := connect(database.GetConnectionURL())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -188,7 +218,18 @@ func Test_SimpleHttpWebApp(t *testing.T) {
 	}
 }
 
-func connect() (*sqlx.DB, error) {
-	db, err := sqlx.Connect("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
+func connect(u string) (*sqlx.DB, error) {
+	parsed, err := url.Parse(u)
+	if err != nil {
+		return nil, err
+	}
+
+	q := parsed.Query()
+	if q.Get("sock") == "" {
+		q.Set("sslmode", "disable")
+	}
+	parsed.RawQuery = q.Encode()
+
+	db, err := sqlx.Connect("postgres", parsed.String())
 	return db, err
 }
