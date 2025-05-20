@@ -258,6 +258,7 @@ func Test_CustomConfig(t *testing.T) {
 		StartTimeout(10 * time.Second).
 		Locale("C").
 		Encoding("UTF8").
+		OwnProcessGroup(true).
 		Logger(nil))
 
 	if err := database.Start(); err != nil {
