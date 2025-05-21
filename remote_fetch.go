@@ -50,7 +50,9 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 
 		shaDownloadURL := fmt.Sprintf("%s.sha256", jarDownloadURL)
 		shaDownloadResponse, err := http.Get(shaDownloadURL)
-
+		if err != nil {
+			return fmt.Errorf("download sha256 from %s failed: %w", shaDownloadURL, err)
+		}
 		defer closeBody(shaDownloadResponse)()
 
 		if err == nil && shaDownloadResponse.StatusCode == http.StatusOK {
