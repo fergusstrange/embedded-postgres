@@ -70,7 +70,7 @@ func defaultRemoteFetchStrategy(remoteFetchHost string, versionStrategy VersionS
 
 func closeBody(resp *http.Response) func() {
 	return func() {
-		if resp == nil {
+		if resp == nil || resp.Body == nil {
 			return
 		}
 		if err := resp.Body.Close(); err != nil {
