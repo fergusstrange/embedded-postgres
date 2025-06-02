@@ -417,3 +417,9 @@ func Test_defaultRemoteFetchStrategy_whenContentLengthNotSet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.FileExists(t, cacheLocation)
 }
+
+func Test_closeBody_NilResponse(t *testing.T) {
+	assert.NotPanics(t, func() {
+		closeBody(nil)()
+	})
+}
