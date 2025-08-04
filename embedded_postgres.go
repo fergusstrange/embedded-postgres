@@ -216,6 +216,7 @@ func startPostgres(ep *EmbeddedPostgres) error {
 		"-o", encodeOptions(ep.config.port, ep.config.startParameters))
 	postgresProcess.Stdout = ep.syncedLogger.file
 	postgresProcess.Stderr = ep.syncedLogger.file
+	applyPlatformSpecificOptions(postgresProcess, ep.config)
 
 	if err := postgresProcess.Run(); err != nil {
 		_ = ep.syncedLogger.flush()
@@ -233,6 +234,7 @@ func stopPostgres(ep *EmbeddedPostgres) error {
 		"-D", ep.config.dataPath)
 	postgresProcess.Stderr = ep.syncedLogger.file
 	postgresProcess.Stdout = ep.syncedLogger.file
+	applyPlatformSpecificOptions(postgresProcess, ep.config)
 
 	if err := postgresProcess.Run(); err != nil {
 		return err
