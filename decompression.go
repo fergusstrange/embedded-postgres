@@ -21,7 +21,13 @@ func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() 
 }
 
 func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), func() io.Reader), path, extractPath string) error {
-	tempExtractPath, err := os.MkdirTemp(filepath.Dir(extractPath), "temp_")
+	extractDirectory := filepath.Dir(extractPath)
+
+	if err := os.MkdirAll(extractDirectory, os.ModePerm); err != nil {
+		return errorUnableToExtract(path, extractPath, err)
+	}
+
+	tempExtractPath, err := os.MkdirTemp(extractDirectory, "temp_")
 	if err != nil {
 		return errorUnableToExtract(path, extractPath, err)
 	}

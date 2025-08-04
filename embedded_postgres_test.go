@@ -672,6 +672,37 @@ func Test_CachePath(t *testing.T) {
 	}
 }
 
+func Test_CustomRuntimePathCreatedWhenNotPresent(t *testing.T) {
+	runtimeTempDir, err := os.MkdirTemp("", "non_existent_runtime_path")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(runtimeTempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	postgresDataPath := filepath.Join(runtimeTempDir,
+		fmt.Sprintf(".embedded-postgres-go-%d", 4444),
+		"extracted")
+
+	database := NewDatabase(DefaultConfig().
+		RuntimePath(postgresDataPath).
+		BinariesPath(postgresDataPath).
+		DataPath(filepath.Join(postgresDataPath, "data")).
+		Database("hoh"))
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
 func Test_CustomBinariesLocation(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "prepare_database_test")
 	if err != nil {
