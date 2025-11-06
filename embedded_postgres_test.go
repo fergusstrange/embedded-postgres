@@ -833,3 +833,55 @@ func Test_RunningInParallel(t *testing.T) {
 
 	waitGroup.Wait()
 }
+
+func Test_DynamicallyAllocatingPort(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "embedded_postgres_test")
+	if err != nil {
+		panic(err)
+	}
+
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			panic(err)
+		}
+	}()
+
+	database := NewDatabase(DefaultConfig().
+		Username("gin").
+		Password("wine").
+		Database("beer").
+		Version(V15).
+		RuntimePath(tempDir).
+		Port(0).
+		StartTimeout(10 * time.Second).
+		Locale("C").
+		Encoding("UTF8").
+		Logger(nil))
+
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	port := database.GetPort()
+
+	db, err := sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=gin password=wine dbname=beer sslmode=disable", port))
+	if err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if !strings.Contains(database.config.GetConnectionURL(), fmt.Sprint(port)) {
+		shutdownDBAndFail(t, errors.New("wrong port in connection url"), database)
+	}
+
+	if err = db.Ping(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := db.Close(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	if err := database.Stop(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}

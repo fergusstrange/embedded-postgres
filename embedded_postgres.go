@@ -71,6 +71,15 @@ func (ep *EmbeddedPostgres) Start() error {
 		return ErrServerAlreadyStarted
 	}
 
+	if ep.config.port == 0 {
+		port, err := getFreePort()
+		if err != nil {
+			return err
+		}
+
+		ep.config.port = port
+	}
+
 	if err := ensurePortAvailable(ep.config.port); err != nil {
 		return err
 	}
@@ -145,6 +154,10 @@ func (ep *EmbeddedPostgres) Start() error {
 	}
 
 	return nil
+}
+
+func (ep *EmbeddedPostgres) GetPort() uint32 {
+	return ep.config.port
 }
 
 func (ep *EmbeddedPostgres) downloadAndExtractBinary(cacheExists bool, cacheLocation string) error {
@@ -252,6 +265,21 @@ func ensurePortAvailable(port uint32) error {
 	}
 
 	return nil
+}
+
+func getFreePort() (uint32, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, fmt.Errorf("failed to resolve TCP address: %w", err)
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, fmt.Errorf("failed to listen on TCP: %w", err)
+	}
+	defer l.Close()
+
+	return uint32(l.Addr().(*net.TCPAddr).Port), nil
 }
 
 func dataDirIsValid(dataDir string, version PostgresVersion) bool {
