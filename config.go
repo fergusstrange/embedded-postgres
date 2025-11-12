@@ -36,7 +36,7 @@ type Config struct {
 // StartTimeout: 15 Seconds
 func DefaultConfig() Config {
 	return Config{
-		version:             V17,
+		version:             V18,
 		port:                5432,
 		database:            "postgres",
 		username:            "postgres",
@@ -153,6 +153,7 @@ type PostgresVersion string
 
 // Predefined supported Postgres versions.
 const (
+	V18 = PostgresVersion("18.0.0")
 	V17 = PostgresVersion("17.5.0")
 	V16 = PostgresVersion("16.9.0")
 	V15 = PostgresVersion("15.13.0")
