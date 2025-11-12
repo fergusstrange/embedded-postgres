@@ -30,7 +30,9 @@ following to add the latest release to your project.
 
 ```bash
 go get -u github.com/fergusstrange/embedded-postgres
-``` 
+```
+
+Please note that Postgres 18 & Mac/Darwin builds require [Rosetta 2](https://github.com/fergusstrange/embedded-postgres/blob/cf5b3570ca7fc727fae6e4874ec08b4818b705b1/.circleci/config.yml#L28).
 
 ## How to use
 
