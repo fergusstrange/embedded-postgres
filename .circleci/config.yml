@@ -38,4 +38,4 @@ workflows:
             parameters:
               executor:
                 - linux-arm64
-                - apple-m2
+                - apple-m4
