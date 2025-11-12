@@ -23,7 +23,8 @@ jobs:
           condition:
             equal: [ *macos-executor, << parameters.executor >> ]
           steps:
-            - go/install
+            - go/install:
+                version: "1.18"
       - go/load-mod-cache
       - go/mod-download
       - go/save-mod-cache
