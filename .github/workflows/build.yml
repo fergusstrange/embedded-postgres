@@ -37,7 +37,7 @@ jobs:
       - name: Nancy Vulnerability
         uses: sonatype-nexus-community/nancy-github-action@main
         with:
-          nancyVersion: v1.0.46
+          nancyVersion: v1.0.52
           nancyCommand: sleuth
       - name: GolangCI Lint
         run: |
