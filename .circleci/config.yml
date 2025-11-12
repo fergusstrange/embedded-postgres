@@ -24,9 +24,9 @@ jobs:
             equal: [ *macos-executor, << parameters.executor >> ]
           steps:
             - go/install
-      - go/load-cache
+      - go/load-mod-cache
       - go/mod-download
-      - go/save-cache
+      - go/save-mod-cache
       - run: cd platform-test && go mod download && go test -v -race ./...
 
 workflows:
