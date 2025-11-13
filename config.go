@@ -24,6 +24,7 @@ type Config struct {
 	binaryRepositoryURL string
 	startTimeout        time.Duration
 	logger              io.Writer
+	ownProcessGroup     bool
 }
 
 // DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
@@ -141,6 +142,12 @@ func (c Config) Logger(logger io.Writer) Config {
 // BinaryRepositoryURL set BinaryRepositoryURL to fetch PG Binary in case of Maven proxy
 func (c Config) BinaryRepositoryURL(binaryRepositoryURL string) Config {
 	c.binaryRepositoryURL = binaryRepositoryURL
+	return c
+}
+
+// OwnProcessGroup configures whether the server should be started in its own process group.
+func (c Config) OwnProcessGroup(ownProcessGroup bool) Config {
+	c.ownProcessGroup = ownProcessGroup
 	return c
 }
 
