@@ -156,7 +156,7 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 		RuntimePath(extractPath).
 		StartTimeout(10 * time.Second))
 
-	database.createDatabase = func(port uint32, username, password, database string) error {
+	database.createDatabase = func(host string, port uint32, username, password, database string) error {
 		return errors.New("ah noes")
 	}
 
@@ -176,7 +176,7 @@ func Test_TimesOutWhenCannotStart(t *testing.T) {
 		Database("something-fancy").
 		StartTimeout(500 * time.Millisecond))
 
-	database.createDatabase = func(port uint32, username, password, database string) error {
+	database.createDatabase = func(host string, port uint32, username, password, database string) error {
 		return nil
 	}
 
@@ -832,4 +832,35 @@ func Test_RunningInParallel(t *testing.T) {
 	go runTestWithPortAndPath(8766, path.Join(tempPath, "2"))
 
 	waitGroup.Wait()
+}
+
+func Test_RunOnUnixSocket(t *testing.T) {
+	database := NewDatabase(DefaultConfig().Port(9876).WithoutTcp())
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	defer database.Stop()
+
+	if _, err := os.Stat("/tmp/.s.PGSQL.9876"); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_RunOnUnixSocketOnCustomPath(t *testing.T) {
+	tempPath, err := os.MkdirTemp("", "custom_dir_socks")
+	if err != nil {
+		panic(err)
+	}
+
+	database := NewDatabase(DefaultConfig().Port(9876).WithoutTcp().WithUnixSocketDirectory(tempPath))
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	defer database.Stop()
+
+	if _, err := os.Stat(fmt.Sprintf("%s/.s.PGSQL.9876", tempPath)); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
 }

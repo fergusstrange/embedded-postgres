@@ -132,7 +132,13 @@ func Test_defaultInitDatabase_PwFileRemoved(t *testing.T) {
 }
 
 func Test_defaultCreateDatabase_ErrorWhenSQLOpenError(t *testing.T) {
-	err := defaultCreateDatabase(1234, "user client_encoding=lol", "password", "database")
+	err := defaultCreateDatabase("localhost", 1234, "user client_encoding=lol", "password", "database")
+
+	assert.EqualError(t, err, "unable to connect to create database with custom name database with the following error: client_encoding must be absent or 'UTF8'")
+}
+
+func Test_defaultCreateDatabase_ErrorWhenSQLOpenError_UnixSocket(t *testing.T) {
+	err := defaultCreateDatabase("/tmp", 1234, "user client_encoding=lol", "password", "database")
 
 	assert.EqualError(t, err, "unable to connect to create database with custom name database with the following error: client_encoding must be absent or 'UTF8'")
 }
@@ -165,13 +171,13 @@ func Test_defaultCreateDatabase_ErrorWhenQueryError(t *testing.T) {
 		}
 	}()
 
-	err := defaultCreateDatabase(9831, "postgres", "postgres", "b33r")
+	err := defaultCreateDatabase("localhost", 9831, "postgres", "postgres", "b33r")
 
 	assert.EqualError(t, err, `unable to connect to create database with custom name b33r with the following error: pq: database "b33r" already exists`)
 }
 
 func Test_healthCheckDatabase_ErrorWhenSQLConnectingError(t *testing.T) {
-	err := healthCheckDatabase(1234, "tom client_encoding=lol", "more", "b33r")
+	err := healthCheckDatabase("localhost", 1234, "tom client_encoding=lol", "more", "b33r")
 
 	assert.EqualError(t, err, "client_encoding must be absent or 'UTF8'")
 }

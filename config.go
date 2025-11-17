@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"time"
 )
@@ -11,6 +12,8 @@ import (
 type Config struct {
 	version             PostgresVersion
 	port                uint32
+	useUnixSocket       bool
+	unixSocketDirectory string
 	database            string
 	username            string
 	password            string
@@ -38,6 +41,8 @@ func DefaultConfig() Config {
 	return Config{
 		version:             V18,
 		port:                5432,
+		useUnixSocket:       false,
+		unixSocketDirectory: "/tmp/",
 		database:            "postgres",
 		username:            "postgres",
 		password:            "postgres",
@@ -56,6 +61,17 @@ func (c Config) Version(version PostgresVersion) Config {
 // Port sets the runtime port that Postgres can be accessed on.
 func (c Config) Port(port uint32) Config {
 	c.port = port
+	return c
+}
+
+// WithoutTcp makes Posgres listen on a UNIX socket instead of opening a TCP port.
+func (c Config) WithoutTcp() Config {
+	c.useUnixSocket = true
+	return c
+}
+
+func (c Config) WithUnixSocketDirectory(dir string) Config {
+	c.unixSocketDirectory = dir
 	return c
 }
 
@@ -145,7 +161,23 @@ func (c Config) BinaryRepositoryURL(binaryRepositoryURL string) Config {
 }
 
 func (c Config) GetConnectionURL() string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", c.username, c.password, "localhost", c.port, c.database)
+	u := &url.URL{
+		Scheme: "postgresql",
+		User:   url.UserPassword(c.username, c.password),
+		Path:   "/" + c.database,
+	}
+
+	if c.useUnixSocket {
+		u.Host = fmt.Sprintf(":%d", c.port)
+
+		q := url.Values{}
+		q.Set("host", c.unixSocketDirectory)
+		u.RawQuery = q.Encode()
+	} else {
+		u.Host = fmt.Sprintf("localhost:%d", c.port)
+	}
+
+	return u.String()
 }
 
 // PostgresVersion represents the semantic version used to fetch and run the Postgres process.

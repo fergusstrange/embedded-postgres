@@ -19,7 +19,7 @@ const (
 )
 
 type initDatabase func(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, encoding string, logger *os.File) error
-type createDatabase func(port uint32, username, password, database string) error
+type createDatabase func(host string, port uint32, username, password, database string) error
 
 func defaultInitDatabase(binaryExtractLocation, runtimePath, pgDataDir, username, password, locale string, encoding string, logger *os.File) error {
 	passwordFile, err := createPasswordFile(runtimePath, password)
@@ -71,12 +71,12 @@ func createPasswordFile(runtimePath, password string) (string, error) {
 	return passwordFileLocation, nil
 }
 
-func defaultCreateDatabase(port uint32, username, password, database string) (err error) {
+func defaultCreateDatabase(host string, port uint32, username, password, database string) (err error) {
 	if database == "postgres" {
 		return nil
 	}
 
-	conn, err := openDatabaseConnection(port, username, password, "postgres")
+	conn, err := openDatabaseConnection(host, port, username, password, "postgres")
 	if err != nil {
 		return errorCustomDatabase(database, err)
 	}
@@ -120,7 +120,12 @@ func healthCheckDatabaseOrTimeout(config Config) error {
 
 	go func() {
 		for timeout.Err() == nil {
-			if err := healthCheckDatabase(config.port, config.database, config.username, config.password); err != nil {
+			host := "localhost"
+			if config.useUnixSocket {
+				host = config.unixSocketDirectory
+			}
+
+			if err := healthCheckDatabase(host, config.port, config.database, config.username, config.password); err != nil {
 				continue
 			}
 			healthCheckSignal <- true
@@ -137,8 +142,8 @@ func healthCheckDatabaseOrTimeout(config Config) error {
 	}
 }
 
-func healthCheckDatabase(port uint32, database, username, password string) (err error) {
-	conn, err := openDatabaseConnection(port, username, password, database)
+func healthCheckDatabase(host string, port uint32, database, username, password string) (err error) {
+	conn, err := openDatabaseConnection(host, port, username, password, database)
 	if err != nil {
 		return err
 	}
@@ -155,8 +160,9 @@ func healthCheckDatabase(port uint32, database, username, password string) (err 
 	return nil
 }
 
-func openDatabaseConnection(port uint32, username string, password string, database string) (*pq.Connector, error) {
-	conn, err := pq.NewConnector(fmt.Sprintf("host=localhost port=%d user=%s password=%s dbname=%s sslmode=disable",
+func openDatabaseConnection(host string, port uint32, username string, password string, database string) (*pq.Connector, error) {
+	conn, err := pq.NewConnector(fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host,
 		port,
 		username,
 		password,
