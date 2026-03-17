@@ -32,7 +32,7 @@ following to add the latest release to your project.
 go get -u github.com/fergusstrange/embedded-postgres
 ```
 
-Please note that Postgres 18 & Mac/Darwin builds require [Rosetta 2](https://github.com/fergusstrange/embedded-postgres/blob/cf5b3570ca7fc727fae6e4874ec08b4818b705b1/.circleci/config.yml#L28).
+Please note that Postgres versions before 18.3.0 on Mac/Darwin require [Rosetta 2](https://github.com/fergusstrange/embedded-postgres/blob/cf5b3570ca7fc727fae6e4874ec08b4818b705b1/.circleci/config.yml#L28) on Apple Silicon due to the upstream binaries being x86_64-only. Version 18.3.0+ includes universal binaries that work natively on Apple Silicon.
 
 ## How to use
 
@@ -43,7 +43,7 @@ This library aims to require as little configuration as possible, favouring over
 | Username            | postgres                                        |
 | Password            | postgres                                        |
 | Database            | postgres                                        |
-| Version             | 18.0.0                                          |
+| Version             | 18.3.0                                          |
 | Encoding            | UTF8                                            |
 | Locale              | C                                               |
 | CachePath           | $USER_HOME/.embedded-postgres-go/               |
