@@ -195,10 +195,8 @@ func (ep *EmbeddedPostgres) Stop() error {
 		return err
 	}
 
-	if ep.config.runtimePath != "" {
-		if err := os.RemoveAll(ep.config.runtimePath); err != nil {
-			return fmt.Errorf("unable to clean up runtime directory %s: %w", ep.config.runtimePath, err)
-		}
+	if err := os.RemoveAll(ep.config.runtimePath); err != nil {
+		return fmt.Errorf("unable to clean up runtime directory %s with error: %s", ep.config.runtimePath, err)
 	}
 
 	return nil
