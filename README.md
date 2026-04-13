@@ -12,7 +12,7 @@
 
 # embedded-postgres
 
-Run a real Postgres database locally on Linux, OSX or Windows as part of another Go application or test.
+Run a real Postgres database locally on Linux, OSX, Windows or FreeBSD (amd64) as part of another Go application or test.
 
 When testing this provides a higher level of confidence than using any in memory alternative. It also requires no other
 external dependencies outside of the Go build ecosystem.
@@ -69,6 +69,10 @@ is done).
 If your test need to run multiple different versions of Postgres for different tests, make sure
 *BinaryPath* is a subdirectory of *RuntimePath*.
 
+On FreeBSD amd64 the default artifact naming currently uses `freebsd13-amd64`.
+If you publish a different FreeBSD line such as `freebsd14-amd64`, select it explicitly with `Platform("freebsd14")`.
+If you already have a prebuilt binary tree on disk, prefer `BinariesPath(...)` to skip remote downloads entirely.
+
 A single Postgres instance can be created, started and stopped as follows
 
 ```go
@@ -89,7 +93,9 @@ Username("beer").
 Password("wine").
 Database("gin").
 Version(V12).
+Platform("freebsd14").
 RuntimePath("/tmp").
+BinariesPath("/opt/embedded-postgres").
 BinaryRepositoryURL("https://repo.local/central.proxy").
 Port(9876).
 StartTimeout(45 * time.Second).
@@ -101,6 +107,35 @@ err := postgres.Start()
 
 err := postgres.Stop()
 ```
+
+If you want a reusable starting point for local macOS development and FreeBSD 13
+deployments, use the `preset` helper package:
+
+```go
+import (
+	"time"
+
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"github.com/fergusstrange/embedded-postgres/preset"
+)
+
+config := preset.LocalDevelopment("myapp", preset.Options{
+	Version:      embeddedpostgres.V18,
+	Port:         5433,
+	StartTimeout: 30 * time.Second,
+	// Optional on FreeBSD when you pre-install the binary tree yourself.
+	// BinariesPath: "/opt/embedded-postgres",
+})
+
+postgres := embeddedpostgres.NewDatabase(config)
+err := postgres.Start()
+defer postgres.Stop()
+```
+
+On FreeBSD this preset defaults to the `freebsd13` artifact line and uses
+`/var/tmp/<app>/embedded-postgres/runtime` plus
+`/var/db/<app>/embedded-postgres/data`. Override `Platform("freebsd14")` or the
+paths if your host layout differs.
 
 It should be noted that if `postgres.Stop()` is not called then the child Postgres process will not be released and the
 caller will block.
@@ -119,4 +154,3 @@ in [examples](https://github.com/fergusstrange/embedded-postgres/tree/master/exa
 ## Contributing
 
 View the [contributing guide](CONTRIBUTING.md).
-

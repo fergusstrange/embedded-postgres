@@ -2,6 +2,7 @@ package embeddedpostgres
 
 import (
 	"archive/tar"
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -28,7 +29,7 @@ func Test_decompressTarXz(t *testing.T) {
 	archive, cleanUp := createTempXzArchive()
 	defer cleanUp()
 
-	err = decompressTarXz(defaultTarReader, archive, tempDir)
+	err = decompressTarXz(defaultTarReader, archive, tempDir, nil)
 
 	assert.NoError(t, err)
 
@@ -42,7 +43,7 @@ func Test_decompressTarXz(t *testing.T) {
 }
 
 func Test_decompressTarXz_ErrorWhenFileNotExists(t *testing.T) {
-	err := decompressTarXz(defaultTarReader, "/does-not-exist", "/also-fake")
+	err := decompressTarXz(defaultTarReader, "/does-not-exist", "/also-fake", nil)
 
 	assert.Error(t, err)
 	assert.Contains(
@@ -68,7 +69,7 @@ func Test_decompressTarXz_ErrorWhenErrorDuringRead(t *testing.T) {
 		return func() (*tar.Header, error) {
 			return nil, errors.New("oh noes")
 		}, nil
-	}, archive, tempDir)
+	}, archive, tempDir, nil)
 
 	assert.EqualError(t, err, "unable to extract postgres archive: oh noes")
 }
@@ -108,7 +109,7 @@ func Test_decompressTarXz_ErrorWhenFailedToReadFileToCopy(t *testing.T) {
 			}
 	}
 
-	err = decompressTarXz(fileBlockingExtractTarReader, archive, tempDir)
+	err = decompressTarXz(fileBlockingExtractTarReader, archive, tempDir, nil)
 
 	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
@@ -145,7 +146,7 @@ func Test_decompressTarXz_ErrorWhenFileToCopyToNotExists(t *testing.T) {
 			}
 	}
 
-	err = decompressTarXz(fileBlockingExtractTarReader, archive, tempDir)
+	err = decompressTarXz(fileBlockingExtractTarReader, archive, tempDir, nil)
 
 	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
@@ -180,7 +181,7 @@ func Test_decompressTarXz_ErrorWhenArchiveCorrupted(t *testing.T) {
 		panic(err)
 	}
 
-	err = decompressTarXz(defaultTarReader, archive, tempDir)
+	err = decompressTarXz(defaultTarReader, archive, tempDir, nil)
 
 	assert.EqualError(t, err, "unable to extract postgres archive: xz: data is corrupt")
 }
@@ -197,10 +198,26 @@ func Test_decompressTarXz_ErrorWithInvalidDestination(t *testing.T) {
 
 	op := fmt.Sprintf(path.Join(tempDir, "%c"), rune(0))
 
-	err = decompressTarXz(defaultTarReader, archive, op)
+	err = decompressTarXz(defaultTarReader, archive, op, nil)
 	assert.EqualError(
 		t,
 		err,
 		fmt.Sprintf("unable to extract postgres archive: mkdir %s: invalid argument", op),
 	)
+}
+
+func Test_decompressTarXz_LogsExtractedEntries(t *testing.T) {
+	tempDir := t.TempDir()
+	archive, cleanUp := createTempXzArchive()
+	defer cleanUp()
+
+	var logs bytes.Buffer
+	err := decompressTarXz(defaultTarReader, archive, tempDir, func(format string, args ...any) {
+		_, _ = fmt.Fprintf(&logs, format+"\n", args...)
+	})
+
+	require.NoError(t, err)
+	assert.Contains(t, logs.String(), "extracting embedded postgres entry")
+	assert.Contains(t, logs.String(), "entry=dir1/dir2/some_content")
+	assert.Contains(t, logs.String(), "finished extracting embedded postgres archive")
 }

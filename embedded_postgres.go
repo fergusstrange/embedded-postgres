@@ -71,11 +71,13 @@ func (ep *EmbeddedPostgres) Start() error {
 		return ErrServerAlreadyStarted
 	}
 
-	if err := ensurePortAvailable(ep.config.port); err != nil {
-		return err
+	if !ep.config.useUnixSocket {
+		if err := ensurePortAvailable(ep.config.port); err != nil {
+			return err
+		}
 	}
 
-	logger, err := newSyncedLogger("", ep.config.logger)
+	logger, err := newSyncedLogger(ep.config.logDirectory, ep.config.logger)
 	if err != nil {
 		return errors.New("unable to create logger")
 	}
@@ -99,6 +101,15 @@ func (ep *EmbeddedPostgres) Start() error {
 	if ep.config.binariesPath == "" {
 		ep.config.binariesPath = ep.config.runtimePath
 	}
+
+	ep.logf(
+		"embedded postgres binary setup cache=%s cache_exists=%t runtime_path=%s binaries_path=%s data_path=%s",
+		cacheLocation,
+		cacheExists,
+		ep.config.runtimePath,
+		ep.config.binariesPath,
+		ep.config.dataPath,
+	)
 
 	if err := ep.downloadAndExtractBinary(cacheExists, cacheLocation); err != nil {
 		return err
@@ -127,7 +138,12 @@ func (ep *EmbeddedPostgres) Start() error {
 	ep.started = true
 
 	if !reuseData {
-		if err := ep.createDatabase(ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
+		host := "localhost"
+		if ep.config.useUnixSocket {
+			host = ep.config.unixSocketDirectory
+		}
+
+		if err := ep.createDatabase(host, ep.config.port, ep.config.username, ep.config.password, ep.config.database); err != nil {
 			if stopErr := stopPostgres(ep); stopErr != nil {
 				return fmt.Errorf("unable to stop database caused by error %s", err)
 			}
@@ -152,19 +168,38 @@ func (ep *EmbeddedPostgres) downloadAndExtractBinary(cacheExists bool, cacheLoca
 	mu.Lock()
 	defer mu.Unlock()
 
-	_, binDirErr := os.Stat(filepath.Join(ep.config.binariesPath, "bin", "pg_ctl"))
+	pgCtlPath := filepath.Join(ep.config.binariesPath, "bin", "pg_ctl")
+	_, binDirErr := os.Stat(pgCtlPath)
 	if os.IsNotExist(binDirErr) {
 		if !cacheExists {
-			if err := ep.remoteFetchStrategy(); err != nil {
+			ep.logf("downloading embedded postgres archive cache=%s", cacheLocation)
+			if err := ep.remoteFetchStrategy(ep.logf); err != nil {
 				return err
 			}
+		} else {
+			ep.logf("using cached embedded postgres archive cache=%s", cacheLocation)
 		}
 
-		if err := decompressTarXz(defaultTarReader, cacheLocation, ep.config.binariesPath); err != nil {
+		ep.logf("extracting embedded postgres archive archive=%s destination=%s", cacheLocation, ep.config.binariesPath)
+		if err := decompressTarXz(defaultTarReader, cacheLocation, ep.config.binariesPath, ep.logf); err != nil {
 			return err
 		}
+		ep.logf("embedded postgres archive extracted archive=%s destination=%s", cacheLocation, ep.config.binariesPath)
+	} else {
+		ep.logf("embedded postgres binaries already available pg_ctl=%s", pgCtlPath)
 	}
 	return nil
+}
+
+func (ep *EmbeddedPostgres) logf(format string, args ...any) {
+	if ep == nil || ep.syncedLogger == nil {
+		return
+	}
+	ep.syncedLogger.logf(format, args...)
+}
+
+func (ep *EmbeddedPostgres) GetConnectionURL() string {
+	return ep.config.GetConnectionURL()
 }
 
 func (ep *EmbeddedPostgres) cleanDataDirectoryAndInit() error {
@@ -210,27 +245,65 @@ func encodeOptions(port uint32, parameters map[string]string) string {
 }
 
 func startPostgres(ep *EmbeddedPostgres) error {
+	if err := ensureFreeBSDRuntimeUser(ep.config.binariesPath, ep.config.runtimePath, ep.config.dataPath); err != nil {
+		return err
+	}
+
+	if ep.config.startParameters == nil {
+		ep.config.startParameters = make(map[string]string)
+	}
+
+	if ep.config.useUnixSocket {
+		ep.config.startParameters["listen_addresses"] = ""
+		ep.config.startParameters["unix_socket_directories"] = ep.config.unixSocketDirectory
+	}
+
 	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
-	postgresProcess := exec.Command(postgresBinary, "start", "-w",
+	postgresProcess := wrapCommandForRuntimeUser(exec.Command(postgresBinary, "start", "-w",
 		"-D", ep.config.dataPath,
-		"-o", encodeOptions(ep.config.port, ep.config.startParameters))
+		"-o", encodeOptions(ep.config.port, ep.config.startParameters)))
 	postgresProcess.Stdout = ep.syncedLogger.file
 	postgresProcess.Stderr = ep.syncedLogger.file
 
 	if err := postgresProcess.Run(); err != nil {
 		_ = ep.syncedLogger.flush()
 		logContent, _ := readLogsOrTimeout(ep.syncedLogger.file)
+		logText := string(logContent)
 
-		return fmt.Errorf("could not start postgres using %s:\n%s", postgresProcess.String(), string(logContent))
+		if runtime.GOOS == "freebsd" && needsFreeBSDICUCopyHint(logText) {
+			logText += freeBSDICUCopyHint(ep.config.binariesPath)
+		}
+
+		return fmt.Errorf("could not start postgres using %s:\n%s", postgresProcess.String(), logText)
 	}
 
 	return nil
 }
 
+func needsFreeBSDICUCopyHint(logText string) bool {
+	return strings.Contains(logText, `U_FILE_ACCESS_ERROR`) ||
+		strings.Contains(logText, `could not open collator for locale "und"`) ||
+		strings.Contains(logText, `pg_collation_actual_version(oid)`) ||
+		strings.Contains(logText, `icu`)
+}
+
+func freeBSDICUCopyHint(binariesPath string) string {
+	icuRoot := filepath.Join(binariesPath, "share", "icu")
+	return fmt.Sprintf(
+		"\nFreeBSD ICU hint:\n"+
+			"  The embedded bundle ships ICU data under %s\n"+
+			"  If PostgreSQL still fails to load collations, copy the bundled ICU version directory into /usr/local/share/icu/.\n"+
+			"  Example:\n"+
+			"    cp -R %s/* /usr/local/share/icu/\n",
+		icuRoot,
+		icuRoot,
+	)
+}
+
 func stopPostgres(ep *EmbeddedPostgres) error {
 	postgresBinary := filepath.Join(ep.config.binariesPath, "bin/pg_ctl")
-	postgresProcess := exec.Command(postgresBinary, "stop", "-w",
-		"-D", ep.config.dataPath)
+	postgresProcess := wrapCommandForRuntimeUser(exec.Command(postgresBinary, "stop", "-w",
+		"-D", ep.config.dataPath))
 	postgresProcess.Stderr = ep.syncedLogger.file
 	postgresProcess.Stdout = ep.syncedLogger.file
 

@@ -10,6 +10,8 @@ import (
 	"github.com/xi2/xz"
 )
 
+type progressLogger func(format string, args ...any)
+
 func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() io.Reader) {
 	tarReader := tar.NewReader(xzReader)
 
@@ -20,7 +22,7 @@ func defaultTarReader(xzReader *xz.Reader) (func() (*tar.Header, error), func() 
 		}
 }
 
-func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), func() io.Reader), path, extractPath string) error {
+func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), func() io.Reader), path, extractPath string, logf progressLogger) error {
 	extractDirectory := filepath.Dir(extractPath)
 
 	if err := os.MkdirAll(extractDirectory, os.ModePerm); err != nil {
@@ -54,6 +56,7 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 	}
 
 	readNext, reader := tarReader(xzReader)
+	entryCount := 0
 
 	for {
 		header, err := readNext()
@@ -79,6 +82,7 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 
 		switch header.Typeflag {
 		case tar.TypeReg:
+			logProgress(logf, "extracting embedded postgres entry archive=%s entry=%s type=file target=%s size=%d", path, header.Name, finalPath, header.Size)
 			outFile, err := os.OpenFile(targetPath, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
 			if err != nil {
 				return errorExtractingPostgres(err)
@@ -92,6 +96,7 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 				return errorExtractingPostgres(err)
 			}
 		case tar.TypeSymlink:
+			logProgress(logf, "extracting embedded postgres entry archive=%s entry=%s type=symlink target=%s link=%s", path, header.Name, finalPath, header.Linkname)
 			if err := os.RemoveAll(targetPath); err != nil {
 				return errorExtractingPostgres(err)
 			}
@@ -101,18 +106,30 @@ func decompressTarXz(tarReader func(*xz.Reader) (func() (*tar.Header, error), fu
 			}
 
 		case tar.TypeDir:
+			logProgress(logf, "extracting embedded postgres entry archive=%s entry=%s type=dir target=%s", path, header.Name, finalPath)
 			if err := os.MkdirAll(finalPath, os.FileMode(header.Mode)); err != nil {
 				return errorExtractingPostgres(err)
 			}
+			entryCount++
 			continue
 		}
 
 		if err := renameOrIgnore(targetPath, finalPath); err != nil {
 			return errorExtractingPostgres(err)
 		}
+		entryCount++
 	}
 
+	logProgress(logf, "finished extracting embedded postgres archive archive=%s destination=%s entries=%d", path, extractPath, entryCount)
+
 	return nil
+}
+
+func logProgress(logf progressLogger, format string, args ...any) {
+	if logf == nil {
+		return
+	}
+	logf(format, args...)
 }
 
 func errorUnableToExtract(cacheLocation, binariesPath string, err error) error {

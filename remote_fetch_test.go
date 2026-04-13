@@ -2,8 +2,10 @@ package embeddedpostgres
 
 import (
 	"archive/zip"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
@@ -22,7 +24,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenHttpGet(t *testing.T) {
 		testVersionStrategy(),
 		testCacheLocator())
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.EqualError(t, err, "unable to connect to http://localhost:1234/maven2")
 }
@@ -37,9 +39,124 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenHttpStatusNot200(t *testing.T) {
 		testVersionStrategy(),
 		testCacheLocator())
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.EqualError(t, err, "no version found matching 1.2.3")
+}
+
+func Test_defaultRemoteFetchStrategy_UsesConfiguredPlatformOverride(t *testing.T) {
+	requests := make([]string, 0, 2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.RequestURI)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	versionStrategy := defaultVersionStrategy(
+		DefaultConfig().
+			Version(PostgresVersion("18.3.0")).
+			Platform("freebsd14"),
+		"freebsd",
+		"amd64",
+		linuxMachineName,
+		func() bool {
+			return false
+		},
+	)
+
+	originalURL := freeBSDBinaryRepositoryURL
+	freeBSDBinaryRepositoryURL = server.URL
+	defer func() {
+		freeBSDBinaryRepositoryURL = originalURL
+	}()
+
+	cacheDir := t.TempDir()
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2", versionStrategy, func() (string, bool) {
+		return filepath.Join(cacheDir, "freebsd14.txz"), false
+	})
+
+	err := remoteFetchStrategy(nil)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, requests)
+	assert.Equal(t, "/postgres-freebsd14-x86_64.txz", requests[0])
+}
+
+func Test_defaultRemoteFetchStrategy_UsesDefaultFreeBSD13Bundle(t *testing.T) {
+	requests := make([]string, 0, 2)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests = append(requests, r.RequestURI)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	versionStrategy := defaultVersionStrategy(
+		DefaultConfig().Version(PostgresVersion("18.3.0")),
+		"freebsd",
+		"amd64",
+		linuxMachineName,
+		func() bool {
+			return false
+		},
+	)
+
+	originalURL := freeBSDBinaryRepositoryURL
+	freeBSDBinaryRepositoryURL = server.URL
+	defer func() {
+		freeBSDBinaryRepositoryURL = originalURL
+	}()
+
+	cacheDir := t.TempDir()
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2", versionStrategy, func() (string, bool) {
+		return filepath.Join(cacheDir, "freebsd13.txz"), false
+	})
+
+	err := remoteFetchStrategy(nil)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, requests)
+	assert.Equal(t, "/postgres-freebsd13-x86_64.txz", requests[0])
+}
+
+func Test_defaultRemoteFetchStrategy_LogsFreeBSDBundleDownload(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("txz"))
+	}))
+	defer server.Close()
+
+	versionStrategy := defaultVersionStrategy(
+		DefaultConfig().Version(PostgresVersion("18.3.0")),
+		"freebsd",
+		"amd64",
+		linuxMachineName,
+		func() bool {
+			return false
+		},
+	)
+
+	originalURL := freeBSDBinaryRepositoryURL
+	freeBSDBinaryRepositoryURL = server.URL
+	defer func() {
+		freeBSDBinaryRepositoryURL = originalURL
+	}()
+
+	cacheDir := t.TempDir()
+	cacheLocation := filepath.Join(cacheDir, "freebsd13.txz")
+	remoteFetchStrategy := defaultRemoteFetchStrategy(server.URL+"/maven2", versionStrategy, func() (string, bool) {
+		return cacheLocation, false
+	})
+
+	var logs bytes.Buffer
+	err := remoteFetchStrategy(func(format string, args ...any) {
+		_, _ = fmt.Fprintf(&logs, format+"\n", args...)
+	})
+
+	require.NoError(t, err)
+	assert.Contains(t, logs.String(), "downloading embedded postgres archive")
+	assert.Contains(t, logs.String(), "/postgres-freebsd13-x86_64.txz")
+	assert.Contains(t, logs.String(), cacheLocation)
+	assert.Contains(t, logs.String(), "downloaded embedded postgres archive")
 }
 
 func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
@@ -52,7 +169,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenBodyReadIssue(t *testing.T) {
 		testVersionStrategy(),
 		testCacheLocator())
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.EqualError(t, err, "error fetching postgres: unexpected EOF")
 }
@@ -70,7 +187,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzipSubFile(t *testing.T) {
 		testVersionStrategy(),
 		testCacheLocator())
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.EqualError(t, err, "error fetching postgres: zip: not a valid zip file")
 }
@@ -92,7 +209,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotUnzip(t *testing.T) {
 		testVersionStrategy(),
 		testCacheLocator())
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.EqualError(t, err, "error fetching postgres: zip: not a valid zip file")
 }
@@ -116,7 +233,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenNoSubTarArchive(t *testing.T) {
 		testVersionStrategy(),
 		testCacheLocator())
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.EqualError(t, err, "error fetching postgres: cannot find binary in archive retrieved from "+server.URL+"/maven2/io/zonky/test/postgres/embedded-postgres-binaries-darwin-amd64/1.2.3/embedded-postgres-binaries-darwin-amd64-1.2.3.jar")
 }
@@ -147,7 +264,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotExtractSubArchive(t *testing
 			return filepath.FromSlash("/invalid"), false
 		})
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
@@ -187,7 +304,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateCacheDirectory(t *test
 			return cacheLocation, false
 		})
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
@@ -224,7 +341,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenCannotCreateSubArchiveFile(t *test
 			return "/\\000", false
 		})
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.Regexp(t, "^unable to extract postgres archive:.+$", err)
 }
@@ -262,7 +379,7 @@ func Test_defaultRemoteFetchStrategy_ErrorWhenSHA256NotMatch(t *testing.T) {
 			return cacheLocation, false
 		})
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.EqualError(t, err, "downloaded checksums do not match")
 }
@@ -301,7 +418,7 @@ func Test_defaultRemoteFetchStrategy(t *testing.T) {
 			return cacheLocation, false
 		})
 
-	err := remoteFetchStrategy()
+	err := remoteFetchStrategy(nil)
 
 	assert.NoError(t, err)
 	assert.FileExists(t, cacheLocation)
@@ -354,7 +471,7 @@ func Test_defaultRemoteFetchStrategyWithExistingDownload(t *testing.T) {
 		})
 
 	// call it the remoteFetchStrategy(). The output location should be empty and a new file created
-	err = remoteFetchStrategy()
+	err = remoteFetchStrategy(nil)
 	assert.NoError(t, err)
 	assert.FileExists(t, cacheLocation)
 	out1, err := os.ReadFile(cacheLocation)
@@ -364,7 +481,7 @@ func Test_defaultRemoteFetchStrategyWithExistingDownload(t *testing.T) {
 	assert.NoError(t, err)
 
 	// call the remoteFetchStrategy() again, this time the file should be overwritten
-	err = remoteFetchStrategy()
+	err = remoteFetchStrategy(nil)
 	assert.NoError(t, err)
 	assert.FileExists(t, cacheLocation)
 
@@ -412,7 +529,7 @@ func Test_defaultRemoteFetchStrategy_whenContentLengthNotSet(t *testing.T) {
 			return cacheLocation, false
 		})
 
-	err = remoteFetchStrategy()
+	err = remoteFetchStrategy(nil)
 
 	assert.NoError(t, err)
 	assert.FileExists(t, cacheLocation)

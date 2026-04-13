@@ -19,7 +19,7 @@ func Test_DefaultVersionStrategy_AllGolangDistributions(t *testing.T) {
 		"darwin/arm64":    {"darwin", "amd64"},
 		"dragonfly/amd64": {"dragonfly", "amd64"},
 		"freebsd/386":     {"freebsd", "386"},
-		"freebsd/amd64":   {"freebsd", "amd64"},
+		"freebsd/amd64":   {"freebsd13", "amd64"},
 		"freebsd/arm":     {"freebsd", "arm"},
 		"freebsd/arm64":   {"freebsd", "arm64"},
 		"illumos/amd64":   {"illumos", "amd64"},
@@ -139,6 +139,40 @@ func Test_DefaultVersionStrategy_Linux_Alpine(t *testing.T) {
 
 	assert.Equal(t, "linux", operatingSystem)
 	assert.Equal(t, "amd64-alpine", architecture)
+	assert.Equal(t, V18, postgresVersion)
+}
+
+func Test_DefaultVersionStrategy_FreeBSD_PlatformOverride(t *testing.T) {
+	operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
+		DefaultConfig().Platform("freebsd14"),
+		"freebsd",
+		"amd64",
+		linuxMachineName,
+		func() bool {
+			return false
+		},
+	)()
+
+	assert.Equal(t, "freebsd14", operatingSystem)
+	assert.Equal(t, "amd64", architecture)
+	assert.Equal(t, V18, postgresVersion)
+}
+
+func Test_DefaultVersionStrategy_Alpine_PlatformOverride(t *testing.T) {
+	operatingSystem, architecture, postgresVersion := defaultVersionStrategy(
+		DefaultConfig().Platform("alpine"),
+		"linux",
+		"arm64",
+		func() string {
+			return ""
+		},
+		func() bool {
+			return false
+		},
+	)()
+
+	assert.Equal(t, "alpine", operatingSystem)
+	assert.Equal(t, "arm64v8", architecture)
 	assert.Equal(t, V18, postgresVersion)
 }
 

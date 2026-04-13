@@ -25,7 +25,7 @@ func (a *App) Start() error {
 }
 
 func NewApp() *App {
-	db, err := sqlx.Connect("postgres", "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable")
+	db, err := sqlx.Connect("postgres", exampleConnectionString())
 	if err != nil {
 		log.Fatal(err)
 	}

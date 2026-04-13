@@ -16,7 +16,16 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 		goos := goos
 		arch := arch
 
-		if goos == "linux" {
+		if config.platform != "" {
+			goos = config.platform
+		}
+
+		if config.platform == "" && goos == "freebsd" && arch == "amd64" {
+			// The current embedded FreeBSD artifact line is published as freebsd13-amd64.
+			goos = "freebsd13"
+		}
+
+		if goos == "linux" || goos == "alpine" {
 			// the zonkyio/embedded-postgres-binaries project produces
 			// arm binaries with the following name schema:
 			// 32bit: arm32v6 / arm32v7
@@ -32,7 +41,7 @@ func defaultVersionStrategy(config Config, goos, arch string, linuxMachineName f
 				}
 			}
 
-			if shouldUseAlpineLinuxBuild() {
+			if goos == "linux" && config.platform == "" && shouldUseAlpineLinuxBuild() {
 				arch += "-alpine"
 			}
 		}

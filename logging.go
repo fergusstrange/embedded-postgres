@@ -15,6 +15,11 @@ type syncedLogger struct {
 }
 
 func newSyncedLogger(dir string, logger io.Writer) (*syncedLogger, error) {
+	if dir != "" {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return nil, err
+		}
+	}
 	file, err := os.CreateTemp(dir, "embedded_postgres_log")
 	if err != nil {
 		return nil, err
@@ -54,6 +59,21 @@ func (s *syncedLogger) flush() error {
 	}
 
 	return nil
+}
+
+func (s *syncedLogger) logf(format string, args ...any) {
+	if s == nil || s.file == nil {
+		return
+	}
+	if _, err := fmt.Fprintf(s.file, format+"\n", args...); err != nil {
+		panic(err)
+	}
+	if err := s.file.Sync(); err != nil {
+		panic(err)
+	}
+	if err := s.flush(); err != nil {
+		panic(err)
+	}
 }
 
 func readLogsOrTimeout(logger *os.File) (logContent []byte, err error) {

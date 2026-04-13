@@ -65,11 +65,11 @@ func Test_ErrorWhenPortAlreadyTaken(t *testing.T) {
 }
 
 func Test_ErrorWhenRemoteFetchError(t *testing.T) {
-	database := NewDatabase()
+	database := NewDatabase(DefaultConfig().Port(9875))
 	database.cacheLocator = func() (string, bool) {
 		return "", false
 	}
-	database.remoteFetchStrategy = func() error {
+	database.remoteFetchStrategy = func(progressLogger) error {
 		return errors.New("did not work")
 	}
 
@@ -156,7 +156,7 @@ func Test_ErrorWhenUnableToCreateDatabase(t *testing.T) {
 		RuntimePath(extractPath).
 		StartTimeout(10 * time.Second))
 
-	database.createDatabase = func(port uint32, username, password, database string) error {
+	database.createDatabase = func(host string, port uint32, username, password, database string) error {
 		return errors.New("ah noes")
 	}
 
@@ -176,7 +176,7 @@ func Test_TimesOutWhenCannotStart(t *testing.T) {
 		Database("something-fancy").
 		StartTimeout(500 * time.Millisecond))
 
-	database.createDatabase = func(port uint32, username, password, database string) error {
+	database.createDatabase = func(host string, port uint32, username, password, database string) error {
 		return nil
 	}
 
@@ -328,7 +328,7 @@ func Test_CustomLog(t *testing.T) {
 	assert.Contains(t, lines, fmt.Sprintf("The files belonging to this database system will be owned by user \"%s\".", current.Username))
 	assert.Contains(t, lines, "syncing data to disk ... ok")
 	assert.Contains(t, lines, "server stopped")
-	assert.Less(t, len(lines), 55)
+	assert.Less(t, len(lines), 70)
 	assert.Greater(t, len(lines), 40)
 }
 
@@ -767,12 +767,12 @@ func Test_PrefetchedBinaries(t *testing.T) {
 		RuntimePath(runtimeTempDir))
 
 	// Download and unarchive postgres into the bindir.
-	if err := database.remoteFetchStrategy(); err != nil {
+	if err := database.remoteFetchStrategy(nil); err != nil {
 		panic(err)
 	}
 
 	cacheLocation, _ := database.cacheLocator()
-	if err := decompressTarXz(defaultTarReader, cacheLocation, binTempDir); err != nil {
+	if err := decompressTarXz(defaultTarReader, cacheLocation, binTempDir, nil); err != nil {
 		panic(err)
 	}
 
@@ -780,7 +780,7 @@ func Test_PrefetchedBinaries(t *testing.T) {
 	database.cacheLocator = func() (string, bool) {
 		return "", false
 	}
-	database.remoteFetchStrategy = func() error {
+	database.remoteFetchStrategy = func(progressLogger) error {
 		return errors.New("did not work")
 	}
 
@@ -832,4 +832,52 @@ func Test_RunningInParallel(t *testing.T) {
 	go runTestWithPortAndPath(8766, path.Join(tempPath, "2"))
 
 	waitGroup.Wait()
+}
+
+func Test_RunOnUnixSocket(t *testing.T) {
+	database := NewDatabase(DefaultConfig().Port(9876).WithoutTcp())
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	defer database.Stop()
+
+	if _, err := os.Stat("/tmp/.s.PGSQL.9876"); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_RunOnUnixSocketOnCustomPath(t *testing.T) {
+	tempPath, err := os.MkdirTemp("", "custom_dir_socks")
+	if err != nil {
+		panic(err)
+	}
+
+	defer os.RemoveAll(tempPath)
+
+	database := NewDatabase(DefaultConfig().Port(9876).WithoutTcp().WithUnixSocketDirectory(tempPath))
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	defer database.Stop()
+
+	if _, err := os.Stat(fmt.Sprintf("%s/.s.PGSQL.9876", tempPath)); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+}
+
+func Test_RunOnUnixSocket_IgnoresBusyTCPPort(t *testing.T) {
+	listener, err := net.Listen("tcp", "localhost:5432")
+	if err != nil {
+		t.Skip("tcp/5432 already in use on this machine")
+	}
+	defer listener.Close()
+
+	database := NewDatabase(DefaultConfig().WithoutTcp())
+	if err := database.Start(); err != nil {
+		shutdownDBAndFail(t, err, database)
+	}
+
+	defer database.Stop()
 }

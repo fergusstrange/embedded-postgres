@@ -3,6 +3,7 @@ package embeddedpostgres
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"time"
 )
@@ -10,7 +11,11 @@ import (
 // Config maintains the runtime configuration for the Postgres process to be created.
 type Config struct {
 	version             PostgresVersion
+	platform            string
 	port                uint32
+	useUnixSocket       bool
+	unixSocketDirectory string
+	logDirectory        string
 	database            string
 	username            string
 	password            string
@@ -38,6 +43,8 @@ func DefaultConfig() Config {
 	return Config{
 		version:             V18,
 		port:                5432,
+		useUnixSocket:       false,
+		unixSocketDirectory: "/tmp/",
 		database:            "postgres",
 		username:            "postgres",
 		password:            "postgres",
@@ -53,9 +60,35 @@ func (c Config) Version(version PostgresVersion) Config {
 	return c
 }
 
+// Platform sets the artifact platform line used to resolve postgres binaries.
+// For example: "freebsd13", "freebsd14" or "alpine".
+func (c Config) Platform(platform string) Config {
+	c.platform = platform
+	return c
+}
+
 // Port sets the runtime port that Postgres can be accessed on.
 func (c Config) Port(port uint32) Config {
 	c.port = port
+	return c
+}
+
+// WithoutTcp makes Postgres listen on a UNIX socket instead of opening a TCP port.
+func (c Config) WithoutTcp() Config {
+	c.useUnixSocket = true
+	return c
+}
+
+// WithUnixSocketDirectory sets the directory where Postgres creates its UNIX socket.
+func (c Config) WithUnixSocketDirectory(dir string) Config {
+	c.unixSocketDirectory = dir
+	return c
+}
+
+// LogDirectory sets the directory where the temporary embedded Postgres capture
+// file is created before its content is forwarded to the configured logger.
+func (c Config) LogDirectory(dir string) Config {
+	c.logDirectory = dir
 	return c
 }
 
@@ -145,7 +178,23 @@ func (c Config) BinaryRepositoryURL(binaryRepositoryURL string) Config {
 }
 
 func (c Config) GetConnectionURL() string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", c.username, c.password, "localhost", c.port, c.database)
+	u := &url.URL{
+		Scheme: "postgresql",
+		User:   url.UserPassword(c.username, c.password),
+		Path:   "/" + c.database,
+	}
+
+	if c.useUnixSocket {
+		u.Host = fmt.Sprintf(":%d", c.port)
+
+		q := url.Values{}
+		q.Set("host", c.unixSocketDirectory)
+		u.RawQuery = q.Encode()
+	} else {
+		u.Host = fmt.Sprintf("localhost:%d", c.port)
+	}
+
+	return u.String()
 }
 
 // PostgresVersion represents the semantic version used to fetch and run the Postgres process.
