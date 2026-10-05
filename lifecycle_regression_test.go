@@ -90,7 +90,11 @@ func TestStartupProviderFailures(t *testing.T) {
 }
 func TestPersistentVersionAndLock(t *testing.T) {
 	c := integrationConfig(t)
-	parent := t.TempDir()
+	parent, err := os.MkdirTemp("", "ep-lock-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(parent) })
 	if c.identity != nil {
 		os.Chmod(parent, 0755)
 	}
@@ -110,7 +114,7 @@ func TestPersistentVersionAndLock(t *testing.T) {
 	if e := pg.Close(); e != nil {
 		t.Fatal(e)
 	}
-	if e := os.WriteFile(filepath.Join(data, "PG_VERSION"), []byte("17\n"), 0600); e != nil {
+	if e := os.WriteFile(filepath.Join(data, "PG_VERSION"), []byte("1\n"), 0600); e != nil {
 		t.Fatal(e)
 	}
 	if e := pg.Start(); !errors.Is(e, ErrDataVersion) {
@@ -208,8 +212,8 @@ func TestBeforeStartFailureAndServerFailure(t *testing.T) {
 	if logs.Len() == 0 || pg.Err() == nil {
 		t.Fatal("startup diagnostics absent")
 	}
-	if pg.Logs() != "" {
-		t.Fatal("closed workspace exposed logs")
+	if pg.Logs() == "" {
+		t.Fatal("closed instance lost failure diagnostics")
 	}
 }
 func TestUnixSocketAndAmbientEnvironment(t *testing.T) {

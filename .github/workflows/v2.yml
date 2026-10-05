@@ -1,15 +1,18 @@
 name: v2
 on:
   push:
-    branches: [codex/embedded-postgres-v2]
+    branches: [master, codex/embedded-postgres-v2]
   pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 1'
 permissions:
   contents: read
 concurrency:
   group: v2-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 jobs:
-  process:
+  native:
     strategy:
       fail-fast: false
       matrix:
@@ -27,29 +30,182 @@ jobs:
           - os: windows-11-arm
             target: x86_64-pc-windows-msvc
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
-          go-version: '1.26.x'
+          go-version: '1.27.x'
           cache: false
       - run: |
           python scripts/fetch-postgres.py 18.6.0 '${{ matrix.target }}' pg.tar.gz
           mkdir pg
           tar -xzf pg.tar.gz -C pg --strip-components=1
-          go build -o "$RUNNER_TEMP/embedded-postgres.exe" ./cmd/embedded-postgres
-          echo "EP_SUPERVISOR=$RUNNER_TEMP/embedded-postgres.exe" >> "$GITHUB_ENV"
-          echo "EP_TEST_BIN=$PWD/pg/bin" >> "$GITHUB_ENV"
-          echo "EP_TEST_ARCHIVE=$PWD/pg.tar.gz" >> "$GITHUB_ENV"
-      - run: go test -v -timeout 3m ./...
-      - if: runner.os == 'Linux'
-        name: Root caller with non-root PostgreSQL
+      - run: python scripts/ci-test.py
+        env:
+          EP_TEST_VERSION: 18.6.0
+          EP_TEST_ROOT: '1'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-${{ matrix.os }}
+          path: ci-output/*.out
+          if-no-files-found: error
+          retention-days: 14
+  supported-postgres:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [15.19.0, 16.15.0, 17.11.0]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - run: |
+          python scripts/fetch-postgres.py '${{ matrix.version }}' x86_64-unknown-linux-gnu pg.tar.gz
+          mkdir pg
+          tar -xzf pg.tar.gz -C pg --strip-components=1
+          python scripts/ci-test.py
+        env:
+          EP_TEST_VERSION: ${{ matrix.version }}
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-postgres-${{ matrix.version }}
+          path: ci-output/*.out
+          if-no-files-found: error
+  checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.26.x'
+          cache: false
+      - name: Minimum Go, formatting, standard-library-only production
         run: |
-          go test -c -o "$RUNNER_TEMP/supervisor.test" ./internal/supervisor
-          go test -c -o "$RUNNER_TEMP/core.test" .
-          sudo env EP_TEST_BIN="$EP_TEST_BIN" EP_SUPERVISOR="$EP_SUPERVISOR" EP_TEST_UID="$(id -u)" EP_TEST_GID="$(id -g)" "$RUNNER_TEMP/supervisor.test" -test.v -test.timeout=2m
-          sudo env EP_TEST_BIN="$EP_TEST_BIN" EP_SUPERVISOR="$EP_SUPERVISOR" EP_TEST_UID="$(id -u)" EP_TEST_GID="$(id -g)" "$RUNNER_TEMP/core.test" -test.v -test.timeout=3m
+          test -z "$(gofmt -l $(git ls-files '*.go'))"
+          go mod tidy -diff
+          test -z "$(go list -deps -f '{{if not .Standard}}{{if not .Module.Main}}{{.ImportPath}}{{end}}{{end}}' ./...)"
+          go vet ./...
+          go test -race -timeout 3m ./...
+          bash -n install/install.sh
+          python -m unittest discover -s scripts -p 'test_*.py'
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - name: Go vulnerability analysis
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+      - name: Static analysis
+        run: go run honnef.co/go/tools/cmd/staticcheck@2026.2.1 ./...
+      - name: Bounded archive fuzzing
+        run: go test ./internal/archive -run '^$' -fuzz FuzzExtract -fuzztime 30s
+  alpine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - run: |
+          docker run --rm -v "$PWD:/src" -w /src golang:1.27-alpine sh -ec '
+            apk add --no-cache python3 gcc musl-dev libxml2 libstdc++ openssl readline krb5-libs zlib lz4-libs zstd-libs
+            python3 scripts/fetch-postgres.py 18.6.0 x86_64-unknown-linux-musl pg.tar.gz
+            mkdir pg
+            tar -xzf pg.tar.gz -C pg --strip-components=1
+            adduser -D pgtest
+            chown -R pgtest /src
+            su pgtest -c "PATH=/usr/local/go/bin:/usr/bin:/bin python3 scripts/ci-test.py"
+          '
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage-alpine
+          path: ci-output/*.out
+          if-no-files-found: error
+  codeql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - uses: github/codeql-action/init@7999b86c43a865dc79d8923397f35af22de63401 # v4
+        with:
+          languages: go
+          build-mode: manual
+      - run: go build ./...
+      - uses: github/codeql-action/analyze@7999b86c43a865dc79d8923397f35af22de63401 # v4
+  coverage:
+    needs: [native, supported-postgres, alpine]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: coverage-*
+          path: profiles
+      - name: Require 90% aggregate production coverage
+        shell: bash
+        run: python scripts/coverage.py profiles --minimum 90 --output coverage.out | tee coverage-summary.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            coverage.out
+            coverage-summary.txt
+  release:
+    needs: [native, supported-postgres, alpine, checks, codeql, coverage]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - id: version
+        run: python scripts/release.py prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - if: steps.version.outputs.publish == 'true'
+        run: python scripts/release.py build '${{ steps.version.outputs.tag }}'
+      - if: steps.version.outputs.publish == 'true'
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        with:
+          subject-path: dist/*
+      - if: steps.version.outputs.publish == 'true'
+        run: python scripts/release.py publish '${{ steps.version.outputs.tag }}'
+        env:
+          GH_TOKEN: ${{ github.token }}

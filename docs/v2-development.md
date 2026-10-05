@@ -107,3 +107,20 @@ from the denominator.
   sentinels are rejected before any identity or ownership operation.
 - Expanded local race-enabled integration suite passes, including concurrent
   verified cache installs, failure cases, socket-only use, and lifecycle restarts.
+
+## Milestone 6 build review (in progress)
+
+- Replaced CircleCI, Nancy and obsolete lint tooling with native GitHub Actions,
+  minimum/current Go checks, govulncheck, staticcheck, CodeQL and archive fuzzing.
+- Added statement-union coverage across native jobs and instrumented subprocesses;
+  the 90% gate uses pipefail and is a required release dependency.
+- Release automation is master-only, idempotent per commit, starts in alpha, and
+  publishes six CGO-disabled CLIs with checksums, SBOM and build attestations.
+- Added repeated real lifecycle checks for retained goroutines, heap and workspaces,
+  plus TestMain success/failure/cleanup-failure subprocess regressions.
+- Native Windows confirmed password-file environment restoration; early integration
+  failures then exposed undersized test deadlines during disk-heavy initdb.
+- Linux concurrent launches exposed a writable-descriptor inheritance race
+  (ETXTBSY). Executable copies now hold Go's Linux fork lock until their writable
+  descriptor closes. Root test fixtures now use traversable temporary parents.
+- Coverage has improved from 61% to 82% locally; final native union is pending.

@@ -123,3 +123,10 @@ modules.xml
 # End of https://www.gitignore.io/api/go,intellij+all,visualstudiocode
 
 main
+# v2 integration and release outputs
+/pg/
+/pg.tar.gz
+/ci-output/
+/dist/
+/embedded-postgres
+/scripts/__pycache__/

@@ -20,6 +20,9 @@ import (
 )
 
 func TestVerifiedConcurrentCache(t *testing.T) {
+	if version := os.Getenv("EP_TEST_VERSION"); version != "" && version != string(V18) {
+		t.Skip("cache fixture uses the default version")
+	}
 	archive := os.Getenv("EP_TEST_ARCHIVE")
 	if archive == "" {
 		t.Skip("set EP_TEST_ARCHIVE to the pinned native gzip bundle")

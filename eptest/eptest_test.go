@@ -14,7 +14,11 @@ func TestAutomaticCleanup(t *testing.T) {
 	}
 	var work string
 	t.Run("scoped", func(t *testing.T) {
-		pg := Start(t, postgres.DefaultConfig().Port(0).BinariesPath(filepath.Dir(bin)))
+		c := postgres.DefaultConfig().Port(0).BinariesPath(filepath.Dir(bin))
+		if version := os.Getenv("EP_TEST_VERSION"); version != "" {
+			c = c.Version(postgres.PostgresVersion(version))
+		}
+		pg := Start(t, c)
 		work = pg.Info().WorkDir
 		if pg.GetPort() == 0 {
 			t.Fatal("dynamic port was not resolved")

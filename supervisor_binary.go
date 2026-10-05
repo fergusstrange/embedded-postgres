@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fergusstrange/embedded-postgres/v2/internal/filelock"
+	"github.com/fergusstrange/embedded-postgres/v2/internal/platform"
 	"io"
 	"net/http"
 	"net/url"
@@ -131,6 +132,10 @@ func copyFile(source, dest string, mode os.FileMode) (err error) {
 		return err
 	}
 	defer in.Close()
+	if mode&0111 != 0 {
+		unlock := platform.ProtectExecutableWrite()
+		defer unlock()
+	}
 	out, err := os.OpenFile(dest, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
 	if err != nil {
 		return err

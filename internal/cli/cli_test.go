@@ -141,7 +141,7 @@ func cliFixture(t *testing.T) (string, string) {
 }
 func TestCLIParentPipe(t *testing.T) {
 	bin, helper := cliFixture(t)
-	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, helper, "run", "--binaries", bin, "--json", "--parent-stdin")
 	var stderr bytes.Buffer
@@ -181,7 +181,7 @@ func TestCLIParentPipe(t *testing.T) {
 func TestCLIBackground(t *testing.T) {
 	bin, helper := cliFixture(t)
 	state := filepath.Join(t.TempDir(), "instance.json")
-	ctx, cancel := context.WithTimeout(t.Context(), 40*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
 	defer cancel()
 	args := []string{"start", "--state-file", state, "--binaries", bin, "--json"}
 	output, e := exec.CommandContext(ctx, helper, args...).CombinedOutput()
@@ -207,7 +207,7 @@ func TestCLIBackground(t *testing.T) {
 }
 func TestCLIExec(t *testing.T) {
 	bin, helper := cliFixture(t)
-	ctx, cancel := context.WithTimeout(t.Context(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
 	defer cancel()
 	// The test executable validates the child's environment and exit propagation.
 	cmd := exec.CommandContext(ctx, helper, "exec", "--binaries", bin, "--", os.Args[0], "-test.run=^TestCLIExecChild$")

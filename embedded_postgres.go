@@ -41,6 +41,7 @@ type EmbeddedPostgres struct {
 	active   *session
 	lastInfo InstanceInfo
 	lastErr  error
+	lastLog  string
 }
 type session struct {
 	supervisorPath    string
@@ -91,6 +92,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 	s := &session{closed: make(chan struct{})}
 	ep.active = s
 	ep.lastErr = nil
+	ep.lastLog = ""
 	defer func() {
 		if p := recover(); p != nil {
 			_ = ep.closeLocked(context.Background())
@@ -555,8 +557,9 @@ func (ep *EmbeddedPostgres) closeLocked(_ context.Context) (err error) {
 	for i := len(s.cleanups) - 1; i >= 0; i-- {
 		err = errors.Join(err, call(func() error { return s.cleanups[i](cleanup) }))
 	}
+	ep.lastLog = redact(string(logTail(s.logPath)), ep.config.password)
 	if ep.config.logger != nil {
-		if b := logTail(s.logPath); len(b) > 0 {
+		if b := ep.lastLog; len(b) > 0 {
 			_, e := io.WriteString(ep.config.logger, redact(string(b), ep.config.password))
 			err = errors.Join(err, e)
 		}
@@ -677,13 +680,13 @@ func (ep *EmbeddedPostgres) Done() <-chan struct{} {
 func (ep *EmbeddedPostgres) Err() error { ep.mu.Lock(); defer ep.mu.Unlock(); return ep.lastErr }
 
 // Logs returns the recent server output with the configured password redacted.
-// Output is available while the instance is active; temporary files are removed
-// by Close. Errors include the relevant output when startup fails.
+// A bounded tail remains available after Close for test-failure diagnostics.
+// Temporary files are still removed. Errors also include startup diagnostics.
 func (ep *EmbeddedPostgres) Logs() string {
 	ep.mu.Lock()
 	defer ep.mu.Unlock()
 	if ep.active == nil {
-		return ""
+		return ep.lastLog
 	}
 	b := logTail(ep.active.logPath)
 	return redact(string(b), ep.config.password)
