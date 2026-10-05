@@ -45,3 +45,23 @@ func TestPrunePreservesUnknown(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestLocalProviderContract(t *testing.T) {
+	dir := t.TempDir()
+	if _, err := (LocalProvider(dir)).Acquire(context.Background(), BinaryRequest{}); err == nil {
+		t.Fatal("incomplete installation accepted")
+	}
+	os.Mkdir(filepath.Join(dir, "bin"), 0700)
+	for _, name := range []string{"postgres", "initdb", "pg_ctl", "createdb", "psql"} {
+		os.WriteFile(filepath.Join(dir, "bin", executable(name)), nil, 0700)
+	}
+	install, err := (LocalProvider(dir)).Acquire(context.Background(), BinaryRequest{})
+	if err != nil || install.Dir != dir {
+		t.Fatalf("%v %v", install, err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err = (LocalProvider(dir)).Acquire(ctx, BinaryRequest{}); err == nil {
+		t.Fatal("ignored cancellation")
+	}
+}

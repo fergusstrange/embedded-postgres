@@ -61,3 +61,20 @@ removed in favour of GitHub Actions. Non-root launching is a core requirement.
 - Replaced stale nested modules with compiled v2 examples and documented all
   incompatible path/provider/version/driver-registration changes explicitly.
 - Verified test-helper cleanup and endpoint resolution in real integration tests.
+
+## Coverage acceptance requirement
+
+User requirement: at least 90% aggregate statement coverage for production Go
+code, including library, CLI, supervisor and OS-specific implementations. Native
+platform profiles and instrumented subprocess profiles are merged; releases fail
+below 90%. Examples/development scripts are not production Go packages. Coverage
+work must exercise real failure and regression scenarios, not remove hard code
+from the denominator.
+
+## Milestone 4 review
+
+- Provider and hook contracts specify cancellation, immutability, cleanup order,
+  errors and panic propagation. Added provider release-on-failure regression.
+- Compiled custom-provider/migration/extension examples keep driver dependencies
+  outside the core. Documented native-extension ABI and NixOS responsibilities.
+- Non-root guide includes actual tested OS-library and directory requirements.

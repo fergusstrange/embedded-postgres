@@ -186,3 +186,21 @@ func TestHooksFailureAndPanicCleanup(t *testing.T) {
 		})
 	}
 }
+
+func TestProviderReleaseOnFailure(t *testing.T) {
+	c := integrationConfig(t)
+	released := 0
+	p := ProviderFunc(func(context.Context, BinaryRequest) (*Installation, error) {
+		return &Installation{Dir: filepath.Dir(os.Getenv("EP_TEST_BIN")), Release: func() error { released++; return nil }}, nil
+	})
+	pg := NewDatabase(c.BinariesPath("").Provider(p).Hooks(Hooks{Ready: []Hook{func(context.Context, InstanceInfo) (func(context.Context) error, error) {
+		return nil, errors.New("setup failed")
+	}}}))
+	if err := pg.Start(); err == nil {
+		t.Fatal("expected hook failure")
+	}
+	pg.Close()
+	if released != 1 {
+		t.Fatalf("release count %d", released)
+	}
+}
