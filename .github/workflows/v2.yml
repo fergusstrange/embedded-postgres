@@ -1,7 +1,7 @@
 name: v2
 on:
   push:
-    branches: [master, codex/embedded-postgres-v2]
+    branches: [master]
   pull_request:
   workflow_dispatch:
   schedule:
