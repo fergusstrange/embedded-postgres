@@ -12,7 +12,7 @@ import (
 
 func TestLifecycleFilesystemFailures(t *testing.T) {
 	c := integrationConfig(t)
-	for _, mode := range []string{"data-file", "data-parent-file", "initdb-locale", "password-path", "removed-data"} {
+	for _, mode := range []string{"data-file", "data-parent-file", "initdb-encoding", "password-path", "removed-data"} {
 		t.Run(mode, func(t *testing.T) {
 			cfg := c
 			parent, e := os.MkdirTemp("", "ep-failure-")
@@ -31,8 +31,8 @@ func TestLifecycleFilesystemFailures(t *testing.T) {
 					file = filepath.Join(file, "data")
 				}
 				cfg = cfg.DataPath(file)
-			case "initdb-locale":
-				cfg = cfg.Locale("this_locale_does_not_exist")
+			case "initdb-encoding":
+				cfg = cfg.Encoding("this_encoding_does_not_exist")
 			case "password-path":
 				cfg = cfg.Hooks(Hooks{BeforeStart: []Hook{func(_ context.Context, i InstanceInfo) (func(context.Context) error, error) {
 					return nil, os.Mkdir(filepath.Join(i.WorkDir, "pgpass"), 0700)

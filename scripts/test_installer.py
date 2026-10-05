@@ -1,4 +1,3 @@
-import hashlib
 import os
 import pathlib
 import shutil
@@ -20,7 +19,8 @@ class InstallerTest(unittest.TestCase):
 import hashlib, os, pathlib, sys
 args=sys.argv[1:]
 if "-o" not in args:
- print('  "tag_name": "v2.0.0-alpha.1",')
+ # Consume a full release listing without an early-reader SIGPIPE under pipefail.
+ print('  "tag_name": "v2.0.0-alpha.1",' + '\\n' + '  "tag_name": "v2.0.0-alpha.0",\\n' * 10000)
 else:
  output=pathlib.Path(args[args.index("-o")+1])
  if output.name=="checksums.txt":

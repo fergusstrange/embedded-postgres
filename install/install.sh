@@ -8,7 +8,7 @@ destination=${EP_INSTALL_DIR:-"$HOME/.local/bin"}
 if [[ -z "$version" ]]; then
   version=$(curl --fail --silent --show-error --location --proto '=https' --tlsv1.2 \
     "https://api.github.com/repos/$repo/releases?per_page=100" | \
-    sed -nE 's/^[[:space:]]*"tag_name": "(v2\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?)",?$/\1/p' | head -n 1)
+    sed -nE 's/^[[:space:]]*"tag_name": "(v2\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?)",?$/\1/p' | sed -n '1p')
 fi
 if [[ ! "$version" =~ ^v2\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
   echo 'No published v2 release found; set EP_VERSION to a published v2 tag.' >&2
