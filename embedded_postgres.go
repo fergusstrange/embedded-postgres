@@ -460,6 +460,7 @@ func (ep *EmbeddedPostgres) environment(s *session) []string {
 	env := []string{}
 	for _, v := range os.Environ() {
 		key, _, _ := strings.Cut(v, "=")
+		key = strings.ToUpper(key)
 		if strings.HasPrefix(key, "PG") || key == "HOME" || key == "TMPDIR" {
 			continue
 		}
@@ -470,14 +471,32 @@ func (ep *EmbeddedPostgres) environment(s *session) []string {
 }
 
 // Stop preserves the v1 error when no server is active. Close is idempotent.
-func (ep *EmbeddedPostgres) Stop() error { return ep.StopContext(context.Background()) }
-func (ep *EmbeddedPostgres) StopContext(ctx context.Context) error {
+func (ep *EmbeddedPostgres) Stop() error {
 	ep.mu.Lock()
 	defer ep.mu.Unlock()
 	if ep.active == nil {
 		return ErrServerNotStarted
 	}
-	return ep.closeLocked(ctx)
+	return ep.closeLocked(context.Background())
+}
+
+// StopContext requests cleanup and bounds how long the caller waits. If ctx
+// expires, bounded process shutdown and resource cleanup continue independently.
+func (ep *EmbeddedPostgres) StopContext(ctx context.Context) error {
+	ep.mu.Lock()
+	s := ep.active
+	ep.mu.Unlock()
+	if s == nil {
+		return ErrServerNotStarted
+	}
+	done := make(chan error, 1)
+	go func() { done <- ep.closeSession(s) }()
+	select {
+	case err := <-done:
+		return err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 func (ep *EmbeddedPostgres) Close() error {
 	ep.mu.Lock()
@@ -516,8 +535,25 @@ func (ep *EmbeddedPostgres) closeLocked(_ context.Context) (err error) {
 	err = ep.stopProcess(s)
 	cleanup, cancel := context.WithTimeout(context.Background(), ep.config.stopTimeout)
 	defer cancel()
+	var firstPanic any
+	call := func(fn func() error) (e error) {
+		defer func() {
+			if p := recover(); p != nil {
+				if firstPanic == nil {
+					firstPanic = p
+				}
+				e = fmt.Errorf("cleanup panicked: %v", p)
+			}
+		}()
+		return fn()
+	}
+	defer func() {
+		if firstPanic != nil {
+			panic(firstPanic)
+		}
+	}()
 	for i := len(s.cleanups) - 1; i >= 0; i-- {
-		err = errors.Join(err, s.cleanups[i](cleanup))
+		err = errors.Join(err, call(func() error { return s.cleanups[i](cleanup) }))
 	}
 	if ep.config.logger != nil {
 		if b := logTail(s.logPath); len(b) > 0 {
@@ -532,7 +568,7 @@ func (ep *EmbeddedPostgres) closeLocked(_ context.Context) (err error) {
 		err = errors.Join(err, os.RemoveAll(s.info.WorkDir))
 	}
 	if s.installation != nil && s.installation.Release != nil {
-		err = errors.Join(err, s.installation.Release())
+		err = errors.Join(err, call(s.installation.Release))
 	}
 	return err
 }
@@ -611,7 +647,7 @@ func validateConfig(c Config) error {
 		}
 	}
 	for k, v := range c.startParameters {
-		switch k {
+		switch strings.ToLower(k) {
 		case "port", "listen_addresses", "data_directory", "unix_socket_directories", "config_file", "hba_file", "ident_file", "external_pid_file":
 			return fmt.Errorf("%s is managed by the lifecycle; use its dedicated setting or a hook", k)
 		}
@@ -674,7 +710,12 @@ func logTail(path string) []byte {
 }
 
 // A delayed watcher from an old lifetime must never close a restarted instance.
-func (ep *EmbeddedPostgres) closeSession(s *session) error {
+func (ep *EmbeddedPostgres) closeSession(s *session) (err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			err = fmt.Errorf("cleanup panicked: %v", p)
+		}
+	}()
 	ep.mu.Lock()
 	defer ep.mu.Unlock()
 	if ep.active != s {

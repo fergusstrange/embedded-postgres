@@ -139,6 +139,15 @@ func copyFile(source, dest string, mode os.FileMode) (err error) {
 	return errors.Join(err, out.Close())
 }
 func copyInstallation(ctx context.Context, source, dest string) error {
+	var err error
+	source, err = filepath.EvalSymlinks(source)
+	if err != nil {
+		return err
+	}
+	source, err = filepath.Abs(source)
+	if err != nil {
+		return err
+	}
 	return filepath.WalkDir(source, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err

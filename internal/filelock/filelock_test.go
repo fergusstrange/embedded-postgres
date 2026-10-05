@@ -32,3 +32,22 @@ func TestLease(t *testing.T) {
 	}
 	c.Close()
 }
+
+func TestTryAndInvalidPaths(t *testing.T) {
+	p := filepath.Join(t.TempDir(), "lock")
+	f, e := Try(p)
+	if e != nil {
+		t.Fatal(e)
+	}
+	if other, e := Try(p); e == nil {
+		other.Close()
+		t.Fatal("exclusive lease bypassed")
+	}
+	f.Close()
+	if _, e := Try(filepath.Join(p, "child")); e == nil {
+		t.Fatal("bad lock path")
+	}
+	if _, e := Acquire(t.Context(), filepath.Join(p, "child"), true); e == nil {
+		t.Fatal("bad acquire path")
+	}
+}

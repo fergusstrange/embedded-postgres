@@ -17,8 +17,8 @@ func ValidateIdentity(id *Identity) error {
 		}
 		return nil
 	}
-	if id.UID == 0 {
-		return errors.New("RunAs UID must be nonzero")
+	if id.UID == 0 || id.UID == ^uint32(0) || id.GID == ^uint32(0) {
+		return errors.New("RunAs needs a nonzero UID and cannot use the Unix unchanged-ID sentinel")
 	}
 	if os.Geteuid() != 0 && (int(id.UID) != os.Geteuid() || int(id.GID) != os.Getegid()) {
 		return errors.New("changing OS identity requires root")

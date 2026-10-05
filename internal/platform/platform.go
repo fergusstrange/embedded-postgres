@@ -3,6 +3,7 @@ package platform
 
 import (
 	"context"
+	"os"
 	"os/exec"
 )
 
@@ -13,6 +14,9 @@ type Identity struct{ UID, GID uint32 }
 // The caller must invoke release after Run or Start, even on error.
 func Command(ctx context.Context, identity *Identity, name string, args ...string) (*exec.Cmd, func(), error) {
 	cmd := exec.CommandContext(ctx, name, args...)
+	// Windows otherwise creates a fresh token environment and loses the caller's
+	// curated HOME, PGPASSFILE and extension settings.
+	cmd.Env = os.Environ()
 	release, err := configure(cmd, identity)
 	if err != nil {
 		return nil, nil, err

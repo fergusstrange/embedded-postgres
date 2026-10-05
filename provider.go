@@ -110,9 +110,19 @@ func (p DownloadProvider) Acquire(ctx context.Context, r BinaryRequest) (*Instal
 		if p.Offline {
 			return nil, fmt.Errorf("PostgreSQL %s is not cached (offline mode)", r.Version)
 		}
-		lock, err := filelock.Acquire(ctx, lockPath, true)
+		lock, err := filelock.Try(lockPath)
 		if err != nil {
-			return nil, err
+			if !filelock.IsBusy(err) {
+				return nil, err
+			}
+			// Another installer or a newly acquired reader won the race. Recheck
+			// under a shared lease instead of waiting behind active instances.
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(20 * time.Millisecond):
+			}
+			continue
 		}
 		err = func() error {
 			defer lock.Close()
@@ -120,7 +130,7 @@ func (p DownloadProvider) Acquire(ctx context.Context, r BinaryRequest) (*Instal
 				return nil
 			}
 			if _, e := os.Lstat(entry); e == nil {
-				return fmt.Errorf("invalid cache entry %s; prune it explicitly", entry)
+				return fmt.Errorf("invalid cache entry %s; remove or repair it explicitly", entry)
 			} else if !os.IsNotExist(e) {
 				return e
 			}

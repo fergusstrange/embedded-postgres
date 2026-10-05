@@ -43,3 +43,6 @@ func Try(path string) (*os.File, error) {
 }
 
 var ErrUnsupported = errors.New("file locking unsupported on this OS")
+
+// IsBusy reports contention with another process-held lease.
+func IsBusy(err error) bool { return busy(err) }

@@ -90,3 +90,20 @@ from the denominator.
   before state-file cleanup. Server log tails now use bounded memory.
 - Windows authenticated startup is under investigation in native CI. Coverage
   measurement is being established; 90% has not yet been demonstrated.
+
+## Integration review corrections
+
+- Concurrent cache acquisition found a lock-upgrade deadlock. Losing installers
+  now re-check under shared leases rather than waiting behind active instances.
+- Windows authentication diagnostics established that password files failed while
+  URI authentication succeeded. Go's token environment default discarded the
+  supervisor's curated environment. Child commands now explicitly inherit it;
+  the permanent regression tests both forms with escaped credentials.
+- Canonicalized installation roots before validating symlinks, handling macOS
+  /var and /private/var aliases without accepting links outside the installation.
+- Old lifecycle watchers cannot close a restarted instance. Canceled StopContext
+  still finishes cleanup. Cleanup panics run remaining cleanups before propagating.
+- Reserved PostgreSQL settings are protected case-insensitively. Unix unchanged-ID
+  sentinels are rejected before any identity or ownership operation.
+- Expanded local race-enabled integration suite passes, including concurrent
+  verified cache installs, failure cases, socket-only use, and lifecycle restarts.
