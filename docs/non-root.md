@@ -46,3 +46,16 @@ The Go executable is built with CGO_ENABLED=0; PostgreSQL remains a native binar
 with OS-library prerequisites. A custom BinaryProvider can supply a distribution
 with additional bundled libraries. Native CI tests both ordinary callers and a
 root test runner launching PostgreSQL as a separate user.
+
+## Alpine / musl
+
+The selected upstream musl bundle links ICU **74**, so the default-provider CI
+uses Alpine **3.21** with `icu-libs` plus the other native libraries. Its package
+[provides the required ICU 74 shared libraries](https://pkgs.alpinelinux.org/package/v3.21/main/x86_64/icu-libs).
+The test image uses the current Go toolchain, independently of its runtime base.
+
+Newer Alpine releases with a different ICU ABI need a compatible custom
+PostgreSQL distribution through `LocalProvider`/`BinaryProvider`, or an upstream
+bundle refresh. Do not symlink incompatible ICU major versions to satisfy the
+loader. This is a native-distribution compatibility constraint, not a Go-module
+dependency. Recheck it when updating PostgreSQL pins or the Alpine CI image.

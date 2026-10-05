@@ -48,7 +48,7 @@ def main():
         hit, size = files.get(name, (0, 0))
         files[name] = (hit + n * (count > 0), size + n)
     for name, (hit, size) in sorted(files.items()):
-        print(f"{100 * hit / size:6.2f}% {name}")
+        print(f"{(100 * hit / size) if size else 100:6.2f}% {name}")
     print(f"Production coverage: {percent:.2f}% ({covered}/{total} statements); required {args.minimum:.2f}%")
     return int(percent < args.minimum)
 

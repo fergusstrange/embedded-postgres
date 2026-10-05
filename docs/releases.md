@@ -1,7 +1,7 @@
 # Build, coverage and releases
 
 GitHub Actions replaces CircleCI. Six native runners exercise Linux, macOS and
-Windows on AMD64 and ARM64; separate jobs cover PostgreSQL 15–17, Alpine musl and
+Windows on AMD64 and ARM64; separate jobs cover PostgreSQL 15–17, Alpine 3.21 musl and
 the minimum Go version. PostgreSQL 18 is exercised on every native runner. Windows
 ARM64 runs its native Go CLI and x64 PostgreSQL through OS emulation.
 

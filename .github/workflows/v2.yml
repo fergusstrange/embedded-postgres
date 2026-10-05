@@ -108,7 +108,7 @@ jobs:
           go-version: '1.27.x'
           cache: false
       - name: Go vulnerability analysis
-        run: go run golang.org/x/vuln/cmd/govulncheck@v1.1.4 ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
       - name: Static analysis
         run: go run honnef.co/go/tools/cmd/staticcheck@2026.2.1 ./...
       - name: Bounded archive fuzzing
@@ -121,12 +121,11 @@ jobs:
         with:
           persist-credentials: false
       - run: |
-          docker run --rm -v "$PWD:/src" -w /src golang:1.27-alpine sh -ec '
-            apk add --no-cache python3 gcc musl-dev libxml2 libstdc++ openssl readline krb5-libs zlib lz4-libs zstd-libs
+          docker build -f scripts/alpine.Dockerfile -t embedded-postgres-musl-test .
+          docker run --rm -v "$PWD:/src" -w /src embedded-postgres-musl-test sh -ec '
             python3 scripts/fetch-postgres.py 18.6.0 x86_64-unknown-linux-musl pg.tar.gz
             mkdir pg
             tar -xzf pg.tar.gz -C pg --strip-components=1
-            adduser -D pgtest
             chown -R pgtest /src
             su pgtest -c "PATH=/usr/local/go/bin:/usr/bin:/bin python3 scripts/ci-test.py"
           '

@@ -55,8 +55,8 @@ func parse(args []string, getenv func(string) string, stderr io.Writer) (Options
 				return o, nil, errors.New("--config needs a path")
 			}
 			config = args[i+1]
-		} else if strings.HasPrefix(arg, "--config=") {
-			config = strings.TrimPrefix(arg, "--config=")
+		} else if strings.HasPrefix(arg, "--config=") || strings.HasPrefix(arg, "-config=") {
+			_, config, _ = strings.Cut(arg, "=")
 		}
 	}
 	if config != "" {

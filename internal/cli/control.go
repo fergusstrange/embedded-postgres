@@ -49,6 +49,19 @@ func newController(ctx context.Context, path string, cancel context.CancelFunc) 
 		return nil, err
 	}
 
+	if st, e := os.Lstat(path); e == nil {
+		if st.Mode()&os.ModeSymlink != 0 {
+			lock.Close()
+			return nil, errors.New("state file must not be a symlink")
+		}
+		if _, e = readState(path); e != nil {
+			lock.Close()
+			return nil, fmt.Errorf("refusing to replace an unrecognized state file: %w", e)
+		}
+	} else if !os.IsNotExist(e) {
+		lock.Close()
+		return nil, e
+	}
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		lock.Close()
@@ -154,6 +167,9 @@ func control(ctx context.Context, path, command string) (Event, error) {
 	var event Event
 	if err = json.NewDecoder(io.LimitReader(res.Body, 64<<10)).Decode(&event); err != nil {
 		return event, err
+	}
+	if event.Protocol != Protocol {
+		return Event{}, errors.New("unsupported control protocol")
 	}
 	if command == "stop" {
 		deadline, cancel := context.WithTimeout(ctx, 70*time.Second)

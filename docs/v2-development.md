@@ -124,3 +124,13 @@ from the denominator.
   (ETXTBSY). Executable copies now hold Go's Linux fork lock until their writable
   descriptor closes. Root test fixtures now use traversable temporary parents.
 - Coverage has improved from 61% to 82% locally; final native union is pending.
+
+- All six native Go test suites passed in the replacement workflow. Windows report
+  generation then found a zero-statement stub division-by-zero; added a merger
+  regression and kept the stub neutral in the weighted denominator.
+- Upstream musl bundles require ICU 74. CI now pins the compatible Alpine 3.21
+  runtime and a separate current Go toolchain, with immutable image digests.
+- govulncheck's older published release was incompatible with Go 1.27; selected
+  the current v1.8.0 source tag. CodeQL analysis already passed.
+- Rewrote README/contribution docs and mapped all 8 open issues, 5 open PRs and
+  25 closed-unmerged proposals. FreeBSD remains outside the supported matrix.
