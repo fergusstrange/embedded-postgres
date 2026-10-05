@@ -298,7 +298,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 			break
 		}
 		_ = ep.stopProcess(s)
-		logs, _ := os.ReadFile(s.logPath)
+		logs := logTail(s.logPath)
 		if c.port != 0 || c.socketDir != "" || (!strings.Contains(string(logs), "Address already in use") && !strings.Contains(string(logs), "could not bind")) {
 			return err
 		}
@@ -415,7 +415,7 @@ func (ep *EmbeddedPostgres) ready(ctx context.Context, s *session, c Config) err
 		}
 		select {
 		case <-ctx.Done():
-			return ep.failure(s, ctx.Err())
+			return ep.failure(s, errors.Join(ctx.Err(), err))
 		case <-s.exited:
 			return ep.failure(s, err)
 		case <-time.After(50 * time.Millisecond):
@@ -520,8 +520,8 @@ func (ep *EmbeddedPostgres) closeLocked(_ context.Context) (err error) {
 		err = errors.Join(err, s.cleanups[i](cleanup))
 	}
 	if ep.config.logger != nil {
-		if b, e := os.ReadFile(s.logPath); e == nil {
-			_, e = io.WriteString(ep.config.logger, redact(string(b), ep.config.password))
+		if b := logTail(s.logPath); len(b) > 0 {
+			_, e := io.WriteString(ep.config.logger, redact(string(b), ep.config.password))
 			err = errors.Join(err, e)
 		}
 	}
@@ -564,10 +564,7 @@ func (ep *EmbeddedPostgres) Info() InstanceInfo {
 	return ep.lastInfo
 }
 func (ep *EmbeddedPostgres) failure(s *session, err error) error {
-	b, _ := os.ReadFile(s.logPath)
-	if len(b) > 32<<10 {
-		b = b[len(b)-(32<<10):]
-	}
+	b := logTail(s.logPath)
 	return fmt.Errorf("%w\n%s", err, redact(string(b), ep.config.password))
 }
 func freePort() (uint32, error) {
@@ -652,9 +649,26 @@ func (ep *EmbeddedPostgres) Logs() string {
 	if ep.active == nil {
 		return ""
 	}
-	b, _ := os.ReadFile(ep.active.logPath)
-	if len(b) > 32<<10 {
-		b = b[len(b)-(32<<10):]
-	}
+	b := logTail(ep.active.logPath)
 	return redact(string(b), ep.config.password)
+}
+
+// logTail bounds memory even when a test produces large server logs.
+func logTail(path string) []byte {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+	st, err := f.Stat()
+	if err != nil {
+		return nil
+	}
+	if st.Size() > 32<<10 {
+		if _, err = f.Seek(-(32 << 10), io.SeekEnd); err != nil {
+			return nil
+		}
+	}
+	b, _ := io.ReadAll(io.LimitReader(f, 32<<10))
+	return b
 }

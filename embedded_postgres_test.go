@@ -20,7 +20,7 @@ func integrationConfig(t *testing.T) Config {
 	if bin == "" || helper == "" {
 		t.Skip("set EP_TEST_BIN and EP_SUPERVISOR")
 	}
-	c := DefaultConfig().Port(0).BinariesPath(filepath.Dir(bin)).Supervisor(helper)
+	c := DefaultConfig().Port(0).StartTimeout(15 * time.Second).BinariesPath(filepath.Dir(bin)).Supervisor(helper)
 	if uid := os.Getenv("EP_TEST_UID"); uid != "" {
 		u, _ := strconv.ParseUint(uid, 10, 32)
 		g, _ := strconv.ParseUint(os.Getenv("EP_TEST_GID"), 10, 32)

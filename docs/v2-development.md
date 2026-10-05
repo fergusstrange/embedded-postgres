@@ -78,3 +78,15 @@ from the denominator.
 - Compiled custom-provider/migration/extension examples keep driver dependencies
   outside the core. Documented native-extension ABI and NixOS responsibilities.
 - Non-root guide includes actual tested OS-library and directory requirements.
+
+## Milestone 5 review
+
+- Added foreground/parent-pipe, command-scoped and explicit background CLI modes,
+  authenticated local status/stop, cache commands and strict config precedence.
+- Added protocol 1 and checksum-verifying Bash/PowerShell installers; documented
+  the Node wrapper contract and assessed Node-API/cgo tradeoffs.
+- Real CLI regressions cover stdin EOF, detached startup/status/stop and child exit
+  propagation. A broken-stdout regression found and fixed premature SIGPIPE exit
+  before state-file cleanup. Server log tails now use bounded memory.
+- Windows authenticated startup is under investigation in native CI. Coverage
+  measurement is being established; 90% has not yet been demonstrated.
