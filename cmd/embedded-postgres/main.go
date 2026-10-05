@@ -8,6 +8,13 @@ import (
 )
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "__command" {
+		if err := supervisor.RunCommand(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) == 2 && os.Args[1] == "__supervise" {
 		if err := supervisor.Run(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintln(os.Stderr, err)

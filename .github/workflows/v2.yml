@@ -44,9 +44,11 @@ jobs:
           go build -o "$RUNNER_TEMP/embedded-postgres.exe" ./cmd/embedded-postgres
           echo "EP_SUPERVISOR=$RUNNER_TEMP/embedded-postgres.exe" >> "$GITHUB_ENV"
           echo "EP_TEST_BIN=$PWD/pg/bin" >> "$GITHUB_ENV"
-      - run: go test -v -timeout 2m ./internal/platform ./internal/supervisor
+      - run: go test -v -timeout 3m ./...
       - if: runner.os == 'Linux'
         name: Root caller with non-root PostgreSQL
         run: |
           go test -c -o "$RUNNER_TEMP/supervisor.test" ./internal/supervisor
+          go test -c -o "$RUNNER_TEMP/core.test" .
           sudo env EP_TEST_BIN="$EP_TEST_BIN" EP_SUPERVISOR="$EP_SUPERVISOR" EP_TEST_UID="$(id -u)" EP_TEST_GID="$(id -g)" "$RUNNER_TEMP/supervisor.test" -test.v -test.timeout=2m
+          sudo env EP_TEST_BIN="$EP_TEST_BIN" EP_SUPERVISOR="$EP_SUPERVISOR" EP_TEST_UID="$(id -u)" EP_TEST_GID="$(id -g)" "$RUNNER_TEMP/core.test" -test.v -test.timeout=3m

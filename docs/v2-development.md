@@ -37,3 +37,19 @@ removed in favour of GitHub Actions. Non-root launching is a core requirement.
   receives an explicit crash trigger after authenticated database readiness.
 - Windows execution still requires native CI validation; compilation is not a
   claim that Job Objects and restricted tokens have been tested at runtime.
+
+## Milestone 2 review
+
+- Production module now has no require directives and no external imports.
+- macOS race-enabled real integration tests pass parallel databases, custom SQL
+  identifiers, cancellation, persistence, nonempty-directory protection, hooks
+  that return errors, and hooks that panic.
+- Cache installs publish only after checksum verification, extraction, and tool
+  validation. Shared leases prevent pruning active installations.
+- Review added post-extraction symlink validation, a gzip-footer check, and
+  protection for unknown cache directories during pruning.
+- Setup/client commands now also use an independent pipe-watching supervisor.
+  Cancellation closes the owner pipe; only that supervisor's own child group is
+  terminated. No supervisor sends a signal to its own/inherited process group.
+- Native milestone-1 CI passed Linux AMD64/ARM64 (including root-to-non-root),
+  macOS AMD64/ARM64, and Windows AMD64/ARM64 (x64 PostgreSQL under emulation).

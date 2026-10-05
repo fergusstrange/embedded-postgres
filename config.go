@@ -2,165 +2,113 @@ package embeddedpostgres
 
 import (
 	"fmt"
+	"github.com/fergusstrange/embedded-postgres/v2/internal/platform"
 	"io"
-	"os"
+	"maps"
+	"net"
+	"net/url"
+	"strconv"
 	"time"
 )
 
-// Config maintains the runtime configuration for the Postgres process to be created.
-type Config struct {
-	version             PostgresVersion
-	port                uint32
-	database            string
-	username            string
-	password            string
-	cachePath           string
-	runtimePath         string
-	dataPath            string
-	binariesPath        string
-	locale              string
-	encoding            string
-	startParameters     map[string]string
-	binaryRepositoryURL string
-	startTimeout        time.Duration
-	logger              io.Writer
-}
-
-// DefaultConfig provides a default set of configuration to be used "as is" or modified using the provided builders.
-// The following can be assumed as defaults:
-// Version:      16
-// Port:         5432
-// Database:     postgres
-// Username:     postgres
-// Password:     postgres
-// StartTimeout: 15 Seconds
-func DefaultConfig() Config {
-	return Config{
-		version:             V18,
-		port:                5432,
-		database:            "postgres",
-		username:            "postgres",
-		password:            "postgres",
-		startTimeout:        15 * time.Second,
-		logger:              os.Stdout,
-		binaryRepositoryURL: "https://repo1.maven.org/maven2",
-	}
-}
-
-// Version will set the Postgres binary version.
-func (c Config) Version(version PostgresVersion) Config {
-	c.version = version
-	return c
-}
-
-// Port sets the runtime port that Postgres can be accessed on.
-func (c Config) Port(port uint32) Config {
-	c.port = port
-	return c
-}
-
-// Database sets the database name that will be created.
-func (c Config) Database(database string) Config {
-	c.database = database
-	return c
-}
-
-// Username sets the username that will be used to connect.
-func (c Config) Username(username string) Config {
-	c.username = username
-	return c
-}
-
-// Password sets the password that will be used to connect.
-func (c Config) Password(password string) Config {
-	c.password = password
-	return c
-}
-
-// RuntimePath sets the path that will be used for the extracted Postgres runtime directory.
-// If Postgres data directory is not set with DataPath(), this directory is also used as data directory.
-func (c Config) RuntimePath(path string) Config {
-	c.runtimePath = path
-	return c
-}
-
-// CachePath sets the path that will be used for storing Postgres binaries archive.
-// If this option is not set, ~/.go-embedded-postgres will be used.
-func (c Config) CachePath(path string) Config {
-	c.cachePath = path
-	return c
-}
-
-// DataPath sets the path that will be used for the Postgres data directory.
-// If this option is set, a previously initialized data directory will be reused if possible.
-func (c Config) DataPath(path string) Config {
-	c.dataPath = path
-	return c
-}
-
-// BinariesPath sets the path of the pre-downloaded postgres binaries.
-// If this option is left unset, the binaries will be downloaded.
-func (c Config) BinariesPath(path string) Config {
-	c.binariesPath = path
-	return c
-}
-
-// Locale sets the default locale for initdb
-func (c Config) Locale(locale string) Config {
-	c.locale = locale
-	return c
-}
-
-// Encoding sets the default character set for initdb
-func (c Config) Encoding(encoding string) Config {
-	c.encoding = encoding
-	return c
-}
-
-// StartParameters sets run-time parameters when starting Postgres (passed to Postgres via "-c").
-//
-// These parameters can be used to override the default configuration values in postgres.conf such
-// as max_connections=100. See https://www.postgresql.org/docs/current/runtime-config.html
-func (c Config) StartParameters(parameters map[string]string) Config {
-	c.startParameters = parameters
-	return c
-}
-
-// StartTimeout sets the max timeout that will be used when starting the Postgres process and creating the initial database.
-func (c Config) StartTimeout(timeout time.Duration) Config {
-	c.startTimeout = timeout
-	return c
-}
-
-// Logger sets the logger for postgres output
-func (c Config) Logger(logger io.Writer) Config {
-	c.logger = logger
-	return c
-}
-
-// BinaryRepositoryURL set BinaryRepositoryURL to fetch PG Binary in case of Maven proxy
-func (c Config) BinaryRepositoryURL(binaryRepositoryURL string) Config {
-	c.binaryRepositoryURL = binaryRepositoryURL
-	return c
-}
-
-func (c Config) GetConnectionURL() string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", c.username, c.password, "localhost", c.port, c.database)
-}
-
-// PostgresVersion represents the semantic version used to fetch and run the Postgres process.
+// PostgresVersion identifies a pinned distribution release. Its first two
+// components are the PostgreSQL version; the third is the packaging revision.
 type PostgresVersion string
 
-// Predefined supported Postgres versions.
 const (
-	V18 = PostgresVersion("18.3.0")
-	V17 = PostgresVersion("17.5.0")
-	V16 = PostgresVersion("16.9.0")
-	V15 = PostgresVersion("15.13.0")
-	V14 = PostgresVersion("14.18.0")
-	V13 = PostgresVersion("13.21.0")
-	V12 = PostgresVersion("12.22.0")
-	V11 = PostgresVersion("11.22.0")
-	V10 = PostgresVersion("10.23.0")
-	V9  = PostgresVersion("9.6.24")
+	V18 PostgresVersion = "18.6.0"
+	V17 PostgresVersion = "17.11.0"
+	V16 PostgresVersion = "16.15.0"
+	V15 PostgresVersion = "15.19.0"
 )
+
+// User identifies an existing OS account. It is separate from Username.
+type User = platform.Identity
+
+// Storage separates reusable binaries, disposable work, and persistent data.
+// WorkDir is a parent: the library creates its own child and never deletes it.
+// DataDir, when set, is persistent and is never automatically removed.
+type Storage struct{ CacheDir, WorkDir, DataDir string }
+
+// Config uses value builders. Maps and slices are copied at API boundaries.
+type Config struct {
+	version                                     PostgresVersion
+	port                                        uint32
+	database, username, password                string
+	storage                                     Storage
+	provider                                    BinaryProvider
+	binariesPath, repositoryURL, supervisorPath string
+	locale, encoding, socketDir                 string
+	startParameters                             map[string]string
+	startTimeout, stopTimeout                   time.Duration
+	logger                                      io.Writer
+	identity                                    *User
+	hooks                                       Hooks
+	environment                                 []string
+}
+
+// DefaultConfig retains port 5432 for existing callers. Use Port(0) for automatic
+// allocation. Test helpers and the CLI choose Port(0) by default.
+func DefaultConfig() Config {
+	return Config{version: V18, port: 5432, database: "postgres", username: "postgres", password: "postgres", locale: "C", encoding: "UTF8", startTimeout: 2 * time.Minute, stopTimeout: 10 * time.Second}
+}
+func (c Config) Version(v PostgresVersion) Config    { c.version = v; return c }
+func (c Config) Port(v uint32) Config                { c.port = v; return c }
+func (c Config) Database(v string) Config            { c.database = v; return c }
+func (c Config) Username(v string) Config            { c.username = v; return c }
+func (c Config) Password(v string) Config            { c.password = v; return c }
+func (c Config) Locale(v string) Config              { c.locale = v; return c }
+func (c Config) Encoding(v string) Config            { c.encoding = v; return c }
+func (c Config) StartTimeout(v time.Duration) Config { c.startTimeout = v; return c }
+func (c Config) StopTimeout(v time.Duration) Config  { c.stopTimeout = v; return c }
+func (c Config) Logger(v io.Writer) Config           { c.logger = v; return c }
+func (c Config) StartParameters(v map[string]string) Config {
+	c.startParameters = maps.Clone(v)
+	return c
+}
+func (c Config) Storage(v Storage) Config         { c.storage = v; return c }
+func (c Config) Provider(v BinaryProvider) Config { c.provider = v; return c }
+
+// RunAs sets the Unix identity for the supervisor and every PostgreSQL command.
+func (c Config) RunAs(v User) Config { c.identity = &v; return c }
+
+// Supervisor selects the companion CLI executable. Released library versions
+// can download their matching companion automatically. Source builds must set it.
+func (c Config) Supervisor(path string) Config { c.supervisorPath = path; return c }
+
+// UnixSocket selects a private Unix socket directory and disables TCP.
+func (c Config) UnixSocket(dir string) Config { c.socketDir = dir; return c }
+
+// RuntimePath is deprecated: use Storage.WorkDir. The path is now a parent and
+// is never erased; each instance receives a uniquely named child.
+func (c Config) RuntimePath(v string) Config { c.storage.WorkDir = v; return c }
+
+// CachePath is deprecated: use Storage.CacheDir.
+func (c Config) CachePath(v string) Config { c.storage.CacheDir = v; return c }
+
+// DataPath is deprecated: use Storage.DataDir. Existing data is preserved.
+func (c Config) DataPath(v string) Config { c.storage.DataDir = v; return c }
+
+// BinariesPath is deprecated: use LocalProvider. The distribution must include
+// psql and createdb; legacy minimal Zonky bundles do not contain them.
+func (c Config) BinariesPath(v string) Config { c.binariesPath = v; return c }
+
+// BinaryRepositoryURL is deprecated: use DownloadProvider.BaseURL. v2 mirrors
+// use /VERSION/ASSET.tar.gz, not the v1 Maven/JAR layout.
+func (c Config) BinaryRepositoryURL(v string) Config { c.repositoryURL = v; return c }
+
+// GetConnectionURL describes static configuration. For Port(0), use the running
+// instance's ConnectionURL instead; this method deliberately does no I/O.
+func (c Config) GetConnectionURL() string { return connectionURL(c, c.port) }
+func connectionURL(c Config, port uint32) string {
+	u := url.URL{Scheme: "postgresql", User: url.UserPassword(c.username, c.password), Host: net.JoinHostPort("127.0.0.1", strconv.Itoa(int(port))), Path: "/" + c.database}
+	u.RawPath = "/" + url.PathEscape(c.database)
+	q := url.Values{"sslmode": {"disable"}}
+	if c.socketDir != "" {
+		u.Host = ""
+		q.Set("host", c.socketDir)
+		q.Set("port", fmt.Sprint(port))
+	}
+	u.RawQuery = q.Encode()
+	return u.String()
+}

@@ -106,7 +106,11 @@ func Extract(ctx context.Context, input io.Reader, dest string) error {
 		}
 	}
 	// Force gzip footer/checksum verification even when tar ends early.
-	if _, err = io.Copy(io.Discard, io.LimitReader(&contextReader{ctx, gz}, 1<<20)); err != nil {
+	if n, e := io.Copy(io.Discard, io.LimitReader(&contextReader{ctx, gz}, (1<<20)+1)); e != nil || n > 1<<20 {
+		if e == nil {
+			e = errors.New("excessive trailing archive data")
+		}
+		err = e
 		return err
 	}
 	for _, l := range links {
@@ -120,6 +124,11 @@ func Extract(ctx context.Context, input io.Reader, dest string) error {
 		}
 		if err != nil {
 			return err
+		}
+	}
+	for _, l := range links {
+		if _, err = root.Stat(filepath.FromSlash(l.name)); err != nil {
+			return fmt.Errorf("invalid archive link %s: %w", l.name, err)
 		}
 	}
 	return nil
