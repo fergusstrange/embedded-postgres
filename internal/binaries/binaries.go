@@ -57,5 +57,5 @@ func targetFor(goos, goarch string, musl bool) (string, error) {
 		}
 		return arch + "-unknown-linux-" + libc, nil
 	}
-	return "", fmt.Errorf("no default provider for %s/%s", runtime.GOOS, goarch)
+	return "", fmt.Errorf("no default provider for %s/%s", goos, goarch)
 }

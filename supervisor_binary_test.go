@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/fergusstrange/embedded-postgres/v2/internal/platform"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -19,7 +20,7 @@ func TestSupervisorAcquisition(t *testing.T) {
 	content := []byte("verified executable fixture")
 	sum := sha256.Sum256(content)
 	digest := hex.EncodeToString(sum[:])
-	name := executable("embedded-postgres-test")
+	name := platform.Executable("embedded-postgres-test")
 	requests := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requests++
@@ -161,5 +162,18 @@ func TestLogTailBounded(t *testing.T) {
 	}
 	if withoutPassword("postgresql://u:secret@localhost/db") != "postgresql://u@localhost/db" || withoutPassword(":broken") != "" {
 		t.Fatal("URI sanitization")
+	}
+}
+
+func TestPublishedSupervisorVersions(t *testing.T) {
+	for _, version := range []string{"v2.0.0", "v2.0.0-alpha.1", "v2.1.2-rc.3"} {
+		if !publishedVersion(version) {
+			t.Errorf("release rejected: %s", version)
+		}
+	}
+	for _, version := range []string{"", "(devel)", "v2.0.0-dev", "v1.8.0", "v2.0.0-20261005024047-69c76a8ace40", "v2.0.1-0.20261005120000-abcdef123456", "v2.0.0-alpha.1.0.20261005120000-abcdef123456"} {
+		if publishedVersion(version) {
+			t.Errorf("source build treated as published release: %s", version)
+		}
 	}
 }

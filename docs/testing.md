@@ -39,3 +39,13 @@ are available through the core `StartContext` API.
 For migration tools, open your chosen driver after Start, run migrations, then
 execute tests. Alternatively use a Ready hook and return a cleanup that closes
 the connection pool. Hooks run synchronously and must honour their context.
+
+`eptest.Start` uses `t.Cleanup` as its normal teardown owner. It deliberately does
+not bind the server lifetime to `t.Context()`, which is cancelled before cleanup
+callbacks run. Hook cleanup panics therefore follow the direct `Close` policy
+consistently, and failure diagnostics include the final shutdown log tail.
+
+Lifecycle and inspection methods on one instance serialise behind an in-flight
+`Start` or `Close`. `StopContext` is the exception for caller waiting: its deadline
+also applies while startup holds the lifecycle lock; the queued cleanup continues
+after startup finishes. Hooks must honour their contexts.

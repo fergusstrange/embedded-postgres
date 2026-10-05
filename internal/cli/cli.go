@@ -143,9 +143,20 @@ func (a App) execute(ctx context.Context, command string, o Options, rest []stri
 		}
 		defer ctl.close()
 	}
-	if err = pg.StartContext(ctx); err != nil {
+	lifetime := ctx
+	stopStartupCancellation := func() bool { return true }
+	if command == "exec" {
+		// Keep PostgreSQL available to the child's teardown after interruption.
+		var closeLifetime context.CancelFunc
+		lifetime, closeLifetime = context.WithCancel(context.WithoutCancel(ctx))
+		defer closeLifetime()
+		stopStartupCancellation = context.AfterFunc(ctx, closeLifetime)
+		defer stopStartupCancellation()
+	}
+	if err = pg.StartContext(lifetime); err != nil {
 		return 1, err
 	}
+	stopStartupCancellation()
 	ready := Event{Protocol: Protocol, Event: "ready", ConnectionURL: pg.ConnectionURL(), Port: pg.GetPort(), StateFile: o.StateFile}
 	if ctl != nil {
 		if err = ctl.publish(ready); err != nil {
@@ -159,13 +170,17 @@ func (a App) execute(ctx context.Context, command string, o Options, rest []stri
 		child.Stdout = a.Out
 		child.Stderr = a.Err
 		child.Env = childEnvironment(os.Environ(), ready.ConnectionURL)
-		child.WaitDelay = 2 * time.Second
+		child.Cancel = func() error { return interruptCommand(child.Process, ctx) }
+		child.WaitDelay = 10 * time.Second
 		err = child.Run()
 		closeErr := pg.Close()
+		if ctx.Err() != nil {
+			return interruptionCode(ctx), closeErr
+		}
 		if err != nil {
 			var exit *exec.ExitError
 			if errors.As(err, &exit) {
-				return max(1, exit.ExitCode()), closeErr
+				return commandExitCode(exit), closeErr
 			}
 			return 1, errors.Join(err, closeErr)
 		}

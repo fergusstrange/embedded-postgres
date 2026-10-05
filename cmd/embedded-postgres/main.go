@@ -5,8 +5,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/fergusstrange/embedded-postgres/v2/internal/cli"
 	"github.com/fergusstrange/embedded-postgres/v2/internal/supervisor"
@@ -28,7 +26,7 @@ func run() int {
 		}
 		return 0
 	}
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	ctx, cancel := cli.NotifyContext(context.Background())
 	defer cancel()
 	executable, err := os.Executable()
 	if err != nil {

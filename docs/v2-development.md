@@ -172,3 +172,40 @@ from the denominator.
   threads. Native/platform tests and the aggregate coverage gate passed.
 - Disabled the obsolete CircleCI GitHub webhook through the GitHub API after the
   CircleCI CLI identified the legacy OAuth pipeline. Branch protection is unchanged.
+
+## PR review: lifecycle and platform follow-up
+
+Reviewed all twelve Claude comments submitted under the repository owner's account
+on PR #171. Eleven correctness or maintenance findings are addressed:
+
+- `4181773940`: Windows background children use `DETACHED_PROCESS`. A native test
+  starts an attached console parent and verifies its detached child has no console.
+- `4181773951`: pseudo-versions (all three Go forms) are rejected before supervisor
+  release acquisition and use the source-build configuration hint.
+- `4181773962`: readiness rejects permanent authentication/HBA failures promptly.
+  Real reused-cluster tests cover changed passwords and missing roles.
+- `4181773970`: unsupported binary targets name the requested OS, not the host OS.
+- `4181774010`: CLI exec forwards Unix interruption, allows bounded teardown while
+  PostgreSQL remains available, and returns signal-specific exit codes. Tests cover
+  SIGINT, SIGTERM, a teardown SQL query, natural signal exits and forced escalation.
+- `4181774022`, `4181774054`: scoped test cleanup has one normal owner and reads
+  logs after shutdown. Subprocess tests verify hook panic propagation and final logs.
+- `4181774028`: StopContext deadlines include time waiting behind startup. The
+  queued cleanup still finishes; inspection-method serialization is documented.
+- `4181774046`: the owner no longer reconstructs a process handle from a remembered
+  PostgreSQL PID. Only the supervisor owns PostgreSQL termination; fallback uses
+  the retained supervisor handle and reports that cleanup could not be confirmed.
+- `4181774063`: RunAs rejects a missing socket parent before binary acquisition.
+  Existing caller-owned parents are not modified; native root CI covers this case.
+- `4181774079`: executable suffix handling lives in internal/platform for both
+  provider and supervisor use.
+
+`4181774071` (sharing RunAs installation copies) is deferred, not treated as a
+correctness fix. Per-instance copies retain predictable ownership and cleanup for
+custom provider leases. The non-root guide documents this cost and the existing
+suite-level wrapper/non-root-runner alternatives. A future shared-copy design needs
+explicit identity and immutability keys and owner-death cleanup before adoption.
+
+Local validation: full race-enabled PostgreSQL integration suite passes on macOS
+ARM64, including the new authentication, queued shutdown, scoped cleanup and CLI
+signal tests. Windows console and root identity tests run in the native CI matrix.

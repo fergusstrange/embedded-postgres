@@ -25,8 +25,18 @@ immutable binary installation and supervisor there when RunAs is used. This avoi
 requiring access through `/root` or changing permissions on a caller's home/cache.
 Data, password files, and sockets created by the library receive the same owner.
 
+The installation copy is per instance, including for a custom provider. For root
+CI suites, use [`eptest.Run`](testing.md) to share one instance across the suite,
+or run the test process itself as the non-root account to avoid `RunAs` copying.
+A shared copy cache is deferred: it needs explicit identity, immutability and lease
+rules for caller-owned providers, plus cleanup after owner death. Keeping a copy
+inside the instance workspace preserves deterministic removal and avoids making
+one user's cached installation accessible to another.
+
 Caller-supplied workspace parents, socket parents, and persistent directories must
-already be accessible to that account. Existing ownership is validated by the
+already be accessible to that account. With `RunAs`, a socket parent must exist
+before startup; a missing parent is rejected before acquiring binaries or creating
+a cluster. The library only owns and removes its private child socket directory. Existing ownership is validated by the
 native tools and is never recursively changed. A missing persistent directory may
 be created and assigned; existing contents are always preserved. Correct permissions
 in your Dockerfile or provisioning step rather than granting broad access.

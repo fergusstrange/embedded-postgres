@@ -66,7 +66,7 @@ func Run(input io.Reader, output io.Writer) error {
 	stop := func() error {
 		ctx, cancel := context.WithTimeout(context.Background(), req.ShutdownTimeout)
 		defer cancel()
-		ctl := filepath.Join(filepath.Dir(req.Binary), executable("pg_ctl"))
+		ctl := filepath.Join(filepath.Dir(req.Binary), platform.Executable("pg_ctl"))
 		shutdown, release, e := platform.Command(ctx, nil, ctl, "stop", "-D", req.DataDir, "-m", "fast", "-w", "-t", fmt.Sprint(max(1, int(req.ShutdownTimeout.Seconds()))))
 		if e == nil {
 			shutdown.Dir = req.DataDir

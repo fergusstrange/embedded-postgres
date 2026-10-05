@@ -131,7 +131,7 @@ func TestUnresponsiveSupervisorFallback(t *testing.T) {
 		t.Fatal(e)
 	}
 	release()
-	s := &session{cmd: owner, lease: lease, postgresPID: child.Process.Pid, exited: make(chan struct{})}
+	s := &session{cmd: owner, lease: lease, exited: make(chan struct{})}
 	go func() { s.waitErr = owner.Wait(); close(s.exited) }()
 	pg := NewDatabase(c)
 	if e = pg.stopProcess(s); e == nil {
@@ -140,8 +140,8 @@ func TestUnresponsiveSupervisorFallback(t *testing.T) {
 	select {
 	case <-childDone:
 		childReaped = true
-	case <-ctx.Done():
-		t.Fatal("owned child survived fallback")
+		t.Fatal("fallback killed an unrelated process")
+	default:
 	}
 	if s.lease != nil {
 		t.Fatal("owner lease remains")

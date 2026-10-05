@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/fergusstrange/embedded-postgres/v2/internal/platform"
 	"io"
 	"net/http"
 	"net/url"
@@ -187,15 +188,9 @@ func validCache(dir, digest string) bool {
 	b, e := os.ReadFile(filepath.Join(dir, ".complete"))
 	return e == nil && string(b) == digest
 }
-func executable(s string) string {
-	if runtime.GOOS == "windows" {
-		return s + ".exe"
-	}
-	return s
-}
 func validateInstallation(dir string) error {
 	for _, name := range []string{"postgres", "initdb", "pg_ctl", "psql", "createdb"} {
-		p := filepath.Join(dir, "bin", executable(name))
+		p := filepath.Join(dir, "bin", platform.Executable(name))
 		st, err := os.Stat(p)
 		if err != nil {
 			return fmt.Errorf("required PostgreSQL tool %s: %w", p, err)

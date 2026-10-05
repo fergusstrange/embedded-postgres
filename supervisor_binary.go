@@ -45,16 +45,24 @@ func resolveSupervisor(ctx context.Context, c Config) (string, error) {
 	if info, ok := debug.ReadBuildInfo(); ok {
 		version = moduleVersion(info)
 	}
-	if !regexp.MustCompile(`^v2\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$`).MatchString(version) {
+	if !publishedVersion(version) {
 		return "", errors.New("source build requires Config.Supervisor(path) or EP_SUPERVISOR; build ./cmd/embedded-postgres first")
 	}
 	cache, err := cacheDirectory(c.storage.CacheDir)
 	if err != nil {
 		return "", err
 	}
-	name := executable("embedded-postgres_" + runtime.GOOS + "_" + runtime.GOARCH)
+	name := platform.Executable("embedded-postgres_" + runtime.GOOS + "_" + runtime.GOARCH)
 	return cacheSupervisor(ctx, cache, version, name, "https://github.com/fergusstrange/embedded-postgres/releases/download/"+version, &http.Client{Timeout: time.Minute})
 }
+
+var releaseVersionPattern = regexp.MustCompile(`^v2\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$`)
+var pseudoVersionPattern = regexp.MustCompile(`(?:[.-])[0-9]{14}-[0-9a-f]{12}$`)
+
+func publishedVersion(version string) bool {
+	return releaseVersionPattern.MatchString(version) && !pseudoVersionPattern.MatchString(version) && version != "v2.0.0-dev"
+}
+
 func moduleVersion(info *debug.BuildInfo) string {
 	for _, d := range info.Deps {
 		if d.Path == "github.com/fergusstrange/embedded-postgres/v2" && d.Replace == nil {

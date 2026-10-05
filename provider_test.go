@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/fergusstrange/embedded-postgres/v2/internal/platform"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -53,7 +54,7 @@ func TestLocalProviderContract(t *testing.T) {
 	}
 	os.Mkdir(filepath.Join(dir, "bin"), 0700)
 	for _, name := range []string{"postgres", "initdb", "pg_ctl", "createdb", "psql"} {
-		os.WriteFile(filepath.Join(dir, "bin", executable(name)), nil, 0700)
+		os.WriteFile(filepath.Join(dir, "bin", platform.Executable(name)), nil, 0700)
 	}
 	install, err := (LocalProvider(dir)).Acquire(context.Background(), BinaryRequest{})
 	if err != nil || install.Dir != dir {

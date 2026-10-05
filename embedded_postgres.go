@@ -35,7 +35,9 @@ var (
 )
 
 // EmbeddedPostgres serialises lifecycle transitions. Separate instances run in
-// parallel and may share immutable binaries. Do not copy after first use.
+// parallel and may share immutable binaries. Inspection methods serialise behind
+// an in-flight Start or Close; StopContext bounds its caller's wait even then.
+// Do not copy after first use.
 type EmbeddedPostgres struct {
 	mu       sync.Mutex
 	config   Config
@@ -47,7 +49,6 @@ type EmbeddedPostgres struct {
 type session struct {
 	supervisorPath    string
 	instanceID        string
-	postgresPID       int
 	info              InstanceInfo
 	installation      *Installation
 	lock              *os.File
@@ -88,6 +89,12 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 	}
 	if err = platform.ValidateIdentity(c.identity); err != nil {
 		return err
+	}
+	if c.identity != nil && c.socketDir != "" {
+		// Do not create a root-only ancestor around a chowned socket child.
+		if st, e := os.Stat(c.socketDir); e != nil || !st.IsDir() {
+			return fmt.Errorf("RunAs UnixSocket parent must be an existing directory accessible to UID %d: %s", c.identity.UID, c.socketDir)
+		}
 	}
 	start, cancel := context.WithTimeout(ctx, c.startTimeout)
 	defer cancel()
@@ -165,7 +172,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 		return err
 	}
 	if c.identity != nil {
-		dest := filepath.Join(work, executable("supervisor"))
+		dest := filepath.Join(work, platform.Executable("supervisor"))
 		if err = copyFile(helper, dest, 0755); err != nil {
 			return err
 		}
@@ -246,8 +253,10 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 		if e != nil {
 			return e
 		}
-		if err = os.MkdirAll(socketDir, 0700); err != nil {
-			return err
+		if c.identity == nil {
+			if err = os.MkdirAll(socketDir, 0700); err != nil {
+				return err
+			}
 		}
 		// The parent is caller-owned; only the private socket child is removed.
 		socketDir, err = os.MkdirTemp(socketDir, "ep-")
@@ -378,15 +387,11 @@ func (ep *EmbeddedPostgres) launch(ctx context.Context, s *session, helper strin
 	s.exited = make(chan struct{})
 	s.waitErr = nil
 	go func() { s.waitErr = cmd.Wait(); close(s.exited) }()
-	req := supervisor.Request{Protocol: supervisor.Protocol, Binary: filepath.Join(s.info.BinariesDir, "bin", executable("postgres")), Args: args, DataDir: s.info.DataDir, LogPath: s.logPath, ShutdownTimeout: ep.config.stopTimeout}
+	req := supervisor.Request{Protocol: supervisor.Protocol, Binary: filepath.Join(s.info.BinariesDir, "bin", platform.Executable("postgres")), Args: args, DataDir: s.info.DataDir, LogPath: s.logPath, ShutdownTimeout: ep.config.stopTimeout}
 	if err = json.NewEncoder(lease).Encode(req); err != nil {
 		return err
 	}
-	type handshake struct {
-		event supervisor.Event
-		err   error
-	}
-	event := make(chan handshake, 1)
+	event := make(chan error, 1)
 	go func() {
 		defer output.Close()
 		var e supervisor.Event
@@ -394,12 +399,11 @@ func (ep *EmbeddedPostgres) launch(ctx context.Context, s *session, helper strin
 		if err == nil && (e.Protocol != supervisor.Protocol || e.PID <= 0) {
 			err = errors.New("invalid supervisor handshake")
 		}
-		event <- handshake{e, err}
+		event <- err
 	}()
 	select {
-	case result := <-event:
-		s.postgresPID = result.event.PID
-		return result.err
+	case err := <-event:
+		return err
 	case <-ctx.Done():
 		lease.Close()
 		return ctx.Err()
@@ -423,6 +427,9 @@ func (ep *EmbeddedPostgres) ready(ctx context.Context, s *session, c Config) err
 		if err == nil {
 			return nil
 		}
+		if permanentConnectionError(string(output)) {
+			return ep.failure(s, err)
+		}
 		select {
 		case <-ctx.Done():
 			return ep.failure(s, errors.Join(ctx.Err(), err))
@@ -432,6 +439,18 @@ func (ep *EmbeddedPostgres) ready(ctx context.Context, s *session, c Config) err
 		}
 	}
 }
+
+// libpq connection errors are text, not SQL result rows. Utilities run with C
+// messages so authentication failures can be distinguished from startup retries.
+func permanentConnectionError(output string) bool {
+	for _, message := range []string{"password authentication failed", "no password supplied", "no pg_hba.conf entry", "pg_hba.conf rejects connection"} {
+		if strings.Contains(output, message) {
+			return true
+		}
+	}
+	return strings.Contains(output, "FATAL:  role ") && strings.Contains(output, " does not exist")
+}
+
 func (ep *EmbeddedPostgres) command(ctx context.Context, s *session, name string, args ...string) ([]byte, error) {
 	cmd, release, err := platform.Command(ctx, ep.config.identity, s.supervisorPath, "__command")
 	if err != nil {
@@ -439,7 +458,7 @@ func (ep *EmbeddedPostgres) command(ctx context.Context, s *session, name string
 	}
 	defer release()
 	cmd.Dir = s.info.WorkDir
-	cmd.Env = ep.environment(s)
+	cmd.Env = append(ep.environment(s), "LC_ALL=C")
 	input, err := cmd.StdinPipe()
 	if err != nil {
 		return nil, err
@@ -453,7 +472,7 @@ func (ep *EmbeddedPostgres) command(ctx context.Context, s *session, name string
 	if err = cmd.Start(); err != nil {
 		return nil, err
 	}
-	req := supervisor.Request{Protocol: supervisor.Protocol, Binary: filepath.Join(s.info.BinariesDir, "bin", executable(name)), Args: args, DataDir: s.info.WorkDir}
+	req := supervisor.Request{Protocol: supervisor.Protocol, Binary: filepath.Join(s.info.BinariesDir, "bin", platform.Executable(name)), Args: args, DataDir: s.info.WorkDir}
 	if err = json.NewEncoder(input).Encode(req); err != nil {
 		input.Close()
 		_ = cmd.Wait()
@@ -493,14 +512,19 @@ func (ep *EmbeddedPostgres) Stop() error {
 // StopContext requests cleanup and bounds how long the caller waits. If ctx
 // expires, bounded process shutdown and resource cleanup continue independently.
 func (ep *EmbeddedPostgres) StopContext(ctx context.Context) error {
-	ep.mu.Lock()
-	s := ep.active
-	ep.mu.Unlock()
-	if s == nil {
-		return ErrServerNotStarted
-	}
 	done := make(chan error, 1)
-	go func() { done <- ep.closeSession(s) }()
+	go func() {
+		// Acquiring the lifecycle lock is part of the bounded wait too. A stop
+		// requested during startup still completes after startup releases it.
+		ep.mu.Lock()
+		s := ep.active
+		ep.mu.Unlock()
+		if s == nil {
+			done <- ErrServerNotStarted
+			return
+		}
+		done <- ep.closeSession(s)
+	}()
 	select {
 	case err := <-done:
 		return err
@@ -521,14 +545,11 @@ func (ep *EmbeddedPostgres) stopProcess(s *session) error {
 	select {
 	case <-s.exited:
 	case <-time.After(ep.config.stopTimeout + 2*time.Second):
-		if s.postgresPID > 0 {
-			if p, e := os.FindProcess(s.postgresPID); e == nil {
-				_ = platform.Kill(p)
-				_ = p.Release()
-			}
-		}
-		_ = platform.Kill(s.cmd.Process)
+		// Only the supervisor owns PostgreSQL's process handle. Never reconstruct
+		// one from its handshake PID: that PID may already have been reused.
+		_ = s.cmd.Process.Kill()
 		<-s.exited
+		s.waitErr = errors.Join(s.waitErr, errors.New("supervisor did not respond to shutdown; force-terminated without confirming PostgreSQL cleanup"))
 	}
 	s.lease = nil
 	if s.waitErr != nil {

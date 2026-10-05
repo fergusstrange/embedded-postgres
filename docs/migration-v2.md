@@ -40,3 +40,9 @@ On Unix, a root caller must supply `RunAs(User{UID: ..., GID: ...})` for an exis
 non-root OS user. That user needs access to any caller-supplied persistent data or
 workspace parent. The library never creates accounts or changes caller-owned data
 permissions. Windows uses restricted tokens and rejects Unix UID/GID configuration.
+
+Commit-pinned Go pseudo-versions require `Config.Supervisor(path)` or
+`EP_SUPERVISOR`, just like a source checkout. They do not attempt to download an
+unpublished GitHub release. Reusing a persistent cluster with incorrect credentials
+fails promptly when PostgreSQL reports an authentication error instead of consuming
+the startup timeout.

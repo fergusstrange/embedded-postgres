@@ -12,6 +12,7 @@ import (
 
 // Start starts an isolated server and registers cleanup before startup. Defaults
 // choose a dynamic port. An explicit Config is honoured, including its port.
+// Cleanup owns normal teardown; test-context cancellation does not race it.
 func Start(t testing.TB, configs ...postgres.Config) *postgres.EmbeddedPostgres {
 	t.Helper()
 	c := postgres.DefaultConfig().Port(0)
@@ -20,7 +21,6 @@ func Start(t testing.TB, configs ...postgres.Config) *postgres.EmbeddedPostgres 
 	}
 	pg := postgres.NewDatabase(c)
 	t.Cleanup(func() {
-		logs := pg.Logs()
 		err := pg.Close()
 		if err == nil {
 			err = pg.Err()
@@ -28,11 +28,11 @@ func Start(t testing.TB, configs ...postgres.Config) *postgres.EmbeddedPostgres 
 		if err != nil {
 			t.Errorf("close embedded PostgreSQL: %v", err)
 		}
-		if t.Failed() && logs != "" {
+		if logs := pg.Logs(); t.Failed() && logs != "" {
 			t.Logf("PostgreSQL output:\n%s", logs)
 		}
 	})
-	if err := pg.StartContext(t.Context()); err != nil {
+	if err := pg.Start(); err != nil {
 		t.Fatalf("start embedded PostgreSQL: %v", err)
 	}
 	return pg

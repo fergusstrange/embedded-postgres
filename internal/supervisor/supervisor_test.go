@@ -85,7 +85,7 @@ func TestSupervisorParentDeath(t *testing.T) {
 			}
 			ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 			defer cancel()
-			init, release, err := platform.Command(ctx, id, filepath.Join(bin, executable("initdb")), "-D", data, "-U", "postgres", "-A", "trust", "--locale=C", "-E", "UTF8")
+			init, release, err := platform.Command(ctx, id, filepath.Join(bin, platform.Executable("initdb")), "-D", data, "-U", "postgres", "-A", "trust", "--locale=C", "-E", "UTF8")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -101,7 +101,7 @@ func TestSupervisorParentDeath(t *testing.T) {
 			}
 			port := listener.Addr().(*net.TCPAddr).Port
 			listener.Close()
-			req := Request{Protocol: Protocol, Binary: filepath.Join(bin, executable("postgres")), DataDir: data, LogPath: log, Args: []string{"-D", data, "-h", "127.0.0.1", "-p", strconv.Itoa(port), "-c", "unix_socket_directories="}, ShutdownTimeout: 5 * time.Second}
+			req := Request{Protocol: Protocol, Binary: filepath.Join(bin, platform.Executable("postgres")), DataDir: data, LogPath: log, Args: []string{"-D", data, "-h", "127.0.0.1", "-p", strconv.Itoa(port), "-c", "unix_socket_directories="}, ShutdownTimeout: 5 * time.Second}
 			exe, args := helper, []string{"__supervise"}
 			if how != "close" {
 				exe, _ = os.Executable()
@@ -148,7 +148,7 @@ func TestSupervisorParentDeath(t *testing.T) {
 			})
 			// Readiness must authenticate to the exact server, not just observe an open port.
 			for {
-				check, release, e := platform.Command(ctx, id, filepath.Join(bin, executable("psql")), "-X", "-w", "-h", "127.0.0.1", "-p", strconv.Itoa(port), "-U", "postgres", "-d", "postgres", "-Atc", "SELECT 1")
+				check, release, e := platform.Command(ctx, id, filepath.Join(bin, platform.Executable("psql")), "-X", "-w", "-h", "127.0.0.1", "-p", strconv.Itoa(port), "-U", "postgres", "-d", "postgres", "-Atc", "SELECT 1")
 				if e != nil {
 					t.Fatal(e)
 				}
@@ -191,7 +191,7 @@ func TestRejectProtocol(t *testing.T) {
 	go func() { fmt.Fprintln(inputW, `{"protocol":999}`); inputW.Close() }()
 	// Guard deliberately owns a Windows process Job; run protocol validation only
 	// in the helper on Windows (the integration test exercises it there).
-	if executable("x") == "x.exe" {
+	if platform.Executable("x") == "x.exe" {
 		inputR.Close()
 		return
 	}

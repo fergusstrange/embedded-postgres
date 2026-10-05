@@ -5,6 +5,7 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"runtime"
 )
 
 // Identity is an operating-system identity, not a PostgreSQL role.
@@ -23,4 +24,12 @@ func Command(ctx context.Context, identity *Identity, name string, args ...strin
 	}
 	cmd.Cancel = func() error { return Kill(cmd.Process) }
 	return cmd, release, nil
+}
+
+// Executable adds the native executable suffix to a tool name.
+func Executable(name string) string {
+	if runtime.GOOS == "windows" {
+		return name + ".exe"
+	}
+	return name
 }

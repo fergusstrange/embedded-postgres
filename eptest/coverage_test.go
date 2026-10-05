@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime/coverage"
+	"strings"
 	"testing"
 	"time"
 )
@@ -100,9 +101,19 @@ func TestScopedFailureChild(t *testing.T) {
 	if mode == "startup" {
 		c = c.Port(65536)
 	}
-	if mode == "cleanup" {
-		c = c.Hooks(postgres.Hooks{Ready: []postgres.Hook{func(context.Context, postgres.InstanceInfo) (func(context.Context) error, error) {
-			return func(context.Context) error { return errors.New("intentional cleanup failure") }, nil
+	if mode == "cleanup" || mode == "cleanup-panic" {
+		c = c.Hooks(postgres.Hooks{Ready: []postgres.Hook{func(_ context.Context, info postgres.InstanceInfo) (func(context.Context) error, error) {
+			return func(context.Context) error {
+				if mode == "cleanup-panic" {
+					panic("intentional cleanup panic")
+				}
+				f, err := os.OpenFile(filepath.Join(info.WorkDir, "postgres.log"), os.O_APPEND|os.O_WRONLY, 0600)
+				if err != nil {
+					return err
+				}
+				_, err = f.WriteString("shutdown diagnostics from cleanup\n")
+				return errors.Join(err, f.Close(), errors.New("intentional cleanup failure"))
+			}, nil
 		}}})
 	}
 	pg := Start(t, c)
@@ -115,7 +126,7 @@ func TestScopedFailureCleanup(t *testing.T) {
 	if os.Getenv("EP_TEST_BIN") == "" || os.Getenv("EP_SUPERVISOR") == "" {
 		t.Skip("integration binaries required")
 	}
-	for _, mode := range []string{"startup", "cleanup", "failure"} {
+	for _, mode := range []string{"startup", "cleanup", "cleanup-panic", "failure"} {
 		t.Run(mode, func(t *testing.T) {
 			file := filepath.Join(t.TempDir(), "work")
 			ctx, cancel := context.WithTimeout(t.Context(), 90*time.Second)
@@ -125,6 +136,12 @@ func TestScopedFailureCleanup(t *testing.T) {
 			output, err := cmd.CombinedOutput()
 			if err == nil {
 				t.Fatalf("test failure was not reported: %s", output)
+			}
+			if mode == "cleanup" && !strings.Contains(string(output), "shutdown diagnostics from cleanup") {
+				t.Fatalf("shutdown logs missing: %s", output)
+			}
+			if mode == "cleanup-panic" && !strings.Contains(string(output), "panic: intentional cleanup panic") {
+				t.Fatalf("cleanup panic was nondeterministically swallowed: %s", output)
 			}
 			if mode != "startup" {
 				work, e := os.ReadFile(file)

@@ -34,10 +34,15 @@ embedded-postgres prune
 `run` stays in the foreground and handles SIGINT/SIGTERM. `exec` injects
 `DATABASE_URL`, `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` and
 `PGSSLMODE` into the test command, preserves its standard streams and exit status,
-and closes PostgreSQL before returning. A test command that starts detached child
-processes must manage those processes itself.
+and closes PostgreSQL before returning. On Unix, SIGINT/SIGTERM is forwarded to
+the test command with up to ten seconds for teardown before forced termination;
+PostgreSQL remains available during that teardown. Interruption returns 130 for
+SIGINT or 143 for SIGTERM (including plain context cancellation). Windows falls
+back to process termination because Go cannot portably forward these signals to
+one Windows process. A test command that starts detached child processes must
+manage those processes itself.
 
-`start` intentionally outlives its launcher. The state file contains a random
+`start` intentionally outlives its launcher, including its console on Windows. The state file contains a random
 control token and a loopback address, never a PID used for killing. Keep it in a
 private directory. `status` and `stop` authenticate to that instance; `stop`
 returns after lifecycle cleanup. Concurrent use of the same state file is
@@ -116,3 +121,9 @@ Use the CLI pipe protocol for the first Node wrapper: it shares the exact tested
 Go lifecycle, works without a compiler on the consuming machine, and isolates Go
 runtime failures from the Node test runner. A native addon can remain an external
 consumer later; no Node implementation is included in this milestone.
+
+If a supervisor itself becomes unresponsive, the owner reports a shutdown error
+and terminates that supervisor using its retained process handle. It never signals
+PostgreSQL by a remembered PID, which could belong to an unrelated process by then.
+Windows Job cleanup covers this case; on Unix PostgreSQL cleanup cannot be confirmed
+without a responsive supervisor. Do not suspend or externally terminate supervisors.

@@ -39,8 +39,12 @@ func TestTargetVariants(t *testing.T) {
 		}
 	}
 	for _, tc := range [][2]string{{"plan9", "amd64"}, {"linux", "unknown"}, {"windows", "386"}} {
-		if _, e := targetFor(tc[0], tc[1], false); e == nil {
+		_, e := targetFor(tc[0], tc[1], false)
+		if e == nil {
 			t.Fatal("unsupported target", tc)
+		}
+		if tc[1] != "unknown" && !strings.Contains(e.Error(), tc[0]+"/"+tc[1]) {
+			t.Fatalf("error names host instead of rejected target: %v", e)
 		}
 	}
 }
