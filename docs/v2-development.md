@@ -53,3 +53,11 @@ removed in favour of GitHub Actions. Non-root launching is a core requirement.
   terminated. No supervisor sends a signal to its own/inherited process group.
 - Native milestone-1 CI passed Linux AMD64/ARM64 (including root-to-non-root),
   macOS AMD64/ARM64, and Windows AMD64/ARM64 (x64 PostgreSQL under emulation).
+
+## Milestone 3 review
+
+- Added eptest.Start with cleanup registered before startup and t.Context lifetime.
+- Added eptest.Run for TestMain; os.Exit occurs only after deferred cleanup.
+- Replaced stale nested modules with compiled v2 examples and documented all
+  incompatible path/provider/version/driver-registration changes explicitly.
+- Verified test-helper cleanup and endpoint resolution in real integration tests.

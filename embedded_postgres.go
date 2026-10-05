@@ -642,3 +642,19 @@ func (ep *EmbeddedPostgres) Done() <-chan struct{} {
 
 // Err reports the most recent lifecycle or unexpected-process error.
 func (ep *EmbeddedPostgres) Err() error { ep.mu.Lock(); defer ep.mu.Unlock(); return ep.lastErr }
+
+// Logs returns the recent server output with the configured password redacted.
+// Output is available while the instance is active; temporary files are removed
+// by Close. Errors include the relevant output when startup fails.
+func (ep *EmbeddedPostgres) Logs() string {
+	ep.mu.Lock()
+	defer ep.mu.Unlock()
+	if ep.active == nil {
+		return ""
+	}
+	b, _ := os.ReadFile(ep.active.logPath)
+	if len(b) > 32<<10 {
+		b = b[len(b)-(32<<10):]
+	}
+	return redact(string(b), ep.config.password)
+}
