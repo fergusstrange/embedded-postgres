@@ -78,7 +78,7 @@ func parse(args []string, getenv func(string) string, stderr io.Writer) (Options
 			return o, nil, fmt.Errorf("config: %w", err)
 		}
 	}
-	stringsEnv := map[string]*string{"VERSION": &o.Version, "DATABASE": &o.Database, "USERNAME": &o.Username, "PASSWORD": &o.Password, "CACHE_DIR": &o.CacheDir, "WORK_DIR": &o.WorkDir, "DATA_DIR": &o.DataDir, "BINARIES": &o.Binaries, "MIRROR": &o.Mirror, "USER": &o.User, "SOCKET_DIR": &o.SocketDir, "START_TIMEOUT": &o.StartTimeout, "STOP_TIMEOUT": &o.StopTimeout, "STATE_FILE": &o.StateFile}
+	stringsEnv := map[string]*string{"POSTGRES_VERSION": &o.Version, "DATABASE": &o.Database, "USERNAME": &o.Username, "PASSWORD": &o.Password, "CACHE_DIR": &o.CacheDir, "WORK_DIR": &o.WorkDir, "DATA_DIR": &o.DataDir, "BINARIES": &o.Binaries, "MIRROR": &o.Mirror, "USER": &o.User, "SOCKET_DIR": &o.SocketDir, "START_TIMEOUT": &o.StartTimeout, "STOP_TIMEOUT": &o.StopTimeout, "STATE_FILE": &o.StateFile}
 	for k, p := range stringsEnv {
 		if v := getenv("EP_" + k); v != "" {
 			*p = v

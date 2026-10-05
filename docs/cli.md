@@ -54,7 +54,7 @@ all flags. JSON field names and matching environment names include:
 
 | JSON | Flag | Environment |
 |---|---|---|
-| `postgres_version` | `--postgres-version` | `EP_VERSION` |
+| `postgres_version` | `--postgres-version` | `EP_POSTGRES_VERSION` |
 | `port` | `--port` | `EP_PORT` |
 | `database`, `username`, `password` | corresponding flag | `EP_DATABASE`, `EP_USERNAME`, `EP_PASSWORD` |
 | `cache_dir`, `work_dir`, `data_dir` | `--cache-dir`, `--work-dir`, `--data-dir` | corresponding uppercase `EP_*` |

@@ -44,6 +44,7 @@ jobs:
           go build -o "$RUNNER_TEMP/embedded-postgres.exe" ./cmd/embedded-postgres
           echo "EP_SUPERVISOR=$RUNNER_TEMP/embedded-postgres.exe" >> "$GITHUB_ENV"
           echo "EP_TEST_BIN=$PWD/pg/bin" >> "$GITHUB_ENV"
+          echo "EP_TEST_ARCHIVE=$PWD/pg.tar.gz" >> "$GITHUB_ENV"
       - run: go test -v -timeout 3m ./...
       - if: runner.os == 'Linux'
         name: Root caller with non-root PostgreSQL

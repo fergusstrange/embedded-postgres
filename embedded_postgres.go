@@ -330,9 +330,9 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 	go func() {
 		select {
 		case <-ctx.Done():
-			_ = ep.Close()
+			_ = ep.closeSession(s)
 		case <-s.exited:
-			_ = ep.Close()
+			_ = ep.closeSession(s)
 		case <-s.closed:
 		}
 	}()
@@ -671,4 +671,14 @@ func logTail(path string) []byte {
 	}
 	b, _ := io.ReadAll(io.LimitReader(f, 32<<10))
 	return b
+}
+
+// A delayed watcher from an old lifetime must never close a restarted instance.
+func (ep *EmbeddedPostgres) closeSession(s *session) error {
+	ep.mu.Lock()
+	defer ep.mu.Unlock()
+	if ep.active != s {
+		return nil
+	}
+	return ep.closeLocked(context.Background())
 }

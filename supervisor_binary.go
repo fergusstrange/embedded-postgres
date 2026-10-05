@@ -41,12 +41,8 @@ func resolveSupervisor(ctx context.Context, c Config) (string, error) {
 		return p, nil
 	}
 	version := ""
-	if b, ok := debug.ReadBuildInfo(); ok {
-		for _, d := range b.Deps {
-			if d.Path == "github.com/fergusstrange/embedded-postgres/v2" && d.Replace == nil {
-				version = d.Version
-			}
-		}
+	if info, ok := debug.ReadBuildInfo(); ok {
+		version = moduleVersion(info)
 	}
 	if !regexp.MustCompile(`^v2\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$`).MatchString(version) {
 		return "", errors.New("source build requires Config.Supervisor(path) or EP_SUPERVISOR; build ./cmd/embedded-postgres first")
@@ -56,6 +52,17 @@ func resolveSupervisor(ctx context.Context, c Config) (string, error) {
 		return "", err
 	}
 	name := executable("embedded-postgres_" + runtime.GOOS + "_" + runtime.GOARCH)
+	return cacheSupervisor(ctx, cache, version, name, "https://github.com/fergusstrange/embedded-postgres/releases/download/"+version, &http.Client{Timeout: time.Minute})
+}
+func moduleVersion(info *debug.BuildInfo) string {
+	for _, d := range info.Deps {
+		if d.Path == "github.com/fergusstrange/embedded-postgres/v2" && d.Replace == nil {
+			return d.Version
+		}
+	}
+	return ""
+}
+func cacheSupervisor(ctx context.Context, cache, version, name, base string, client *http.Client) (string, error) {
 	path := filepath.Join(cache, version+"-"+name)
 	lock, err := filelock.Acquire(ctx, path+".lock", true)
 	if err != nil {
@@ -65,12 +72,10 @@ func resolveSupervisor(ctx context.Context, c Config) (string, error) {
 	if st, e := os.Stat(path); e == nil && st.Mode().IsRegular() {
 		return path, nil
 	}
-	base := "https://github.com/fergusstrange/embedded-postgres/releases/download/" + version
 	req, err := http.NewRequestWithContext(ctx, "GET", base+"/checksums.txt", nil)
 	if err != nil {
 		return "", err
 	}
-	client := &http.Client{Timeout: time.Minute}
 	res, err := client.Do(req)
 	if err != nil {
 		return "", err
