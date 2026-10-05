@@ -14,7 +14,7 @@ function Invoke-RestMethod($Uri) {
 }
 function Invoke-WebRequest($Uri, $OutFile) {
     if ($Uri.EndsWith('/checksums.txt')) {
-        $Hash = if ($script:Corrupt) { '0' * 64 } else { $FixtureHash }
+        $Hash = if ($FixtureCorrupt) { '0' * 64 } else { $FixtureHash }
         return [PSCustomObject]@{Content="$Hash  $FixtureAsset`n"}
     }
     if (-not $Uri.EndsWith("/$FixtureAsset")) { throw 'Wrong native asset requested' }
@@ -24,7 +24,7 @@ try {
     foreach ($Case in @('success', 'checksum', 'version', 'directory')) {
         $env:EP_INSTALL_DIR = Join-Path $Root "$Case with spaces"
         $env:EP_VERSION = if ($Case -eq 'version') { '../invalid' } else { '' }
-        $script:Corrupt = $Case -eq 'checksum'
+        $FixtureCorrupt = $Case -eq 'checksum'
         $Target = Join-Path $env:EP_INSTALL_DIR 'embedded-postgres.exe'
         if ($Case -eq 'directory') { New-Item -ItemType Directory -Path $Target -Force | Out-Null }
         $Failed = $false

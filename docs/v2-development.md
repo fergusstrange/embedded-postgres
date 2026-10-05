@@ -108,7 +108,7 @@ from the denominator.
 - Expanded local race-enabled integration suite passes, including concurrent
   verified cache installs, failure cases, socket-only use, and lifecycle restarts.
 
-## Milestone 6 build review (in progress)
+## Milestone 6 build review
 
 - Replaced CircleCI, Nancy and obsolete lint tooling with native GitHub Actions,
   minimum/current Go checks, govulncheck, staticcheck, CodeQL and archive fuzzing.
@@ -134,3 +134,28 @@ from the denominator.
   the current v1.8.0 source tag. CodeQL analysis already passed.
 - Rewrote README/contribution docs and mapped all 8 open issues, 5 open PRs and
   25 closed-unmerged proposals. FreeBSD remains outside the supported matrix.
+
+## Final review
+
+- Aggregate native production coverage reached **90.60% (1445/1595 statements)**
+  at `eb6a687`, including CLI, supervisor and platform-specific implementations.
+  The final workflow recalculates coverage and enforces 90% for every release.
+- TestMain coverage is flushed after suite cleanup so failure-return paths are
+  measured. Test-scoped cleanup also reports failures from a prior context-driven
+  close. Regression subprocesses cover assertion, startup and cleanup failures.
+- Native Windows fault injection verifies token/job setup failures release their
+  handles. Typed syscall boundaries preserve pointer lifetimes across injected
+  calls; native successful launches exercise the real API.
+- Full local race tests pass against PostgreSQL 18.6. The six-target release dry
+  build succeeds and all artifact checksums verify; nothing has been published.
+- Bash installer fixtures cover all six targets, checksum rejection and paths with
+  spaces. They consume complete release listings to avoid SIGPIPE under pipefail.
+  Native Windows jobs also exercise the PowerShell installer with HTTP fixtures.
+- Alpine now reaches the native suite with ICU 74. Its startup-failure regression
+  uses an invalid encoding because musl accepts arbitrary locale names.
+- Final ownership review added a per-launch PostgreSQL setting to readiness checks:
+  a listener with the same credentials on a contested port cannot satisfy another
+  instance's probe. Exhausted port retries preserve their startup error.
+- A panicking log writer now follows the same cleanup policy as a panicking hook:
+  release resources first, then propagate the panic. Socket cleanup is registered
+  immediately after creating the private directory, before changing ownership.

@@ -6,6 +6,7 @@ package embeddedpostgres
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -45,6 +46,7 @@ type EmbeddedPostgres struct {
 }
 type session struct {
 	supervisorPath    string
+	instanceID        string
 	postgresPID       int
 	info              InstanceInfo
 	installation      *Installation
@@ -89,7 +91,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 	}
 	start, cancel := context.WithTimeout(ctx, c.startTimeout)
 	defer cancel()
-	s := &session{closed: make(chan struct{})}
+	s := &session{closed: make(chan struct{}), instanceID: rand.Text()}
 	ep.active = s
 	ep.lastErr = nil
 	ep.lastLog = ""
@@ -252,10 +254,10 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 		if err != nil {
 			return err
 		}
+		s.cleanups = append(s.cleanups, func(context.Context) error { return os.RemoveAll(socketDir) })
 		if err = platform.Own(socketDir, c.identity); err != nil {
 			return err
 		}
-		s.cleanups = append(s.cleanups, func(context.Context) error { return os.RemoveAll(socketDir) })
 		c.socketDir = socketDir
 	}
 	for _, hook := range c.hooks.BeforeStart {
@@ -284,6 +286,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 		if c.socketDir != "" {
 			args = []string{"-D", data, "-p", fmt.Sprint(port), "-h", "", "-c", "unix_socket_directories=" + c.socketDir}
 		}
+		args = append(args, "-c", "embedded_postgres.instance_id="+s.instanceID)
 		keys := make([]string, 0, len(c.startParameters))
 		for k := range c.startParameters {
 			keys = append(keys, k)
@@ -301,7 +304,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 		}
 		_ = ep.stopProcess(s)
 		logs := logTail(s.logPath)
-		if c.port != 0 || c.socketDir != "" || (!strings.Contains(string(logs), "Address already in use") && !strings.Contains(string(logs), "could not bind")) {
+		if attempt == 4 || c.port != 0 || c.socketDir != "" || (!strings.Contains(string(logs), "Address already in use") && !strings.Contains(string(logs), "could not bind")) {
 			return err
 		}
 		if err = os.WriteFile(s.logPath, nil, 0600); err != nil {
@@ -410,8 +413,13 @@ func (ep *EmbeddedPostgres) ready(ctx context.Context, s *session, c Config) err
 		default:
 		}
 		probe, cancel := context.WithTimeout(ctx, time.Second)
-		_, err := ep.command(probe, s, "psql", "-X", "-w", "-d", withoutPassword(connectionURL(cWithDatabase(c, "postgres"), s.info.Port)), "-Atc", "SELECT 1")
+		// An authenticated listener can be another test with identical credentials.
+		// Verify the launch-specific setting before accepting readiness.
+		output, err := ep.command(probe, s, "psql", "-X", "-w", "-d", withoutPassword(connectionURL(cWithDatabase(c, "postgres"), s.info.Port)), "-Atc", "SELECT current_setting('embedded_postgres.instance_id', true)")
 		cancel()
+		if err == nil && strings.TrimSpace(string(output)) != s.instanceID {
+			err = errors.New("listener belongs to a different PostgreSQL instance")
+		}
 		if err == nil {
 			return nil
 		}
@@ -560,8 +568,10 @@ func (ep *EmbeddedPostgres) closeLocked(_ context.Context) (err error) {
 	ep.lastLog = redact(string(logTail(s.logPath)), ep.config.password)
 	if ep.config.logger != nil {
 		if b := ep.lastLog; len(b) > 0 {
-			_, e := io.WriteString(ep.config.logger, redact(string(b), ep.config.password))
-			err = errors.Join(err, e)
+			err = errors.Join(err, call(func() error {
+				_, e := io.WriteString(ep.config.logger, b)
+				return e
+			}))
 		}
 	}
 	if s.lock != nil {
@@ -651,7 +661,7 @@ func validateConfig(c Config) error {
 	}
 	for k, v := range c.startParameters {
 		switch strings.ToLower(k) {
-		case "port", "listen_addresses", "data_directory", "unix_socket_directories", "config_file", "hba_file", "ident_file", "external_pid_file":
+		case "port", "listen_addresses", "data_directory", "unix_socket_directories", "config_file", "hba_file", "ident_file", "external_pid_file", "embedded_postgres.instance_id":
 			return fmt.Errorf("%s is managed by the lifecycle; use its dedicated setting or a hook", k)
 		}
 		if k == "" || strings.ContainsAny(k, "=\x00\r\n") || strings.ContainsRune(v, 0) {
