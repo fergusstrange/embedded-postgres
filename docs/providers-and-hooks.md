@@ -38,7 +38,9 @@ Every hook may return a cleanup, even alongside an error. Registered cleanups ru
 in reverse order after PostgreSQL stops, before the workspace and binary lease are
 released. An error aborts startup. A panic triggers cleanup and is rethrown. Hooks
 must honour context cancellation and must not call lifecycle methods on their own
-instance. Cleanup uses an independent, bounded context.
+instance. Cleanup uses an independent, bounded context. All registered cleanups run even
+if one panics. Direct Close/Stop calls propagate cleanup panics after releasing
+resources; asynchronous cleanup records them in Err instead.
 
 ## Extensions and migrations
 

@@ -68,7 +68,7 @@ func Extract(ctx context.Context, input io.Reader, dest string) error {
 		switch h.Typeflag {
 		case tar.TypeDir:
 			err = root.MkdirAll(filepath.FromSlash(name), 0755)
-		case tar.TypeReg, tar.TypeRegA:
+		case tar.TypeReg:
 			if h.Size < 0 || h.Size > MaxExpanded-total {
 				return errors.New("archive exceeds expanded size limit")
 			}
@@ -134,7 +134,7 @@ func Extract(ctx context.Context, input io.Reader, dest string) error {
 	return nil
 }
 func safe(s string) bool {
-	return s != "" && s != "." && !strings.ContainsAny(s, "\\:") && path.IsAbs(s) == false && path.Clean(s) == s && s != ".." && !strings.HasPrefix(s, "../") && filepath.IsLocal(filepath.FromSlash(s))
+	return s != "" && s != "." && !strings.ContainsAny(s, "\\:") && !path.IsAbs(s) && path.Clean(s) == s && s != ".." && !strings.HasPrefix(s, "../") && filepath.IsLocal(filepath.FromSlash(s))
 }
 
 type contextReader struct {

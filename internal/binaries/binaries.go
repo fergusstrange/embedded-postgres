@@ -31,27 +31,31 @@ func Lookup(version, target string) (string, Artifact, error) {
 	return name, a, nil
 }
 func Target() (string, error) {
-	arch := map[string]string{"amd64": "x86_64", "arm64": "aarch64", "386": "i686", "arm": "armv7", "ppc64le": "powerpc64le", "s390x": "s390x"}[runtime.GOARCH]
+	_, err := os.Stat("/etc/alpine-release")
+	return targetFor(runtime.GOOS, runtime.GOARCH, err == nil)
+}
+func targetFor(goos, goarch string, musl bool) (string, error) {
+	arch := map[string]string{"amd64": "x86_64", "arm64": "aarch64", "386": "i686", "arm": "armv7", "ppc64le": "powerpc64le", "s390x": "s390x"}[goarch]
 	if arch == "" {
-		return "", fmt.Errorf("unsupported architecture %s", runtime.GOARCH)
+		return "", fmt.Errorf("unsupported architecture %s", goarch)
 	}
-	switch runtime.GOOS {
+	switch goos {
 	case "darwin":
 		return arch + "-apple-darwin", nil
 	case "windows":
-		if runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64" {
+		if goarch != "amd64" && goarch != "arm64" {
 			break
 		}
 		return "x86_64-pc-windows-msvc", nil
 	case "linux":
 		libc := "gnu"
-		if _, err := os.Stat("/etc/alpine-release"); err == nil {
+		if musl {
 			libc = "musl"
 		}
-		if runtime.GOARCH == "arm" {
+		if goarch == "arm" {
 			libc += "eabihf"
 		}
 		return arch + "-unknown-linux-" + libc, nil
 	}
-	return "", fmt.Errorf("no default provider for %s/%s", runtime.GOOS, runtime.GOARCH)
+	return "", fmt.Errorf("no default provider for %s/%s", runtime.GOOS, goarch)
 }

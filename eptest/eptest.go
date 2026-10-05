@@ -21,7 +21,11 @@ func Start(t testing.TB, configs ...postgres.Config) *postgres.EmbeddedPostgres 
 	pg := postgres.NewDatabase(c)
 	t.Cleanup(func() {
 		logs := pg.Logs()
-		if err := pg.Close(); err != nil {
+		err := pg.Close()
+		if err == nil {
+			err = pg.Err()
+		}
+		if err != nil {
 			t.Errorf("close embedded PostgreSQL: %v", err)
 		}
 		if t.Failed() && logs != "" {

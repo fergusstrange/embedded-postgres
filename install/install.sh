@@ -50,5 +50,6 @@ staged=$(mktemp "$destination/.embedded-postgres.XXXXXX")
 trap 'rm -rf "$stage"; rm -f "$staged"' EXIT
 cp "$stage/$asset" "$staged"
 chmod 755 "$staged"
+if [[ -d "$destination/embedded-postgres$suffix" ]]; then echo "Install target is a directory." >&2; exit 1; fi
 mv -f "$staged" "$destination/embedded-postgres$suffix"
 printf 'Installed %s to %s/embedded-postgres%s\n' "$version" "$destination" "$suffix"

@@ -238,7 +238,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 	}
 	if c.socketDir != "" {
 		if runtime.GOOS == "windows" {
-			return errors.New("Unix sockets are not supported on Windows")
+			return errors.New("unix sockets are not supported on Windows")
 		}
 		socketDir, e := filepath.Abs(c.socketDir)
 		if e != nil {

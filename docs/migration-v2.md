@@ -16,7 +16,7 @@ available under its original module path. v2 requires Go 1.26 or newer.
 | `CacheLocator`, `RemoteFetchStrategy`, `VersionStrategy` | Replace with `BinaryProvider` or `DownloadProvider` configuration |
 | `V9` through `V14` | Removed from the supported catalogue; v2 supports PostgreSQL 15–18 |
 | `StartParameters` | Retained; lifecycle-owned paths/endpoints use dedicated settings |
-| `Logger(io.Writer)` | Retained; receives redacted server output during cleanup |
+| `Logger(io.Writer)` | Retained; receives a redacted tail (up to 32 KiB) during cleanup |
 | Implicit lib/pq registration | Removed; explicitly import/register your own driver |
 
 Defaults are PostgreSQL 18.6, database/user/password `postgres`, locale `C`,

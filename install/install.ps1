@@ -22,7 +22,9 @@ try {
     if ($Lines.Count -ne 1) { throw 'Missing or ambiguous SHA-256 checksum.' }
     $Expected = ($Lines[0] -split '\s+')[0]
     if ((Get-FileHash -Algorithm SHA256 $Stage).Hash.ToLowerInvariant() -ne $Expected) { throw 'SHA-256 mismatch; installation refused.' }
-    Move-Item -Force $Stage (Join-Path $Destination 'embedded-postgres.exe')
+    $Target = Join-Path $Destination 'embedded-postgres.exe'
+    if (Test-Path -PathType Container $Target) { throw 'Install target is a directory.' }
+    Move-Item -Force $Stage $Target
     Write-Output "Installed $Version to $Destination"
 } finally {
     if (Test-Path $Stage) { Remove-Item $Stage }

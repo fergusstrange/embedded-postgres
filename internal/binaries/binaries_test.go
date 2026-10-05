@@ -26,3 +26,21 @@ func TestPinnedSupportedMatrix(t *testing.T) {
 		t.Fatal(e)
 	}
 }
+
+func TestTargetVariants(t *testing.T) {
+	for _, tc := range []struct {
+		os, arch string
+		musl     bool
+		want     string
+	}{{"linux", "amd64", true, "x86_64-unknown-linux-musl"}, {"linux", "arm", false, "armv7-unknown-linux-gnueabihf"}, {"linux", "arm", true, "armv7-unknown-linux-musleabihf"}, {"darwin", "arm64", false, "aarch64-apple-darwin"}, {"windows", "arm64", false, "x86_64-pc-windows-msvc"}} {
+		got, e := targetFor(tc.os, tc.arch, tc.musl)
+		if e != nil || got != tc.want {
+			t.Fatal(tc, got, e)
+		}
+	}
+	for _, tc := range [][2]string{{"plan9", "amd64"}, {"linux", "unknown"}, {"windows", "386"}} {
+		if _, e := targetFor(tc[0], tc[1], false); e == nil {
+			t.Fatal("unsupported target", tc)
+		}
+	}
+}
