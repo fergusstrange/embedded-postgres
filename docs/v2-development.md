@@ -159,3 +159,16 @@ from the denominator.
 - A panicking log writer now follows the same cleanup policy as a panicking hook:
   release resources first, then propagate the panic. Socket cleanup is registered
   immediately after creating the private directory, before changing ownership.
+
+## PR review: Unix identity conversions
+
+- Addressed all four CodeQL integer-conversion findings with one checked UID/GID
+  conversion shared by identity validation and ownership changes. Values that do
+  not fit the host's int are rejected before conversion; 64-bit hosts retain large
+  valid Unix IDs. Root UID and unchanged-ID sentinels remain rejected.
+- Added boundary and pre-chown rejection regressions, including an executed Linux
+  386 test in native CI. Its profile contributes to the aggregate coverage gate.
+- CodeQL confirmed all four alerts fixed and automatically resolved their review
+  threads. Native/platform tests and the aggregate coverage gate passed.
+- Disabled the obsolete CircleCI GitHub webhook through the GitHub API after the
+  CircleCI CLI identified the legacy OAuth pipeline. Branch protection is unchanged.

@@ -35,5 +35,6 @@ commit is a no-op. Published release artifacts are never overwritten.
 GitHub Actions uses immutable action commit references, minimal job permissions,
 and credentials disabled on checkout. Only the release job receives contents,
 attestation and OIDC write permissions. Dependabot maintains action references.
-Configure branch protection to require the v2 jobs before merging. No repository
-settings, production release, or branch protection are changed by this PR.
+Configure branch protection to require the v2 jobs before merging. The retired
+CircleCI repository webhook is disabled so it no longer publishes missing-config
+failures. No production release or branch protection has been changed.
