@@ -50,6 +50,12 @@ jobs:
         env:
           EP_TEST_VERSION: 18.6.0
           EP_TEST_ROOT: '1'
+      - name: 32-bit Unix identity regression
+        if: matrix.os == 'ubuntu-24.04'
+        run: go test -count=1 -timeout=1m -covermode=atomic -coverprofile=ci-output/platform-386.out ./internal/platform
+        env:
+          GOARCH: '386'
+          CGO_ENABLED: '0'
       - name: Native PowerShell installer regression
         if: runner.os == 'Windows'
         shell: pwsh

@@ -5,6 +5,7 @@ package platform
 import (
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"syscall"
@@ -17,13 +18,26 @@ func ValidateIdentity(id *Identity) error {
 		}
 		return nil
 	}
-	if id.UID == 0 || id.UID == ^uint32(0) || id.GID == ^uint32(0) {
-		return errors.New("RunAs needs a nonzero UID and cannot use the Unix unchanged-ID sentinel")
+	uid, gid, err := nativeIdentity(*id)
+	if err != nil {
+		return err
 	}
-	if os.Geteuid() != 0 && (int(id.UID) != os.Geteuid() || int(id.GID) != os.Getegid()) {
+	if os.Geteuid() != 0 && (uid != os.Geteuid() || gid != os.Getegid()) {
 		return errors.New("changing OS identity requires root")
 	}
 	return nil
+}
+
+// Go's ownership APIs use int, which is narrower than a Unix ID on 32-bit hosts.
+func nativeIdentity(id Identity) (int, int, error) {
+	uid, gid := uint64(id.UID), uint64(id.GID)
+	if uid == 0 || uid == math.MaxUint32 || gid == math.MaxUint32 {
+		return 0, 0, errors.New("RunAs needs a nonzero UID and cannot use the Unix unchanged-ID sentinel")
+	}
+	if uid > math.MaxInt || gid > math.MaxInt {
+		return 0, 0, errors.New("RunAs UID and GID must fit the host's int range")
+	}
+	return int(uid), int(gid), nil
 }
 
 func configure(cmd *exec.Cmd, id *Identity) (func(), error) {
@@ -53,7 +67,11 @@ func Own(path string, id *Identity) error {
 	if id == nil {
 		return nil
 	}
-	if err := os.Chown(path, int(id.UID), int(id.GID)); err != nil {
+	uid, gid, err := nativeIdentity(*id)
+	if err != nil {
+		return err
+	}
+	if err := os.Chown(path, uid, gid); err != nil {
 		return fmt.Errorf("assign %s to %d:%d: %w", path, id.UID, id.GID, err)
 	}
 	return nil

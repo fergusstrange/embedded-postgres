@@ -14,6 +14,9 @@ changed, and the library never invokes sudo/su or creates users.
 
 Default non-root callers use their own identity. Root callers must explicitly
 choose a nonzero UID. An unprivileged caller cannot select another identity.
+Explicit IDs must fit Go's native `int`: at most 2147483647 on 32-bit hosts.
+64-bit hosts retain the full Unix ID range except the unchanged-ID sentinel
+4294967295. These bounds are checked before identity comparison or ownership changes.
 Windows uses restricted security tokens plus a kill-on-close Job Object; UID/GID
 selection is a Unix feature.
 
