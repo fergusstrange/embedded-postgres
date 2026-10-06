@@ -2,18 +2,18 @@
 
 # embedded-postgres v2
 
-Run real PostgreSQL for Go tests, with isolated storage, automatic test cleanup,
-and a CLI for other test runners. The production Go packages have **zero
-third-party dependencies**. PostgreSQL and the companion supervisor are native
-executables; PostgreSQL still needs the host libraries listed in the
-[platform guide](docs/non-root.md).
+Run real PostgreSQL in your tests. Each test gets its own database, an available
+port, and automatic cleanup. A CLI provides the same lifecycle for other languages.
+The production Go packages have **zero third-party dependencies**.
 
-**v2 is being developed as a major-version migration.** Use the `/v2` import path
-and read the [migration guide](docs/migration-v2.md). Releases begin as alpha
-prereleases. The current source tree requires Go 1.26 or newer and CI exercises
-Go 1.26 and 1.27.
+**v2 is available as an alpha release.** Requires Go 1.26 or newer. Upgrading from
+v1? Start with the [migration guide](docs/migration-v2.md).
 
 ## A database scoped to a test
+
+```bash
+go get github.com/fergusstrange/embedded-postgres/v2@v2.0.0-alpha.1
+```
 
 ```go
 package app_test
@@ -21,38 +21,40 @@ package app_test
 import (
     "testing"
 
-    postgres "github.com/fergusstrange/embedded-postgres/v2"
     "github.com/fergusstrange/embedded-postgres/v2/eptest"
 )
 
 func TestRepository(t *testing.T) {
-    pg := eptest.Start(t, postgres.DefaultConfig().Port(0).Database("app_test"))
+    pg := eptest.Start(t)
     connectionURL := pg.ConnectionURL()
     _ = connectionURL // Open your chosen Go driver/pool here.
     // Register pool cleanup after eptest.Start, so the pool closes first.
 }
 ```
 
-`eptest.Start` registers cleanup before startup. Its default configuration chooses
-an available port. `eptest.Run` manages one instance for `TestMain`. See
-[testing patterns](docs/testing.md), including cleanup order and parallel tests.
-The library does not register a SQL driver; choose one in the consuming project.
+The first start downloads PostgreSQL and the matching supervisor; later starts
+reuse the cache. PostgreSQL needs the [native libraries for your OS](docs/non-root.md).
+Choose your own SQL driver, and close connection pools before test cleanup.
 
-For a released v2 version, add the module with:
+Use `eptest.Start(t, postgres.DefaultConfig().Port(0).Database("app_test"))` to
+customize an instance, or `eptest.Run` to share one across `TestMain`. See
+[testing patterns](docs/testing.md) for parallel tests and suite setup.
+Source checkouts, local replacements and vendored tests need an explicitly selected
+supervisor; see the [migration guide](docs/migration-v2.md).
 
-```bash
-go get github.com/fergusstrange/embedded-postgres/v2@v2.0.0-alpha.1
-```
-
-Replace the example tag with a published v2 release. The companion CLI is acquired
-at the matching module version. Source checkouts and module replacements must
-build and select the companion explicitly:
+## Use the CLI with any test runner
 
 ```bash
-go build -o /tmp/embedded-postgres ./cmd/embedded-postgres
-export EP_SUPERVISOR=/tmp/embedded-postgres
-go test ./...
+curl -fsSL https://raw.githubusercontent.com/fergusstrange/embedded-postgres/master/install/install.sh | bash
+export PATH="$HOME/.local/bin:$PATH"
+embedded-postgres exec -- npm test
 ```
+
+`exec` starts PostgreSQL, supplies `DATABASE_URL` and the usual `PG*` variables,
+runs your command, then stops the database and returns the command's exit code.
+Replace `npm test` with your test command. The CLI chooses an available port and
+a random password. See the [CLI guide](docs/cli.md) for foreground and background
+instances, Windows installation, configuration files and wrapper integration.
 
 ## Direct lifecycle use
 
@@ -135,29 +137,13 @@ Other Linux architectures can use a source-built companion when a pinned bundle
 exists. FreeBSD needs a custom distribution and companion; it is not in the
 supported release matrix.
 
-## CLI
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/fergusstrange/embedded-postgres/master/install/install.sh | bash
-embedded-postgres exec -- npm test
-embedded-postgres run --json --parent-stdin
-```
-
-The installer becomes usable after the first v2 release is published. CLI defaults
-use an available port and random password. `exec` exports `DATABASE_URL` to a test
-command and closes PostgreSQL before returning its exit status. `run` exposes a
-versioned JSON pipe protocol for Node and other wrappers. Explicit background
-instances have authenticated `start`, `status`, and `stop` commands. See
-[CLI configuration, installers and protocol](docs/cli.md).
-
 ## Development
 
 [Contributing](CONTRIBUTING.md) explains local tests and coverage.
 [Build and release policy](docs/releases.md) describes the native GitHub Actions
 matrix, 90% production coverage gate, security checks and automatic master releases.
-The [issue disposition](docs/issues-v2.md) records how v2 addresses open and
-previously closed proposals. The [milestone ledger](docs/v2-development.md) records
-implementation reviews on the single v2 PR.
+Download published binaries and read release notes on the
+[releases page](https://github.com/fergusstrange/embedded-postgres/releases).
 
 Thanks to [theseus-rs/postgresql-binaries](https://github.com/theseus-rs/postgresql-binaries)
 for gzip distributions, the PostgreSQL project, and

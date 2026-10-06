@@ -7,8 +7,6 @@ under OS emulation. Native PostgreSQL runtime prerequisites still apply; see
 
 ## Install
 
-After the first v2 release is published:
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fergusstrange/embedded-postgres/master/install/install.sh | bash
 export PATH="$HOME/.local/bin:$PATH"
@@ -21,15 +19,52 @@ The default selects the newest published v2 release, including prereleases durin
 v2 development. Downloads do not bundle PostgreSQL; `prefetch` prepares an offline
 cache. Build from source with `go build ./cmd/embedded-postgres`.
 
+In PowerShell:
+
+```powershell
+$installer = Join-Path $env:TEMP "install-embedded-postgres.ps1"
+Invoke-WebRequest https://raw.githubusercontent.com/fergusstrange/embedded-postgres/master/install/install.ps1 -OutFile $installer
+& $installer
+$env:PATH = "$HOME\.local\bin;$env:PATH"
+```
+
+## Run a test command
+
 ```bash
-embedded-postgres prefetch
 embedded-postgres exec -- npm test
-embedded-postgres run --json --parent-stdin
+```
+
+Replace `npm test` with your command. PostgreSQL starts before the command and
+stops when it finishes. Your command receives `DATABASE_URL` and the usual `PG*`
+connection variables. The CLI returns the command's exit code.
+
+## Start and stop manually
+
+For a foreground instance, run `embedded-postgres run` and press Ctrl-C to stop.
+For an instance that stays running between commands:
+
+```bash
 embedded-postgres start --state-file ./private/postgres.json --json
 embedded-postgres status --state-file ./private/postgres.json --json
 embedded-postgres stop --state-file ./private/postgres.json --json
+```
+
+Use `--database app_test` to choose a database or `--port 5433` to choose a port.
+Otherwise, the CLI selects an available port and a random password.
+
+## Cache and offline use
+
+```bash
+embedded-postgres prefetch
+embedded-postgres exec --offline -- npm test
 embedded-postgres prune
 ```
+
+`prefetch` downloads and verifies PostgreSQL ahead of time. `prune` removes unused
+PostgreSQL installations and preserves active ones. Set `--cache-dir` consistently
+across these commands to use a custom cache.
+
+## Lifecycle details
 
 `run` stays in the foreground and handles SIGINT/SIGTERM. `exec` injects
 `DATABASE_URL`, `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` and

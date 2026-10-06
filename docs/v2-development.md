@@ -1,5 +1,10 @@
 # v2 implementation and review ledger
 
+This is a historical record of the migration. Each entry describes the state at
+that milestone; later reviews supersede earlier pending checks and design notes.
+For current setup and published releases, use the [README](../README.md) and
+[release guide](releases.md).
+
 One implementation branch and one final PR. Each milestone has its own commit,
 validation, and diff review. PostgreSQL 14 and older are excluded. CircleCI is
 removed in favour of GitHub Actions. Non-root launching is a core requirement.

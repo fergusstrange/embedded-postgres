@@ -1,7 +1,6 @@
 # Contributing
 
-Open pull requests against `master`. Keep changes reviewable; the v2 migration
-uses milestone commits and review notes in one PR. Behavior changes need useful
+Open pull requests against `master`. Keep changes reviewable. Behavior changes need useful
 regression tests and matching API/reference documentation. Production Go imports
 must stay within this module and the standard library; test-only dependencies are
 allowed when they improve the tests.
@@ -58,7 +57,10 @@ change. Test mirror/download failures, immutable cache leases, unsafe archives a
 offline behavior when changing acquisition code.
 
 The master workflow publishes automatically only after every required job passes.
-It starts with alpha prereleases. See [release policy](docs/releases.md) before
+Releases currently use the alpha channel. See [release policy](docs/releases.md) before
 changing `.github/release.json`. Do not merge unfinished migrations merely to
 exercise publishing. Keep provider and hook reference code compilable with the
 normal module tests.
+
+The [issue disposition](docs/issues-v2.md) maps earlier requests to v2. The
+[implementation ledger](docs/v2-development.md) preserves the migration's review history.
