@@ -85,11 +85,13 @@ def build(tag):
 def publish(tag):
     if not TAG.fullmatch(tag):
         raise ValueError("invalid v2 release tag")
-    release = json.loads(command("gh", "api", f"repos/{REPO}/releases/tags/{tag}"))
-    if not release["draft"]:
+    # The REST endpoint for a tag only resolves published releases. The CLI
+    # also finds drafts, including those whose Git tag has not been created.
+    release = json.loads(command("gh", "release", "view", tag, "--repo", REPO, "--json", "isDraft,targetCommitish"))
+    if not release["isDraft"]:
         print("Release is already published; artifacts are immutable")
         return
-    if release["target_commitish"] != os.environ["GITHUB_SHA"]:
+    if release["targetCommitish"] != os.environ["GITHUB_SHA"]:
         raise SystemExit("draft belongs to a different commit")
     assets = sorted(str(path) for path in (ROOT / "dist").iterdir())
     if len(assets) != 12:
