@@ -25,7 +25,7 @@ In PowerShell:
 $installer = Join-Path $env:TEMP "install-embedded-postgres.ps1"
 Invoke-WebRequest https://raw.githubusercontent.com/fergusstrange/embedded-postgres/master/install/install.ps1 -OutFile $installer
 & $installer
-$env:PATH = "$HOME\.local\bin;$env:PATH"
+$env:PATH = "$env:LOCALAPPDATA\embedded-postgres\bin;$env:PATH"
 ```
 
 ## Run a test command

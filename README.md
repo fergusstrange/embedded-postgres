@@ -36,8 +36,9 @@ The first start downloads PostgreSQL and the matching supervisor; later starts
 reuse the cache. PostgreSQL needs the [native libraries for your OS](docs/non-root.md).
 Choose your own SQL driver, and close connection pools before test cleanup.
 
-Use `eptest.Start(t, postgres.DefaultConfig().Port(0).Database("app_test"))` to
-customize an instance, or `eptest.Run` to share one across `TestMain`. See
+For configuration, import `github.com/fergusstrange/embedded-postgres/v2` as `postgres`
+and pass `postgres.DefaultConfig().Port(0).Database("app_test")` to `eptest.Start`.
+Use `eptest.Run` to share one instance across `TestMain`. See
 [testing patterns](docs/testing.md) for parallel tests and suite setup.
 Source checkouts, local replacements and vendored tests need an explicitly selected
 supervisor; see the [migration guide](docs/migration-v2.md).
