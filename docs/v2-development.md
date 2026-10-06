@@ -84,7 +84,7 @@ from the denominator.
 - Added foreground/parent-pipe, command-scoped and explicit background CLI modes,
   authenticated local status/stop, cache commands and strict config precedence.
 - Added protocol 1 and checksum-verifying Bash/PowerShell installers; documented
-  the Node wrapper contract and assessed Node-API/cgo tradeoffs.
+  the CLI protocol contract for Node wrappers.
 - Real CLI regressions cover stdin EOF, detached startup/status/stop and child exit
   propagation. A broken-stdout regression found and fixed premature SIGPIPE exit
   before state-file cleanup. Server log tails now use bounded memory.

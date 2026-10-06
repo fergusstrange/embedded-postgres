@@ -109,19 +109,6 @@ owner closes a second pipe watched by the independent supervisor. Whole-machine
 failure or simultaneous termination of the supervisor and PostgreSQL cannot be
 made graceful by a userspace library.
 
-## Native Go → Node binding assessment
-
-[Node-API](https://nodejs.org/api/n-api.html) exposes a stable **C** ABI. Go can
-export C entry points with [cgo](https://pkg.go.dev/cmd/cgo) and `-buildmode=c-shared`,
-but this requires an additional Node addon, a C toolchain, native artifact builds,
-and careful runtime/thread ownership. It does not remove the need for independent
-process supervision. There is no standard-library Go-to-Node binding.
-
-Use the CLI pipe protocol for the first Node wrapper: it shares the exact tested
-Go lifecycle, works without a compiler on the consuming machine, and isolates Go
-runtime failures from the Node test runner. A native addon can remain an external
-consumer later; no Node implementation is included in this milestone.
-
 If a supervisor itself becomes unresponsive, the owner reports a shutdown error
 and terminates that supervisor using its retained process handle. It never signals
 PostgreSQL by a remembered PID, which could belong to an unrelated process by then.
