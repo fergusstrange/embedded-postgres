@@ -163,7 +163,7 @@ jobs:
           languages: go
           build-mode: manual
       - run: go build ./...
-      - uses: github/codeql-action/analyze@7999b86c43a865dc79d8923397f35af22de63401 # v4
+      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4
   coverage:
     needs: [native, supported-postgres, alpine]
     runs-on: ubuntu-24.04
