@@ -1,11 +1,17 @@
 # v2 issue and pull-request disposition
 
-Reviewed the complete public issue/PR history, including all 8 open issues, all
-5 open PRs, and 25 closed-unmerged PRs, as of 2026-10-05. This records implementation
-coverage; it does not close issues or imply that an earlier proposal was wrong.
-Final closure should follow native CI, migration review and the v2 release.
+The v2 review covered the 8 open issues, 5 open feature PRs and 25 closed-unmerged
+PRs present on 2026-10-05. After the native matrix, migration checks and publication
+of v2.0.0-alpha.1, all 8 issues and 4 superseded feature PRs were closed on
+2026-10-06. Each received an individual explanation and an invitation to confirm
+that the v2 solution meets the original use case. Reporter confirmation is welcome;
+closure records implementation, not confirmation on every downstream setup.
 
-## Open work
+FreeBSD #169 remains open because its supported distribution and native CI work
+are not complete. The separate Alpine update #172 also remains open: the current
+musl PostgreSQL bundle requires ICU 74, which the proposed Alpine 3.24 image lacks.
+
+## Requests reviewed for v2
 
 | Issue / PR | v2 disposition | Validation / contract |
 |---|---|---|
