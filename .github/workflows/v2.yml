@@ -60,7 +60,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/test_installer.ps1
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-${{ matrix.os }}
           path: ci-output/*.out
@@ -88,7 +88,7 @@ jobs:
           python scripts/ci-test.py
         env:
           EP_TEST_VERSION: ${{ matrix.version }}
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-postgres-${{ matrix.version }}
           path: ci-output/*.out
@@ -139,7 +139,7 @@ jobs:
             chown -R pgtest /src
             su pgtest -c "PATH=/usr/local/go/bin:/usr/bin:/bin python3 scripts/ci-test.py"
           '
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-alpine
           path: ci-output/*.out
@@ -179,7 +179,7 @@ jobs:
       - name: Require 90% aggregate production coverage
         shell: bash
         run: python scripts/coverage.py profiles --minimum 90 --output coverage.out | tee coverage-summary.txt
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: coverage-report
