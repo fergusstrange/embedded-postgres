@@ -31,7 +31,10 @@ already cancelled test context does not skip shutdown. `Stop` retains the
 `ErrServerNotStarted` behaviour; `Close` can safely be called repeatedly.
 
 The supervisor is an independent executable. Released module consumers acquire
-its matching release automatically. When using a source checkout or `replace`,
+its matching release automatically, including from `go test` and `go test -trimpath`.
+Test binaries use the version recorded in the module-cache source path when Go
+omits dependency build metadata. When using a source checkout, local `replace`,
+or vendored tests without that version information,
 build `go build -o /absolute/path/embedded-postgres ./cmd/embedded-postgres` and set
 `EP_SUPERVISOR` or `Config.Supervisor`. Offline users must prefetch PostgreSQL and
 provide an already installed supervisor. No system Go compiler is used at runtime.

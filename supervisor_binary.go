@@ -41,10 +41,7 @@ func resolveSupervisor(ctx context.Context, c Config) (string, error) {
 		}
 		return p, nil
 	}
-	version := ""
-	if info, ok := debug.ReadBuildInfo(); ok {
-		version = moduleVersion(info)
-	}
+	version := supervisorVersion()
 	if !publishedVersion(version) {
 		return "", errors.New("source build requires Config.Supervisor(path) or EP_SUPERVISOR; build ./cmd/embedded-postgres first")
 	}
@@ -71,6 +68,30 @@ func moduleVersion(info *debug.BuildInfo) string {
 	}
 	return ""
 }
+
+func supervisorVersion() string {
+	if info, ok := debug.ReadBuildInfo(); ok && len(info.Deps) != 0 {
+		return moduleVersion(info)
+	}
+	// Go test binaries omit dependency versions. Module-cache source paths
+	// retain them, including with -trimpath (module/path@version/file.go).
+	_, source, _, ok := runtime.Caller(0)
+	if !ok {
+		return ""
+	}
+	return sourceModuleVersion(source)
+}
+
+func sourceModuleVersion(source string) string {
+	source = strings.ReplaceAll(source, `\`, "/")
+	_, suffix, found := strings.Cut("/"+source, "/github.com/fergusstrange/embedded-postgres/v2@")
+	version, file, separated := strings.Cut(suffix, "/")
+	if !found || !separated || file != "supervisor_binary.go" || !publishedVersion(version) {
+		return ""
+	}
+	return version
+}
+
 func cacheSupervisor(ctx context.Context, cache, version, name, base string, client *http.Client) (string, error) {
 	path := filepath.Join(cache, version+"-"+name)
 	lock, err := filelock.Acquire(ctx, path+".lock", true)

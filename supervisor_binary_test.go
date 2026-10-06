@@ -177,3 +177,30 @@ func TestPublishedSupervisorVersions(t *testing.T) {
 		}
 	}
 }
+
+func TestSupervisorSourceModuleVersion(t *testing.T) {
+	for _, source := range []string{
+		"/go/pkg/mod/github.com/fergusstrange/embedded-postgres/v2@v2.0.0-alpha.1/supervisor_binary.go",
+		"github.com/fergusstrange/embedded-postgres/v2@v2.0.0-alpha.1/supervisor_binary.go",
+		`C:\Users\test\go\pkg\mod\github.com\fergusstrange\embedded-postgres\v2@v2.0.0-alpha.1\supervisor_binary.go`,
+	} {
+		if got := sourceModuleVersion(source); got != "v2.0.0-alpha.1" {
+			t.Errorf("%s: got %q", source, got)
+		}
+	}
+	for _, source := range []string{
+		"/checkout/embedded-postgres/supervisor_binary.go",
+		"github.com/fergusstrange/embedded-postgres/v2/supervisor_binary.go",
+		"/app/vendor/github.com/fergusstrange/embedded-postgres/v2/supervisor_binary.go",
+		"github.com/fergusstrange/embedded-postgres/v2@v2.0.0-20261005024047-69c76a8ace40/supervisor_binary.go",
+		"github.com/fergusstrange/embedded-postgres/v2@v2.0.0-dev/supervisor_binary.go",
+		"github.com/fergusstrange/embedded-postgres/v2@v2.0.0/supervisor_binary.go/other.go",
+		"github.com/fergusstrange/embedded-postgres/v2@v2.0.0/other.go",
+		"notgithub.com/fergusstrange/embedded-postgres/v2@v2.0.0/supervisor_binary.go",
+		"github.com/fergusstrange/embedded-postgres/v2@v2.0.0",
+	} {
+		if got := sourceModuleVersion(source); got != "" {
+			t.Errorf("unversioned or unrelated source %s selected release %q", source, got)
+		}
+	}
+}
