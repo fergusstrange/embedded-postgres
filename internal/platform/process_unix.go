@@ -22,6 +22,9 @@ func ValidateIdentity(id *Identity) error {
 	if err != nil {
 		return err
 	}
+	if os.Geteuid() == 0 && gid == 0 {
+		return errors.New("RunAs needs a nonzero GID for a root caller: set the account's primary group explicitly")
+	}
 	if os.Geteuid() != 0 && (uid != os.Geteuid() || gid != os.Getegid()) {
 		return errors.New("changing OS identity requires root")
 	}

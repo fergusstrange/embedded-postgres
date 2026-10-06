@@ -6,8 +6,11 @@ import (
 	"errors"
 	"math"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"syscall"
 	"testing"
 )
 
@@ -18,7 +21,7 @@ func TestNativeIdentityBounds(t *testing.T) {
 		valid bool
 	}{
 		{"ordinary", Identity{UID: 1000, GID: 1000}, true},
-		{"root-group", Identity{UID: 1000, GID: 0}, true},
+		{"representable-zero-group", Identity{UID: 1000, GID: 0}, true},
 		{"root-user", Identity{UID: 0, GID: 1000}, false},
 		{"unchanged-user", Identity{UID: math.MaxUint32, GID: 1000}, false},
 		{"unchanged-group", Identity{UID: 1000, GID: math.MaxUint32}, false},
@@ -60,5 +63,47 @@ func TestOwnRejectsInvalidIdentityBeforeChown(t *testing.T) {
 		if err := ValidateIdentity(&id); err == nil {
 			t.Fatalf("ValidateIdentity(%+v) did not reject the identity: %v", id, err)
 		}
+	}
+}
+
+func TestRootCallerRequiresExplicitGroup(t *testing.T) {
+	if os.Geteuid() != 0 {
+		t.Skip("root identity validation runs in native Linux CI")
+	}
+	if err := ValidateIdentity(&Identity{UID: 10001}); err == nil || !strings.Contains(err.Error(), "nonzero GID") {
+		t.Fatalf("omitted group was not rejected: %v", err)
+	}
+	if err := ValidateIdentity(&Identity{UID: 10001, GID: 10001}); err != nil {
+		t.Fatalf("explicit non-root group was rejected: %v", err)
+	}
+}
+
+func TestUnprivilegedCallerCanRetainGroupZero(t *testing.T) {
+	if os.Getenv("EP_GROUP_ZERO_CHILD") == "1" {
+		if os.Geteuid() == 0 || os.Getegid() != 0 {
+			t.Fatal("invalid arbitrary-UID fixture")
+		}
+		if err := ValidateIdentity(&Identity{UID: uint32(os.Geteuid()), GID: 0}); err != nil {
+			t.Fatalf("unprivileged caller cannot retain its own group: %v", err)
+		}
+		return
+	}
+	if os.Geteuid() != 0 {
+		t.Skip("root fixture setup runs in native Linux CI")
+	}
+	uid, err := strconv.ParseUint(os.Getenv("EP_TEST_UID"), 10, 32)
+	if err != nil || uid == 0 {
+		t.Skip("EP_TEST_UID must identify a non-root test account")
+	}
+	// Only the subprocess changes identity. This simulates an existing container
+	// identity; the library still rejects selecting group zero from a root caller.
+	child := exec.CommandContext(t.Context(), os.Args[0], "-test.run=^TestUnprivilegedCallerCanRetainGroupZero$")
+	child.SysProcAttr = &syscall.SysProcAttr{Credential: &syscall.Credential{Uid: uint32(uid), Gid: 0}}
+	child.Env = append(os.Environ(), "EP_GROUP_ZERO_CHILD=1")
+	if dir := os.Getenv("EP_COVERDIR"); dir != "" {
+		child.Env = append(child.Env, "GOCOVERDIR="+dir)
+	}
+	if output, err := child.CombinedOutput(); err != nil {
+		t.Fatalf("arbitrary-UID child: %v\n%s", err, output)
 	}
 }

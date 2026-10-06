@@ -209,3 +209,13 @@ explicit identity and immutability keys and owner-death cleanup before adoption.
 Local validation: full race-enabled PostgreSQL integration suite passes on macOS
 ARM64, including the new authentication, queued shutdown, scoped cleanup and CLI
 signal tests. Windows console and root identity tests run in the native CI matrix.
+
+## Final RunAs review
+
+- `4191391592`: root callers must explicitly set a nonzero GID as well as UID.
+  The check runs before provider acquisition. Non-root callers may still retain
+  their own GID 0. Native Linux CI runs the platform tests as root and verifies
+  the arbitrary-UID/GID-0 case in a credential-isolated subprocess.
+- `4191391593`: the missing socket-parent diagnostic now describes only its
+  existence/type check. The non-root guide makes clear that native tools validate
+  traversal permissions; no ownership or permission changes are made to ancestors.

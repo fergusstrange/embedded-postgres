@@ -13,7 +13,9 @@ groups are cleared for a root caller. The Go application's credentials are never
 changed, and the library never invokes sudo/su or creates users.
 
 Default non-root callers use their own identity. Root callers must explicitly
-choose a nonzero UID. An unprivileged caller cannot select another identity.
+choose both a nonzero UID and a nonzero GID; an omitted GID is not inferred from
+the account. An unprivileged caller cannot select another identity, but may retain
+its own GID 0 (for example, in an arbitrary-UID container).
 Explicit IDs must fit Go's native `int`: at most 2147483647 on 32-bit hosts.
 64-bit hosts retain the full Unix ID range except the unchanged-ID sentinel
 4294967295. These bounds are checked before identity comparison or ownership changes.
@@ -36,8 +38,10 @@ one user's cached installation accessible to another.
 Caller-supplied workspace parents, socket parents, and persistent directories must
 already be accessible to that account. With `RunAs`, a socket parent must exist
 before startup; a missing parent is rejected before acquiring binaries or creating
-a cluster. The library only owns and removes its private child socket directory. Existing ownership is validated by the
-native tools and is never recursively changed. A missing persistent directory may
+a cluster. This preflight checks existence and directory type, not traversal
+permissions on the parent or its ancestors; the native tools validate actual
+access. The library only owns and removes its private child socket directory.
+Existing ownership is never recursively changed. A missing persistent directory may
 be created and assigned; existing contents are always preserved. Correct permissions
 in your Dockerfile or provisioning step rather than granting broad access.
 

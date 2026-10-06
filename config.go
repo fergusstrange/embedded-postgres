@@ -70,6 +70,7 @@ func (c Config) Storage(v Storage) Config         { c.storage = v; return c }
 func (c Config) Provider(v BinaryProvider) Config { c.provider = v; return c }
 
 // RunAs sets the Unix identity for the supervisor and every PostgreSQL command.
+// Root callers must set both UID and GID to nonzero values explicitly.
 func (c Config) RunAs(v User) Config { c.identity = &v; return c }
 
 // Supervisor selects the companion CLI executable. Released library versions

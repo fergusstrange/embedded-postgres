@@ -29,7 +29,7 @@ run("go", "build", "-cover", "-covermode=atomic", "-coverpkg=./...", "-o", str(h
 race = [] if sys.platform == "win32" and subprocess.check_output(["go", "env", "GOARCH"], text=True).strip() == "arm64" else ["-race"]
 run("go", "test", *race, "-count=1", "-p=2", "-timeout=8m", "-coverpkg=./...", "-covermode=atomic", "-coverprofile=" + str(output / "unit.out"), "./...")
 if sys.platform.startswith("linux") and os.environ.get("EP_TEST_ROOT") == "1":
-    for package, name in [(".", "core"), ("./internal/supervisor", "supervisor")]:
+    for package, name in [(".", "core"), ("./internal/supervisor", "supervisor"), ("./internal/platform", "platform")]:
         binary = output / (name + ".test")
         run("go", "test", "-c", "-cover", "-covermode=atomic", "-coverpkg=./...", "-o", str(binary), package)
         selected = [f"{key}={value}" for key, value in env.items() if key.startswith("EP_")]

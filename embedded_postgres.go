@@ -93,7 +93,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 	if c.identity != nil && c.socketDir != "" {
 		// Do not create a root-only ancestor around a chowned socket child.
 		if st, e := os.Stat(c.socketDir); e != nil || !st.IsDir() {
-			return fmt.Errorf("RunAs UnixSocket parent must be an existing directory accessible to UID %d: %s", c.identity.UID, c.socketDir)
+			return fmt.Errorf("RunAs UnixSocket parent must be an existing directory: %s", c.socketDir)
 		}
 	}
 	start, cancel := context.WithTimeout(ctx, c.startTimeout)

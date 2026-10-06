@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -116,5 +117,23 @@ func TestRunAsMissingSocketParent(t *testing.T) {
 	}
 	if _, err := os.Stat(parent); !os.IsNotExist(err) {
 		t.Fatal("created inaccessible caller-owned parent", err)
+	}
+}
+
+func TestRunAsOmittedGroupFailsBeforeAcquisition(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() != 0 {
+		t.Skip("root Unix startup regression")
+	}
+	acquired := false
+	provider := ProviderFunc(func(context.Context, BinaryRequest) (*Installation, error) {
+		acquired = true
+		return nil, errors.New("unexpected provider acquisition")
+	})
+	pg := NewDatabase(DefaultConfig().RunAs(User{UID: 10001}).Provider(provider))
+	if err := pg.Start(); err == nil || !strings.Contains(err.Error(), "nonzero GID") {
+		t.Fatalf("omitted group was not rejected: %v", err)
+	}
+	if acquired {
+		t.Fatal("invalid RunAs identity reached binary acquisition")
 	}
 }
