@@ -133,7 +133,7 @@ not a separate LTS edition. Binary checksums are pinned in the reviewed manifest
 automatic library releases do not silently change those pins.
 
 Native CI covers Linux and macOS AMD64/ARM64, Windows AMD64, and Windows ARM64
-with x64 PostgreSQL emulation. Alpine 3.21 AMD64 has a separate musl integration job,
+with x64 PostgreSQL emulation. Alpine 3.24 AMD64 has a separate musl integration job,
 and published consumers cover native x64/ARM64 musl. The corrected bundles include
 ICU; no host ICU 74 package is needed. See the [platform guide](docs/non-root.md).
 Other Linux architectures can use a source-built companion when a pinned bundle

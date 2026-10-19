@@ -89,7 +89,7 @@ can still reproduce the missing-library error.
 The corrected musl bundles include ICU and the other third-party libraries;
 there is no host ICU 74 package requirement for these pins. They remain dynamically
 linked to musl, so the matching loader is required. The default-provider CI uses
-Alpine 3.21 with the current Go toolchain and only its build/test prerequisites.
+Alpine 3.24 with the current Go toolchain and only its build/test prerequisites.
 The published-binary regression campaign also exercised native x64 and ARM64
 musl containers. Do not symlink incompatible library versions to satisfy a loader
 error; check the selected distribution and its runtime requirements instead.

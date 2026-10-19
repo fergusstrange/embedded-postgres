@@ -75,7 +75,7 @@ jobs:
         run: |
           import os, subprocess, sys
           subprocess.run([sys.executable, 'scripts/check-published.py', os.environ['RELEASE_VERSION'], os.environ['RELEASE_REVISION']], check=True)
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: published-${{ matrix.os }}-go-${{ matrix.go }}
@@ -105,7 +105,7 @@ jobs:
           mkdir published-evidence
           sudo chown 1000:1000 published-evidence
           docker run --rm -e GH_TOKEN -v "$PWD/published-evidence:/evidence" published-consumer "$RELEASE_VERSION" "$RELEASE_REVISION" /evidence/results
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: published-musl-${{ matrix.os }}-go-${{ matrix.go }}
