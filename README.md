@@ -12,7 +12,7 @@ v1? Start with the [migration guide](docs/migration-v2.md).
 ## A database scoped to a test
 
 ```bash
-go get github.com/fergusstrange/embedded-postgres/v2@v2.0.0-alpha.1
+go get github.com/fergusstrange/embedded-postgres/v2@latest
 ```
 
 ```go
@@ -33,7 +33,7 @@ func TestRepository(t *testing.T) {
 ```
 
 The first start downloads PostgreSQL and the matching supervisor; later starts
-reuse the cache. PostgreSQL needs the [native libraries for your OS](docs/non-root.md).
+reuse the cache. PostgreSQL needs the [native runtime requirements for your OS](docs/non-root.md).
 Choose your own SQL driver, and close connection pools before test cleanup.
 
 For configuration, import `github.com/fergusstrange/embedded-postgres/v2` as `postgres`
@@ -117,7 +117,7 @@ for container setup, directory ownership, and native library requirements.
 
 | Setting | Library default |
 |---|---|
-| PostgreSQL | `V18` / 18.6.0 |
+| PostgreSQL | `V18` / 18.6.1 |
 | Role, password, database | `postgres` |
 | Port | 5432; use `Port(0)` for parallel tests |
 | Locale / encoding | `C` / `UTF8` |
@@ -125,7 +125,7 @@ for container setup, directory ownership, and native library requirements.
 | Data / workspace | Private disposable instance |
 | Cache | `os.UserCacheDir()/embedded-postgres/v2` |
 
-`V15`, `V16`, `V17`, `V18` pin 15.19.0, 16.15.0, 17.11.0, 18.6.0. PostgreSQL
+`V15`, `V16`, `V17`, `V18` pin 15.19.1, 16.15.1, 17.11.1, 18.6.1. PostgreSQL
 14 and older are excluded. PostgreSQL uses a
 [five-year major-version support policy](https://www.postgresql.org/support/versioning/),
 not a separate LTS edition. Binary checksums are pinned in the reviewed manifest;

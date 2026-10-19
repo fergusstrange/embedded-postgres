@@ -27,7 +27,7 @@ func TestOptionsFilesEnvironmentAndIdentity(t *testing.T) {
 	if o, _, e := parse([]string{"-config=" + file}, func(string) string { return "" }, io.Discard); e != nil || o.Port != 1234 {
 		t.Fatal(o, e)
 	}
-	env := map[string]string{"EP_CONFIG": file, "EP_PORT": "2345", "EP_OFFLINE": "true", "EP_JSON": "true", "EP_PARENT_STDIN": "true", "EP_USERNAME": "custom", "EP_POSTGRES_VERSION": "17.11.0"}
+	env := map[string]string{"EP_CONFIG": file, "EP_PORT": "2345", "EP_OFFLINE": "true", "EP_JSON": "true", "EP_PARENT_STDIN": "true", "EP_USERNAME": "custom", "EP_POSTGRES_VERSION": "17.11.1"}
 	o, _, e := parse(nil, func(k string) string { return env[k] }, io.Discard)
 	if e != nil || o.Port != 2345 || !o.JSON || !o.ParentStdin || !o.Offline || o.Username != "custom" {
 		t.Fatal(o, e)

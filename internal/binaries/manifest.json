@@ -91,6 +91,98 @@
     "sha256": "7cced8ac2497c23cf7b347ac8ca15630c50e59985dc3399733fbe5c6c1a5fd5e",
     "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.0/postgresql-15.19.0-x86_64-unknown-linux-musl.tar.gz"
   },
+  "postgresql-15.19.1-aarch64-apple-darwin.tar.gz": {
+    "sha256": "02214be6486ec1be214eae66664f384be218b0893d29a9c151408afe5646a8ab",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-aarch64-apple-darwin.tar.gz"
+  },
+  "postgresql-15.19.1-aarch64-unknown-linux-gnu.tar.gz": {
+    "sha256": "d38b8cfd65e02fd6f08b2368b2d607c70d0d0527b1ca12baeee780cc2a947b07",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-aarch64-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-15.19.1-aarch64-unknown-linux-musl.tar.gz": {
+    "sha256": "6948dd84286157fbee74c6b4c6980a52a6716ab0461403d4735d96f094fb86ec",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-aarch64-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-15.19.1-arm-unknown-linux-gnueabi.tar.gz": {
+    "sha256": "8a9cf17db665be77950e66d2d3888c87fafdc7c2cf02c92de317755e26e33227",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-arm-unknown-linux-gnueabi.tar.gz"
+  },
+  "postgresql-15.19.1-arm-unknown-linux-gnueabihf.tar.gz": {
+    "sha256": "2a6087a00ce11da8be9709e35773d09ad410cf93a07e9aa733023f7bcf6f2d71",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-arm-unknown-linux-gnueabihf.tar.gz"
+  },
+  "postgresql-15.19.1-arm-unknown-linux-musleabi.tar.gz": {
+    "sha256": "1c59abdfaf1bac5c9ea2bc479871b5343375f710179c6c768ac0ff5ec6aeba98",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-arm-unknown-linux-musleabi.tar.gz"
+  },
+  "postgresql-15.19.1-arm-unknown-linux-musleabihf.tar.gz": {
+    "sha256": "dc6d0cf7438dd1ac0c74369037addf62a781d18bb6afc1f5796b6f89852f5b6f",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-arm-unknown-linux-musleabihf.tar.gz"
+  },
+  "postgresql-15.19.1-armv5te-unknown-linux-gnueabi.tar.gz": {
+    "sha256": "dc298b5755f9c11f9be4338c7710910bf705b80508b5c56df69199cabac98604",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-armv5te-unknown-linux-gnueabi.tar.gz"
+  },
+  "postgresql-15.19.1-armv7-unknown-linux-gnueabihf.tar.gz": {
+    "sha256": "007763ccfbacfaaf3e8c7a13e66d7d3e60c7f6ff422230bb1d0f227283ad3383",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-armv7-unknown-linux-gnueabihf.tar.gz"
+  },
+  "postgresql-15.19.1-armv7-unknown-linux-musleabihf.tar.gz": {
+    "sha256": "59de8848776ddbcfe23f67eb81fde36e081a75241865a0342d3c09db197b5a92",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-armv7-unknown-linux-musleabihf.tar.gz"
+  },
+  "postgresql-15.19.1-i586-unknown-linux-gnu.tar.gz": {
+    "sha256": "fe37643a51cedcb1b65fd20a1a91c8736a2dd671804e5eaf0dd64eae2590a227",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-i586-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-15.19.1-i586-unknown-linux-musl.tar.gz": {
+    "sha256": "284640805735fa7daa059bc86c09d82b07e5357f3a0275048279ff9aebdeecac",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-i586-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-15.19.1-i686-unknown-linux-gnu.tar.gz": {
+    "sha256": "2d52cfbb27954050bd7ad45aad4990355998c40b47f22fd04828ed4eccceef4c",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-i686-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-15.19.1-i686-unknown-linux-musl.tar.gz": {
+    "sha256": "c41b64330b9b731cc4c4cb4e79b0dab000543257b836b2c38717e644f5321709",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-i686-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-15.19.1-mips64el-unknown-linux-gnuabi64.tar.gz": {
+    "sha256": "fdaf5cf948633dcb88d15f7ebcf0f4faae69d4a1dc945e9a85025ce91b1eb486",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-mips64el-unknown-linux-gnuabi64.tar.gz"
+  },
+  "postgresql-15.19.1-powerpc64le-unknown-linux-gnu.tar.gz": {
+    "sha256": "e88503307695256ae4fabe53efc457290bbaeae8cdbd31e0dff3d6ebdb77a818",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-powerpc64le-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-15.19.1-powerpc64le-unknown-linux-musl.tar.gz": {
+    "sha256": "9c40802d84721b373dff3915071b2712145c9ec45646187d37e0fe8cdccc04dd",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-powerpc64le-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-15.19.1-s390x-unknown-linux-gnu.tar.gz": {
+    "sha256": "0b7371d03ddb4486c62f885a646a329c89a17f8e698df324156364af0642c7df",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-s390x-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-15.19.1-s390x-unknown-linux-musl.tar.gz": {
+    "sha256": "19c054e3da29a8514a89fffde3aa9636b827d8d7609db4013f30480077744550",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-s390x-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-15.19.1-x86_64-apple-darwin.tar.gz": {
+    "sha256": "4e8149811d40eb09fdbcef532d1fea177b2b267132a188450af0139969bc96f0",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-x86_64-apple-darwin.tar.gz"
+  },
+  "postgresql-15.19.1-x86_64-pc-windows-msvc.tar.gz": {
+    "sha256": "7f2c068b3e7c55b3df8eed6c3baa5891edbcb6121cf73ba3124cf1d6478f8232",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-x86_64-pc-windows-msvc.tar.gz"
+  },
+  "postgresql-15.19.1-x86_64-unknown-linux-gnu.tar.gz": {
+    "sha256": "f34ebfdbff9029f47011709fe8ef68d4a65ea5caadfd065e68a1161e2a021565",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-x86_64-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-15.19.1-x86_64-unknown-linux-musl.tar.gz": {
+    "sha256": "b0844ce1e1a6ad00222d586a5c3e8ba22fce8c32d6319f5948f7aaa67a1a08ff",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/15.19.1/postgresql-15.19.1-x86_64-unknown-linux-musl.tar.gz"
+  },
   "postgresql-16.15.0-aarch64-apple-darwin.tar.gz": {
     "sha256": "46f6382024d9b633d1f4b4903ffef8c2404e00ae83098d628c00591048cb0512",
     "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.0/postgresql-16.15.0-aarch64-apple-darwin.tar.gz"
@@ -182,6 +274,102 @@
   "postgresql-16.15.0-x86_64-unknown-linux-musl.tar.gz": {
     "sha256": "cafd527ea67e2533edc575c5e805c67d466fb67bb592e2b9662fec6af754d462",
     "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.0/postgresql-16.15.0-x86_64-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-16.15.1-aarch64-apple-darwin.tar.gz": {
+    "sha256": "0a70b8a3bbb991b5671dc7678ba9a8cf1a389f2fc595ac4834fb1e29e757b89e",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-aarch64-apple-darwin.tar.gz"
+  },
+  "postgresql-16.15.1-aarch64-pc-windows-msvc.tar.gz": {
+    "sha256": "51862a60500d3826394b8a0df5ec5d14840d180cdf97ea239295031c125d1104",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-aarch64-pc-windows-msvc.tar.gz"
+  },
+  "postgresql-16.15.1-aarch64-unknown-linux-gnu.tar.gz": {
+    "sha256": "0a6fdf1639ac702fc8a97cd9e4ffeeea6281cf5c9f614beec3e4687525556bd8",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-aarch64-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-16.15.1-aarch64-unknown-linux-musl.tar.gz": {
+    "sha256": "1d417dd2985bbdf24bde03be6868373c86b2792595ec463e060c3296c88608c4",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-aarch64-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-16.15.1-arm-unknown-linux-gnueabi.tar.gz": {
+    "sha256": "751084a2b5f48724b66f8f8914e59484d04c19a3653a7c694ce250fa19741eff",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-arm-unknown-linux-gnueabi.tar.gz"
+  },
+  "postgresql-16.15.1-arm-unknown-linux-gnueabihf.tar.gz": {
+    "sha256": "8e051072791f8ec48c5fe80844a307fc43ef18a0c175653603d563ec81a6e8b5",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-arm-unknown-linux-gnueabihf.tar.gz"
+  },
+  "postgresql-16.15.1-arm-unknown-linux-musleabi.tar.gz": {
+    "sha256": "0e3b5abd456b5fc82e83d5ff853837224841fbd97970c9e60dc2cec33cacd3f7",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-arm-unknown-linux-musleabi.tar.gz"
+  },
+  "postgresql-16.15.1-arm-unknown-linux-musleabihf.tar.gz": {
+    "sha256": "e52c415ebf48a5901645cddc1b11eac322bd85bf6c2727f34ef5d084a773d3b1",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-arm-unknown-linux-musleabihf.tar.gz"
+  },
+  "postgresql-16.15.1-armv5te-unknown-linux-gnueabi.tar.gz": {
+    "sha256": "f107729b293094154e2329bb83154df983b89741a922e3dafd3b3e42a69f5c8d",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-armv5te-unknown-linux-gnueabi.tar.gz"
+  },
+  "postgresql-16.15.1-armv7-unknown-linux-gnueabihf.tar.gz": {
+    "sha256": "a7df49cc00cb3d2f3e45b54e2894798607f6c5e7b9b1f80e1e944cc90d3e2501",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-armv7-unknown-linux-gnueabihf.tar.gz"
+  },
+  "postgresql-16.15.1-armv7-unknown-linux-musleabihf.tar.gz": {
+    "sha256": "05bb951239f7899c163b9a6842dfd33ee1643d2bd8970b194682112cf632cdab",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-armv7-unknown-linux-musleabihf.tar.gz"
+  },
+  "postgresql-16.15.1-i586-unknown-linux-gnu.tar.gz": {
+    "sha256": "75cc48b9c130ad21584d7a75264cff85afcf7159eeaee8642c353fefdd306d48",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-i586-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-16.15.1-i586-unknown-linux-musl.tar.gz": {
+    "sha256": "00a687172408c4298bfa278106259a5bd10768f37b37189cef629d45f3fcdf83",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-i586-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-16.15.1-i686-unknown-linux-gnu.tar.gz": {
+    "sha256": "704f1731be252359a089215953a47a82259af2a197b6fd793c55692b37d6e887",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-i686-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-16.15.1-i686-unknown-linux-musl.tar.gz": {
+    "sha256": "2a7ea97d9912258f11c88451bbab363e89796ddb9e721ba323152e6df1b8731d",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-i686-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-16.15.1-mips64el-unknown-linux-gnuabi64.tar.gz": {
+    "sha256": "134cebf2d344bcb94168d1dd8177b986bbb44fcb9657477733b6626892289b41",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-mips64el-unknown-linux-gnuabi64.tar.gz"
+  },
+  "postgresql-16.15.1-powerpc64le-unknown-linux-gnu.tar.gz": {
+    "sha256": "f34e4fe773f403623e26ca7a5bfaa69dcaef549887448eb0f15353b2005bec0c",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-powerpc64le-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-16.15.1-powerpc64le-unknown-linux-musl.tar.gz": {
+    "sha256": "171cc3db19ba8aa58e567a410c4f1ed320191d811d7d84b0509a3243c2028f35",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-powerpc64le-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-16.15.1-s390x-unknown-linux-gnu.tar.gz": {
+    "sha256": "6cce1009f2b1077fa62adc8281ecb69d74b9f38aa0bec60a0a4191589809714a",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-s390x-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-16.15.1-s390x-unknown-linux-musl.tar.gz": {
+    "sha256": "ae8e0334d2d150e6fd87632c59e383f9f2fbb6ada53b36d554f46abdd3aa6e10",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-s390x-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-16.15.1-x86_64-apple-darwin.tar.gz": {
+    "sha256": "1b10aa67f9c111dd288f96d800c995dc424ab1e474fb8dd60ea6d05edb055f4c",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-x86_64-apple-darwin.tar.gz"
+  },
+  "postgresql-16.15.1-x86_64-pc-windows-msvc.tar.gz": {
+    "sha256": "9d617660ac12b599b57481b4b7a3b9658d35fe3ebc2fd72c95ea595d775c95ad",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-x86_64-pc-windows-msvc.tar.gz"
+  },
+  "postgresql-16.15.1-x86_64-unknown-linux-gnu.tar.gz": {
+    "sha256": "0c42e7c05f0cb596b82ac07990c96fc261ec2e8106055d557c76442d712dbf74",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-x86_64-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-16.15.1-x86_64-unknown-linux-musl.tar.gz": {
+    "sha256": "48d00d5ba39e2ef757db9dbaad53f3e87f05636d4ee345fa68bdf618e28778e4",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/16.15.1/postgresql-16.15.1-x86_64-unknown-linux-musl.tar.gz"
   },
   "postgresql-17.11.0-aarch64-apple-darwin.tar.gz": {
     "sha256": "fd4b62794b160e26973a768a1eef3248aef9d2ff23ebd6d884a4299485e28e57",
@@ -275,6 +463,102 @@
     "sha256": "81d183c8cd03cd79eb1d1d14ff3d7234e460a20598898ec650672827236dd69a",
     "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.0/postgresql-17.11.0-x86_64-unknown-linux-musl.tar.gz"
   },
+  "postgresql-17.11.1-aarch64-apple-darwin.tar.gz": {
+    "sha256": "f4b2ff0587d80b6f22bf09ec2d133a3c2949b6423318d3fed0f4ddddddf2f004",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-aarch64-apple-darwin.tar.gz"
+  },
+  "postgresql-17.11.1-aarch64-pc-windows-msvc.tar.gz": {
+    "sha256": "966a689aa98a3488649b6065d15c2fc635b720c4006ca54542814b5c7499a617",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-aarch64-pc-windows-msvc.tar.gz"
+  },
+  "postgresql-17.11.1-aarch64-unknown-linux-gnu.tar.gz": {
+    "sha256": "edaab3230a014680ebedd836824962628f66ceabd94c36ba3f953bf9e04dc166",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-aarch64-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-17.11.1-aarch64-unknown-linux-musl.tar.gz": {
+    "sha256": "1791b7126eafafa519996fcca88f5c4066e659879d73fe7bcceacb994de02776",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-aarch64-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-17.11.1-arm-unknown-linux-gnueabi.tar.gz": {
+    "sha256": "b17f946c62978cc26dcfaf30ece80c7a662cc79747f8eed00cf0bbc734a9a233",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-arm-unknown-linux-gnueabi.tar.gz"
+  },
+  "postgresql-17.11.1-arm-unknown-linux-gnueabihf.tar.gz": {
+    "sha256": "6fedbb983be145b5baf6a88f304d360ecd717271bcc806486e641551b7b1c8ea",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-arm-unknown-linux-gnueabihf.tar.gz"
+  },
+  "postgresql-17.11.1-arm-unknown-linux-musleabi.tar.gz": {
+    "sha256": "a3d9890b544acc00fd288db216d49412b781fb648d3fed4540d885d8149ae7f7",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-arm-unknown-linux-musleabi.tar.gz"
+  },
+  "postgresql-17.11.1-arm-unknown-linux-musleabihf.tar.gz": {
+    "sha256": "cc1964fac93531fa95d446aadadb77798b294e4d1b59455773a92724dd4753b1",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-arm-unknown-linux-musleabihf.tar.gz"
+  },
+  "postgresql-17.11.1-armv5te-unknown-linux-gnueabi.tar.gz": {
+    "sha256": "c748175c15c9ca351486ade552f6d4ff163e6451b56a71518aca53ce7deabf36",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-armv5te-unknown-linux-gnueabi.tar.gz"
+  },
+  "postgresql-17.11.1-armv7-unknown-linux-gnueabihf.tar.gz": {
+    "sha256": "6958ebb33be2686afc50cb3009c641d6bf0a4fd98bea582c76957459ec86094d",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-armv7-unknown-linux-gnueabihf.tar.gz"
+  },
+  "postgresql-17.11.1-armv7-unknown-linux-musleabihf.tar.gz": {
+    "sha256": "fa6d9c393a8ef381ba622104d1c34d85d7171dc348fba5f1114630b8049e2e4e",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-armv7-unknown-linux-musleabihf.tar.gz"
+  },
+  "postgresql-17.11.1-i586-unknown-linux-gnu.tar.gz": {
+    "sha256": "26a84f43528286c07121dd49bf7e97e3b1f6ab5fd2cfc504d5d53aefa1e919fb",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-i586-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-17.11.1-i586-unknown-linux-musl.tar.gz": {
+    "sha256": "8ea130389254b9574bd25da67f2726e5cb1c2250a586e79ee049d0c8f3f5372d",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-i586-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-17.11.1-i686-unknown-linux-gnu.tar.gz": {
+    "sha256": "1661e893f264bb0d6e67d13e176a697463f9754681377d1dc5360ea40a1db33a",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-i686-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-17.11.1-i686-unknown-linux-musl.tar.gz": {
+    "sha256": "5a847256cfdec02cdfe2f36ce869adf9ff5b1bfbebb1cfa7bbdf64ae65e0e5d6",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-i686-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-17.11.1-mips64el-unknown-linux-gnuabi64.tar.gz": {
+    "sha256": "fed32fcbe28c4e7ee3f09b1bdf4f2ff48daf04ba8da4c8acd5da33bad7dacec0",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-mips64el-unknown-linux-gnuabi64.tar.gz"
+  },
+  "postgresql-17.11.1-powerpc64le-unknown-linux-gnu.tar.gz": {
+    "sha256": "287814c51e87cd4985861821ac5dcbb30fe6cce73be589ed2f596f10f32e9c9b",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-powerpc64le-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-17.11.1-powerpc64le-unknown-linux-musl.tar.gz": {
+    "sha256": "33f6fd10a42ee0037a06948fb2efec811a9a06bab3238953cc4a5a4cd2c58d1c",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-powerpc64le-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-17.11.1-s390x-unknown-linux-gnu.tar.gz": {
+    "sha256": "b03057c1c26233b7aa1eb1dabc8a91584ea0b8347745534793a2fdde8b86b8ad",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-s390x-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-17.11.1-s390x-unknown-linux-musl.tar.gz": {
+    "sha256": "c96366defdbe674d481928ae4ff530eb4b61abab7cdfa0deb7c44c3281612a1a",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-s390x-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-17.11.1-x86_64-apple-darwin.tar.gz": {
+    "sha256": "edb44b25cf8bffec60fa300fbe100fa4238bf2cab4f4bd98d4b7255c61780df3",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-x86_64-apple-darwin.tar.gz"
+  },
+  "postgresql-17.11.1-x86_64-pc-windows-msvc.tar.gz": {
+    "sha256": "9855f1b2a9acf127e148fbdd929ef118bfe2fc095c9358a7da74bdc02cedfc27",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-x86_64-pc-windows-msvc.tar.gz"
+  },
+  "postgresql-17.11.1-x86_64-unknown-linux-gnu.tar.gz": {
+    "sha256": "aa8e2e97574bd789119ac01f1dddcd7a038c84e5c308d7b753018618258f0fbd",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-x86_64-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-17.11.1-x86_64-unknown-linux-musl.tar.gz": {
+    "sha256": "f554c6a5d232da640ba256ea1a26b8f7dd38621295998268aad3be79e7a60fd0",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/17.11.1/postgresql-17.11.1-x86_64-unknown-linux-musl.tar.gz"
+  },
   "postgresql-18.6.0-aarch64-apple-darwin.tar.gz": {
     "sha256": "a257bcdb8aa3301a13d6a5bcec48f8c9517045b7cbae71e50788b2615539e95b",
     "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.0/postgresql-18.6.0-aarch64-apple-darwin.tar.gz"
@@ -366,5 +650,101 @@
   "postgresql-18.6.0-x86_64-unknown-linux-musl.tar.gz": {
     "sha256": "c864af924c32dadfeaca61585fc7092679c8b6374162e62e96e33d9ece0d55c2",
     "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.0/postgresql-18.6.0-x86_64-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-18.6.1-aarch64-apple-darwin.tar.gz": {
+    "sha256": "89e91cc80650a43d22c018b95ca356a0c9e15838a1182fed2880bfb5d7d9c9a6",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-aarch64-apple-darwin.tar.gz"
+  },
+  "postgresql-18.6.1-aarch64-pc-windows-msvc.tar.gz": {
+    "sha256": "29669a4e020f252d8ff7a59e5e5c4632901fcff0e5ee7793f8b011a0e2157f68",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-aarch64-pc-windows-msvc.tar.gz"
+  },
+  "postgresql-18.6.1-aarch64-unknown-linux-gnu.tar.gz": {
+    "sha256": "1ab47fa2f06ff70454309ad02e5d89c46488300d43977231481fd6b160b9d556",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-aarch64-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-18.6.1-aarch64-unknown-linux-musl.tar.gz": {
+    "sha256": "d33d7d3249d7cf7ae72f35aaa20e46d30bdc1c17f4d102b2b3a39d618848ea8b",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-aarch64-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-18.6.1-arm-unknown-linux-gnueabi.tar.gz": {
+    "sha256": "c208c98ed5972ca0369f884e3b449c7abb5c3f248c8b1a7212588bf61f060b4e",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-arm-unknown-linux-gnueabi.tar.gz"
+  },
+  "postgresql-18.6.1-arm-unknown-linux-gnueabihf.tar.gz": {
+    "sha256": "c1db32157c18fc46074d0ad13812898494a5746a2b99927e2f211425c2927a3e",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-arm-unknown-linux-gnueabihf.tar.gz"
+  },
+  "postgresql-18.6.1-arm-unknown-linux-musleabi.tar.gz": {
+    "sha256": "4988914e3a16d6c7fdf093e794a7c390be69fff65e92bd10d6aadf61068032a3",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-arm-unknown-linux-musleabi.tar.gz"
+  },
+  "postgresql-18.6.1-arm-unknown-linux-musleabihf.tar.gz": {
+    "sha256": "991d5f276cd7f770e6b61a14cc80ad678a350c2af9ff40089e39182dd7b781f0",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-arm-unknown-linux-musleabihf.tar.gz"
+  },
+  "postgresql-18.6.1-armv5te-unknown-linux-gnueabi.tar.gz": {
+    "sha256": "57e865892558ee45071763e986032a3ef4a10e6053229e5876210dd30da1599f",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-armv5te-unknown-linux-gnueabi.tar.gz"
+  },
+  "postgresql-18.6.1-armv7-unknown-linux-gnueabihf.tar.gz": {
+    "sha256": "bec50b73660cb778ed7934dabb8ceb5910276050733031659d5e450ba880e425",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-armv7-unknown-linux-gnueabihf.tar.gz"
+  },
+  "postgresql-18.6.1-armv7-unknown-linux-musleabihf.tar.gz": {
+    "sha256": "f3f3d38324554ab6b93d89eb060d30be41acaeeb7ac9b6b0d9a5ff4ff2869cd6",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-armv7-unknown-linux-musleabihf.tar.gz"
+  },
+  "postgresql-18.6.1-i586-unknown-linux-gnu.tar.gz": {
+    "sha256": "f5fe1772a4fe4fdd5ef9623de0e034501aa83d17d98b7a8d96858ab2c7004149",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-i586-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-18.6.1-i586-unknown-linux-musl.tar.gz": {
+    "sha256": "db91981cc3fd5ed233297f162d8e048db55a00c01ee3312953422c9617ae53be",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-i586-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-18.6.1-i686-unknown-linux-gnu.tar.gz": {
+    "sha256": "5ad9246c5cb4e2ed22a82c625cca6def94ae87526cee5f9d1d0f96aa4f254c84",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-i686-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-18.6.1-i686-unknown-linux-musl.tar.gz": {
+    "sha256": "a18adbf5ace7434e5f68d60e5b71072d92720be61ffd8b38f9493e13924795c3",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-i686-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-18.6.1-mips64el-unknown-linux-gnuabi64.tar.gz": {
+    "sha256": "2df80745693c06893792867733022a8d93521d700211771d41c781a1087e5a82",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-mips64el-unknown-linux-gnuabi64.tar.gz"
+  },
+  "postgresql-18.6.1-powerpc64le-unknown-linux-gnu.tar.gz": {
+    "sha256": "2943d1d95f37ead9341901046d4465cac7f341231abfba3d0078fbe5b8b16fd4",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-powerpc64le-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-18.6.1-powerpc64le-unknown-linux-musl.tar.gz": {
+    "sha256": "5c0be2bf1692c19cb4d1eb8f518f360e2a4bb71e97d28fd566d80526845aa655",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-powerpc64le-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-18.6.1-s390x-unknown-linux-gnu.tar.gz": {
+    "sha256": "699da417b6c9f6fe95b2ab562298ccc150efdb50a87061fb0cf0748c4eaa7f1c",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-s390x-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-18.6.1-s390x-unknown-linux-musl.tar.gz": {
+    "sha256": "9112ab10d4653a0163c69d58cd80f6550b7365108e3742d111c9870a8eafa012",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-s390x-unknown-linux-musl.tar.gz"
+  },
+  "postgresql-18.6.1-x86_64-apple-darwin.tar.gz": {
+    "sha256": "4229812543e19c91864ebdf5d8f78883c5816d51d4cc5d065298260c1f64d37e",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-x86_64-apple-darwin.tar.gz"
+  },
+  "postgresql-18.6.1-x86_64-pc-windows-msvc.tar.gz": {
+    "sha256": "0c0c845626ed77c605d716051c9e8df3368d07fbbd9f61ea39a4c5c0536fde7e",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-x86_64-pc-windows-msvc.tar.gz"
+  },
+  "postgresql-18.6.1-x86_64-unknown-linux-gnu.tar.gz": {
+    "sha256": "e84b02dd8d0ce5879fb697330a789231c8b8f8d958dae3ad4d90fecc710b1315",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-x86_64-unknown-linux-gnu.tar.gz"
+  },
+  "postgresql-18.6.1-x86_64-unknown-linux-musl.tar.gz": {
+    "sha256": "80287b4596d427cf8456eb946c44b1607b3d2f0a0ad48ffe26dde0068bee5ff3",
+    "url": "https://github.com/theseus-rs/postgresql-binaries/releases/download/18.6.1/postgresql-18.6.1-x86_64-unknown-linux-musl.tar.gz"
   }
 }

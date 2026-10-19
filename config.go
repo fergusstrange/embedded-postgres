@@ -16,10 +16,10 @@ import (
 type PostgresVersion string
 
 const (
-	V18 PostgresVersion = "18.6.0"
-	V17 PostgresVersion = "17.11.0"
-	V16 PostgresVersion = "16.15.0"
-	V15 PostgresVersion = "15.19.0"
+	V18 PostgresVersion = "18.6.1"
+	V17 PostgresVersion = "17.11.1"
+	V16 PostgresVersion = "16.15.1"
+	V15 PostgresVersion = "15.19.1"
 )
 
 // User identifies an existing OS account. It is separate from Username.

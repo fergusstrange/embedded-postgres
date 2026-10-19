@@ -17,6 +17,18 @@ The [quick start](https://github.com/fergusstrange/embedded-postgres#readme) and
 [CLI guide](https://github.com/fergusstrange/embedded-postgres/blob/master/docs/cli.md)
 cover installation and configuration.
 
+## Corrected PostgreSQL distributions
+
+This alpha updates the default and supported pins to PostgreSQL 18.6.1, 17.11.1,
+16.15.1 and 15.19.1. These upstream packaging revisions include the Windows and
+relocatable-library fixes. New downloads use the corresponding SHA-256 pins;
+explicit older distribution versions retain their existing catalog entries.
+Windows ARM64 continues to select x64 PostgreSQL under emulation.
+
+See the [published-binary regression report](https://github.com/theseus-rs/postgresql-binaries/pull/35#issuecomment-6256273450)
+for the platform matrix, verification evidence and two unreproduced Windows
+findings.
+
 ## Included in v2
 
 - PostgreSQL 15–18; Linux, macOS and Windows on AMD64 and ARM64. Windows ARM64 uses

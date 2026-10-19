@@ -113,7 +113,7 @@ only a parent for private disposable children.
 
 ```json
 {
-  "postgres_version": "18.6.0",
+  "postgres_version": "18.6.1",
   "port": 0,
   "database": "app_test",
   "start_timeout": "30s",

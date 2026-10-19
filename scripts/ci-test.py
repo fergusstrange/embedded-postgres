@@ -17,7 +17,7 @@ env["EP_COVERDIR"] = str(raw)
 env["EP_SUPERVISOR"] = str(helper)
 env["EP_TEST_BIN"] = str((root / "pg/bin").resolve())
 env["EP_TEST_ARCHIVE"] = str((root / "pg.tar.gz").resolve())
-env["EP_POSTGRES_VERSION"] = env.get("EP_TEST_VERSION", "18.6.0")
+env["EP_POSTGRES_VERSION"] = env.get("EP_TEST_VERSION", "18.6.1")
 
 
 def run(*args, **kwargs):
