@@ -1,0 +1,113 @@
+name: Published consumers
+on:
+  workflow_run:
+    workflows: [v2]
+    types: [completed]
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published v2 tag to validate
+        required: true
+        type: string
+permissions:
+  contents: read
+  attestations: read
+jobs:
+  release:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.pin.outputs.version }}
+      revision: ${{ steps.pin.outputs.revision }}
+    steps:
+      - id: pin
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+          SOURCE_REVISION: ${{ github.event.workflow_run.head_sha }}
+        shell: python
+        run: |
+          import json, os, re, subprocess
+          repo = os.environ['GITHUB_REPOSITORY']
+          def api(path):
+              return json.loads(subprocess.check_output(['gh', 'api', f'repos/{repo}/{path}'], text=True))
+          version = os.environ['REQUESTED_VERSION']
+          if version:
+              assert re.fullmatch(r'v2\.\d+\.\d+(?:-[a-z]+\.\d+)?', version)
+              release = api('releases/tags/' + version)
+          else:
+              releases = api('releases?per_page=100')
+              matches = [r for r in releases if not r['draft'] and r['target_commitish'] == os.environ['SOURCE_REVISION']]
+              assert len(matches) == 1, 'expected one published release for successful master commit'
+              release = matches[0]
+              version = release['tag_name']
+          assert not release['draft']
+          revision = api('commits/' + version)['sha']
+          if os.environ.get('SOURCE_REVISION'):
+              assert revision == os.environ['SOURCE_REVISION']
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'version={version}\nrevision={revision}\n')
+  native:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-15-intel, macos-15, windows-2025, windows-11-arm]
+        go: ['1.26.x', '1.27.x']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go }}
+          cache: false
+      - name: Verify actual public module and CLI from fresh caches
+        # Launch directly from the runner, without Git Bash's token environment.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.release.outputs.version }}
+          RELEASE_REVISION: ${{ needs.release.outputs.revision }}
+        shell: python
+        run: |
+          import os, subprocess, sys
+          subprocess.run([sys.executable, 'scripts/check-published.py', os.environ['RELEASE_VERSION'], os.environ['RELEASE_REVISION']], check=True)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: published-${{ matrix.os }}-go-${{ matrix.go }}
+          path: published-evidence
+          if-no-files-found: error
+  musl:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+        go: ['1.26', '1.27']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify public consumers on native Alpine
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.release.outputs.version }}
+          RELEASE_REVISION: ${{ needs.release.outputs.revision }}
+          GO_VERSION: ${{ matrix.go }}
+        run: |
+          docker build --build-arg GO_VERSION="$GO_VERSION" -f scripts/published.Dockerfile -t published-consumer .
+          mkdir published-evidence
+          sudo chown 1000:1000 published-evidence
+          docker run --rm -e GH_TOKEN -v "$PWD/published-evidence:/evidence" published-consumer "$RELEASE_VERSION" "$RELEASE_REVISION" /evidence/results
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: published-musl-${{ matrix.os }}-go-${{ matrix.go }}
+          path: published-evidence
+          if-no-files-found: error

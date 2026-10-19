@@ -22,6 +22,13 @@ Explicit IDs must fit Go's native `int`: at most 2147483647 on 32-bit hosts.
 Windows uses restricted security tokens plus a kill-on-close Job Object; UID/GID
 selection is a Unix feature.
 
+On Windows, supplied cache and workspace directories must grant access to the
+actual user account. An ACL that grants access only through Administrators or
+administrator ownership will not work after that group is disabled. The library
+does not rewrite caller-owned directory permissions. Restricted child tokens and
+the objects they create grant access to that user and SYSTEM, so tools can reopen
+their own tokens without restoring administrator or power-user membership.
+
 The library creates a private workspace, assigns its ownership, and copies the
 immutable binary installation and supervisor there when RunAs is used. This avoids
 requiring access through `/root` or changing permissions on a caller's home/cache.
