@@ -12,7 +12,7 @@ v1? Start with the [migration guide](docs/migration-v2.md).
 ## A database scoped to a test
 
 ```bash
-go get github.com/fergusstrange/embedded-postgres/v2@v2.0.0-alpha.1
+go get github.com/fergusstrange/embedded-postgres/v2@latest
 ```
 
 ```go
@@ -33,7 +33,7 @@ func TestRepository(t *testing.T) {
 ```
 
 The first start downloads PostgreSQL and the matching supervisor; later starts
-reuse the cache. PostgreSQL needs the [native libraries for your OS](docs/non-root.md).
+reuse the cache. PostgreSQL needs the [native runtime requirements for your OS](docs/non-root.md).
 Choose your own SQL driver, and close connection pools before test cleanup.
 
 For configuration, import `github.com/fergusstrange/embedded-postgres/v2` as `postgres`

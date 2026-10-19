@@ -6,10 +6,10 @@ The [migration guide](migration-v2.md) explains the changes from v1.
 
 ## Install
 
-For Go tests, add a published version:
+For Go tests, add the newest published v2 version (currently an alpha):
 
 ```bash
-go get github.com/fergusstrange/embedded-postgres/v2@v2.0.0-alpha.1
+go get github.com/fergusstrange/embedded-postgres/v2@latest
 ```
 
 The library downloads the matching supervisor automatically. No separate CLI
@@ -34,7 +34,7 @@ Windows users can use Git Bash or the [PowerShell installer](../install/install.
 See the [CLI guide](cli.md) for installation paths and configuration.
 
 PostgreSQL is downloaded on first use and cached for later tests. Its native
-libraries must be available on the host; see the [platform guide](non-root.md).
+platform requirements still apply; see the [platform guide](non-root.md).
 
 ## What a release contains
 
