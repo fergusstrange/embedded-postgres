@@ -22,7 +22,8 @@ go test -race -count=1 -timeout 8m ./...
 
 Select the pinned target for your platform from `internal/binaries/manifest.json`.
 Windows uses `x86_64-pc-windows-msvc`, including on ARM64. Linux targets distinguish
-`gnu` and `musl`. Install the native prerequisites in [non-root execution](docs/non-root.md).
+`gnu` and `musl`. Check the OS and loader requirements in [non-root execution](docs/non-root.md);
+the corrected pinned bundles include their third-party runtime libraries.
 Without fixture variables, real PostgreSQL tests skip; that is not full validation.
 
 ## Coverage and checks
@@ -57,7 +58,7 @@ change. Test mirror/download failures, immutable cache leases, unsafe archives a
 offline behavior when changing acquisition code.
 
 The master workflow publishes automatically only after every required job passes.
-Releases currently use the alpha channel. See [release policy](docs/releases.md) before
+Releases use the stable channel. See [release policy](docs/releases.md) before
 changing `.github/release.json`. Do not merge unfinished migrations merely to
 exercise publishing. Keep provider and hook reference code compilable with the
 normal module tests.

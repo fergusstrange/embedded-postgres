@@ -3,6 +3,12 @@
 Change imports to `github.com/fergusstrange/embedded-postgres/v2`. v1 remains
 available under its original module path. v2 requires Go 1.26 or newer.
 
+After updating imports, select the stable release:
+
+```bash
+go get github.com/fergusstrange/embedded-postgres/v2@v2.0.0
+```
+
 | v1 usage | v2 behaviour or replacement |
 | --- | --- |
 | `NewDatabase`, `DefaultConfig`, `Start`, `Stop` | Retained; add `StartContext`, `StopContext`, or idempotent `Close` |
@@ -19,7 +25,7 @@ available under its original module path. v2 requires Go 1.26 or newer.
 | `Logger(io.Writer)` | Retained; receives a redacted tail (up to 32 KiB) during cleanup |
 | Implicit lib/pq registration | Removed; explicitly import/register your own driver |
 
-Defaults are PostgreSQL 18.6, database/user/password `postgres`, locale `C`,
+Defaults are PostgreSQL 18.6 (distribution 18.6.1), database/user/password `postgres`, locale `C`,
 encoding `UTF8`, startup timeout two minutes, shutdown timeout ten seconds,
 loopback TCP, and no console logging. `Start` remains compatible with fixed port
 5432. `eptest.Start` without a config uses an automatic port and automatic cleanup.
