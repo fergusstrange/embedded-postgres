@@ -30,7 +30,11 @@ lines.on('line', line => {
       ready = true;
       port = event.port;
       const suffix = process.platform === 'win32' ? '.exe' : '';
-      const result = execFileSync(join(binaries, `psql${suffix}`), [event.connection_url, '-Atc', 'SELECT 42;'], { encoding: 'utf8', timeout: 10_000 });
+      const url = new URL(event.connection_url);
+      const env = { ...process.env, PGHOST: url.hostname, PGPORT: url.port,
+        PGUSER: decodeURIComponent(url.username), PGPASSWORD: decodeURIComponent(url.password),
+        PGDATABASE: decodeURIComponent(url.pathname.slice(1)) };
+      const result = execFileSync(join(binaries, `psql${suffix}`), ['-Atc', 'SELECT 42;'], { env, encoding: 'utf8', timeout: 10_000 });
       assert.equal(result.trim(), '42');
       child.stdin.end();
     }
