@@ -60,6 +60,18 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: ./scripts/test_installer.ps1
+      - name: PowerShell restricted-token and PostgreSQL lifecycle regressions
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:EP_SUPERVISOR = Join-Path $PWD 'ci-output/embedded-postgres.exe'
+          $env:EP_TEST_BIN = Join-Path $PWD 'pg/bin'
+          $env:EP_TEST_VERSION = '18.6.1'
+          foreach ($version in @('go1.26.9', 'go1.27.2')) {
+            $env:GOTOOLCHAIN = $version
+            go test -v -count=1 -p=1 -timeout=4m -run '^(TestWindowsRestrictedChildCanOpenItsToken|TestWindowsNativeFailuresReleaseHandles|TestWindowsUserDACLRejectsInvalidToken|TestParallelLifecycle|TestLifetimeCancellation|TestPersistentDataNeverErased|TestCLIParentPipe|TestCLIBackground|TestCLIExec|TestWindowsExecCancellation)$' . ./internal/platform ./internal/cli
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: coverage-${{ matrix.os }}
