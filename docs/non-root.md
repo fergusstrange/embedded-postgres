@@ -47,32 +47,32 @@ in your Dockerfile or provisioning step rather than granting broad access.
 
 ## Minimal Debian container
 
-Install the selected binary distribution's native runtime libraries and create a
-non-root account when building the image. The tested glibc distribution needs
-OpenSSL 3, readline, libxml2, Kerberos, zlib, lz4, and zstd. On Debian Bookworm:
+The corrected pinned distributions bundle their third-party runtime libraries.
+The GNU bundles still need glibc 2.36 or newer and the matching ELF loader; the
+musl bundles need musl 1.2.4 or newer and its dynamic loader. See the upstream
+[support policy](https://github.com/theseus-rs/postgresql-binaries/blob/1d92c278f64f41ecc835b0e261abfb2d75ca2066/docs/support-policy.md)
+for platform floors. Custom providers and explicitly selected older bundles can
+have additional native-library requirements.
+
+On Debian Bookworm, install CA certificates for verified downloads and create a
+non-root account when building the image:
 
 ```dockerfile
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libssl3 libreadline8 libxml2 libgssapi-krb5-2 \
-    zlib1g liblz4-1 libzstd1 \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
     && useradd --uid 10001 --no-create-home pgtest \
     && rm -rf /var/lib/apt/lists/*
 ```
 
-The Go executable is built with CGO_ENABLED=0; PostgreSQL remains a native binary
-with OS-library prerequisites. A custom BinaryProvider can supply a distribution
-with additional bundled libraries. Native CI tests both ordinary callers and a
-root test runner launching PostgreSQL as a separate user.
+The Go executable is built with CGO_ENABLED=0; PostgreSQL remains a native binary.
+Native CI tests both ordinary callers and a root test runner launching PostgreSQL
+as a separate user.
 
 ## Alpine / musl
 
-The selected upstream musl bundle links ICU **74**, so the default-provider CI
-uses Alpine **3.21** with `icu-libs` plus the other native libraries. Its package
-[provides the required ICU 74 shared libraries](https://pkgs.alpinelinux.org/package/v3.21/main/x86_64/icu-libs).
-The test image uses the current Go toolchain, independently of its runtime base.
-
-Newer Alpine releases with a different ICU ABI need a compatible custom
-PostgreSQL distribution through `LocalProvider`/`BinaryProvider`, or an upstream
-bundle refresh. Do not symlink incompatible ICU major versions to satisfy the
-loader. This is a native-distribution compatibility constraint, not a Go-module
-dependency. Recheck it when updating PostgreSQL pins or the Alpine CI image.
+The corrected musl bundles include ICU and the other third-party libraries;
+there is no host ICU 74 package requirement for these pins. They remain dynamically
+linked to musl, so the matching loader is required. The default-provider CI uses
+Alpine 3.21 with the current Go toolchain and only its build/test prerequisites.
+The published-binary regression campaign also exercised native x64 and ARM64
+musl containers. Do not symlink incompatible library versions to satisfy a loader
+error; check the selected distribution and its runtime requirements instead.

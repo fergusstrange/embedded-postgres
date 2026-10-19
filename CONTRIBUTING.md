@@ -11,7 +11,7 @@ Install Go 1.26 or newer, then build the companion. Example for Apple Silicon:
 
 ```bash
 go build -o /tmp/embedded-postgres ./cmd/embedded-postgres
-python3 scripts/fetch-postgres.py 18.6.0 aarch64-apple-darwin pg.tar.gz
+python3 scripts/fetch-postgres.py 18.6.1 aarch64-apple-darwin pg.tar.gz
 mkdir pg
 tar -xzf pg.tar.gz -C pg --strip-components=1
 export EP_SUPERVISOR=/tmp/embedded-postgres

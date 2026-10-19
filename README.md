@@ -117,7 +117,7 @@ for container setup, directory ownership, and native library requirements.
 
 | Setting | Library default |
 |---|---|
-| PostgreSQL | `V18` / 18.6.0 |
+| PostgreSQL | `V18` / 18.6.1 |
 | Role, password, database | `postgres` |
 | Port | 5432; use `Port(0)` for parallel tests |
 | Locale / encoding | `C` / `UTF8` |
@@ -125,7 +125,7 @@ for container setup, directory ownership, and native library requirements.
 | Data / workspace | Private disposable instance |
 | Cache | `os.UserCacheDir()/embedded-postgres/v2` |
 
-`V15`, `V16`, `V17`, `V18` pin 15.19.0, 16.15.0, 17.11.0, 18.6.0. PostgreSQL
+`V15`, `V16`, `V17`, `V18` pin 15.19.1, 16.15.1, 17.11.1, 18.6.1. PostgreSQL
 14 and older are excluded. PostgreSQL uses a
 [five-year major-version support policy](https://www.postgresql.org/support/versioning/),
 not a separate LTS edition. Binary checksums are pinned in the reviewed manifest;

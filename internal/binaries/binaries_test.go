@@ -7,8 +7,8 @@ import (
 )
 
 func TestPinnedSupportedMatrix(t *testing.T) {
-	for _, version := range []string{"15.19.0", "16.15.0", "17.11.0", "18.6.0"} {
-		for _, target := range []string{"x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "aarch64-apple-darwin", "x86_64-pc-windows-msvc"} {
+	for _, version := range []string{"15.19.1", "16.15.1", "17.11.1", "18.6.1"} {
+		for _, target := range []string{"x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "x86_64-unknown-linux-musl", "aarch64-unknown-linux-musl", "x86_64-apple-darwin", "aarch64-apple-darwin", "x86_64-pc-windows-msvc"} {
 			name, a, e := Lookup(version, target)
 			if e != nil {
 				t.Fatal(e)

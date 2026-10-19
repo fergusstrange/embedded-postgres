@@ -20,8 +20,9 @@ import (
 )
 
 func TestVerifiedConcurrentCache(t *testing.T) {
-	if version := os.Getenv("EP_TEST_VERSION"); version != "" && version != string(V18) {
-		t.Skip("cache fixture uses the default version")
+	version := V18
+	if configured := os.Getenv("EP_TEST_VERSION"); configured != "" {
+		version = PostgresVersion(configured)
 	}
 	archive := os.Getenv("EP_TEST_ARCHIVE")
 	if archive == "" {
@@ -32,7 +33,7 @@ func TestVerifiedConcurrentCache(t *testing.T) {
 	defer server.Close()
 	cache := t.TempDir()
 	p := DownloadProvider{CacheDir: cache, BaseURL: server.URL}
-	req := BinaryRequest{Version: V18, GOOS: runtime.GOOS, GOARCH: runtime.GOARCH}
+	req := BinaryRequest{Version: version, GOOS: runtime.GOOS, GOARCH: runtime.GOARCH}
 	var wg sync.WaitGroup
 	installs := make(chan *Installation, 3)
 	for range 3 {
