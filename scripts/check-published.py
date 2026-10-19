@@ -1,6 +1,6 @@
 """Check a public Go module and CLI in an isolated consumer (no source override).
 
-Usage: python scripts/check-published.py v2.0.0-alpha.5 COMMIT [EVIDENCE_DIR]
+Usage: python scripts/check-published.py v2.0.0 COMMIT [EVIDENCE_DIR]
 Requires Go, Python and authenticated gh for public build-attestation verification.
 """
 import hashlib
