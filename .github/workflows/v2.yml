@@ -73,6 +73,8 @@ jobs:
             # missing GOCOVERDIR warning would contaminate psql probe output.
             go build -o $env:EP_SUPERVISOR ./cmd/embedded-postgres
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            go test -count=50 -timeout=2m -run '^TestWindowsNativeFailuresReleaseHandles$' ./internal/platform
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
             go test -v -count=1 -p=1 -timeout=4m -run '^(TestWindowsRestrictedChildCanOpenItsToken|TestWindowsNativeFailuresReleaseHandles|TestWindowsUserDACLRejectsInvalidToken|TestParallelLifecycle|TestLifetimeCancellation|TestPersistentDataNeverErased|TestCLIParentPipe|TestCLIBackground|TestCLIExec|TestWindowsExecCancellation)$' . ./internal/platform ./internal/cli
             if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
