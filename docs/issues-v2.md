@@ -8,8 +8,15 @@ that the v2 solution meets the original use case. Reporter confirmation is welco
 closure records implementation, not confirmation on every downstream setup.
 
 FreeBSD #169 remains open because its supported distribution and native CI work
-are not complete. The separate Alpine update #172 also remains open: the current
-musl PostgreSQL bundle requires ICU 74, which the proposed Alpine 3.24 image lacks.
+are not complete. The separate Alpine update #172 still needs its dependency-update
+review and CI. Its earlier host ICU 74 blocker is removed by the corrected pinned
+bundles, which include ICU and other third-party runtime libraries.
+
+The later Arch Linux [issue #181](https://github.com/fergusstrange/embedded-postgres/issues/181)
+was closed after the published alpha.5 and PostgreSQL 15–18 passed clean Arch
+validation without `libxml2-legacy`. The
+[report and reproduction steps](https://github.com/fergusstrange/embedded-postgres/issues/181#issuecomment-6259458842)
+record the emulated x64 scope and invite the reporter's confirmation.
 
 ## Requests reviewed for v2
 
@@ -17,7 +24,7 @@ musl PostgreSQL bundle requires ICU 74, which the proposed Alpine 3.24 image lac
 |---|---|---|
 | [#170](https://github.com/fergusstrange/embedded-postgres/issues/170), Windows `.exe` lookup | Addressed | Platform suffix applied to every required tool; native Windows cache and lifecycle tests |
 | [#168](https://github.com/fergusstrange/embedded-postgres/pull/168), [#167](https://github.com/fergusstrange/embedded-postgres/issues/167), cleanup | Addressed with clarified ownership | Disposable children removed; shared cache intentionally retained; explicit lease-aware prune |
-| [#164](https://github.com/fergusstrange/embedded-postgres/issues/164), update policy | Addressed | Pinned supported major releases, security checks, automatic tested master releases and explicit prerelease channel |
+| [#164](https://github.com/fergusstrange/embedded-postgres/issues/164), update policy | Addressed | Pinned supported major releases, security checks, automatic tested master releases with reviewed channel settings |
 | [#161](https://github.com/fergusstrange/embedded-postgres/pull/161), [#128](https://github.com/fergusstrange/embedded-postgres/issues/128), dynamic ports | Addressed | `Port(0)`, `GetPort`, actual connection URL and bounded collision retries; parallel native tests |
 | [#160](https://github.com/fergusstrange/embedded-postgres/issues/160), parent death | Addressed | Independent owner-pipe supervision, Unix owned process groups, Windows Job Objects; forced termination and panic tests |
 | [#157](https://github.com/fergusstrange/embedded-postgres/issues/157), test timeouts | Addressed | Startup deadline, lifetime context, bounded shutdown, `eptest.Start` and `eptest.Run` |
