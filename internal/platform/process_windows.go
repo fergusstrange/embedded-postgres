@@ -27,12 +27,59 @@ type windowsCalls struct {
 	openToken func(syscall.Handle, uint32, *syscall.Token) error
 	sid       func(string) (*syscall.SID, error)
 	restrict  func(syscall.Token, []syscall.SIDAndAttributes, *syscall.Token) (uintptr, error)
+	secure    func(syscall.Token) error
 	create    func() (uintptr, error)
 	limit     func(uintptr, *extendedLimits) (uintptr, error)
 	assign    func(uintptr, syscall.Handle) (uintptr, error)
 }
 
-var nativeWindows = windowsCalls{syscall.OpenProcessToken, syscall.StringToSid, nativeRestrict, nativeCreate, nativeLimit, nativeAssign}
+var nativeWindows = windowsCalls{syscall.OpenProcessToken, syscall.StringToSid, nativeRestrict, nativeUserDACL, nativeCreate, nativeLimit, nativeAssign}
+
+// A token created by an elevated PowerShell process can inherit an
+// administrators-only DACL. Once that SID is disabled, the child cannot reopen
+// its own token (as initdb must). Grant only the actual user and SYSTEM access
+// to this token and to objects it creates. No caller token or directory ACL is
+// modified, and the administrator/power-user SIDs remain deny-only.
+func nativeUserDACL(token syscall.Token) error {
+	user, err := token.GetTokenUser()
+	if err != nil {
+		return err
+	}
+	sid, err := user.User.Sid.String()
+	if err != nil {
+		return err
+	}
+	sddl, err := syscall.UTF16PtrFromString("D:P(A;;GA;;;SY)(A;;GA;;;" + sid + ")")
+	if err != nil {
+		return err
+	}
+	var descriptor uintptr
+	ok, _, callErr := advapi.NewProc("ConvertStringSecurityDescriptorToSecurityDescriptorW").Call(uintptr(unsafe.Pointer(sddl)), 1, uintptr(unsafe.Pointer(&descriptor)), 0)
+	runtime.KeepAlive(sddl)
+	if ok == 0 {
+		return callErr
+	}
+	defer syscall.LocalFree(syscall.Handle(descriptor))
+	var present, defaulted uint32
+	var dacl unsafe.Pointer
+	ok, _, callErr = advapi.NewProc("GetSecurityDescriptorDacl").Call(descriptor, uintptr(unsafe.Pointer(&present)), uintptr(unsafe.Pointer(&dacl)), uintptr(unsafe.Pointer(&defaulted)))
+	if ok == 0 {
+		return callErr
+	}
+	if present == 0 || dacl == nil {
+		return errors.New("restricted token requires a non-null user DACL")
+	}
+	// TOKEN_DEFAULT_DACL consists of one ACL pointer.
+	ok, _, callErr = advapi.NewProc("SetTokenInformation").Call(uintptr(token), syscall.TokenDefaultDacl, uintptr(unsafe.Pointer(&dacl)), unsafe.Sizeof(dacl))
+	if ok == 0 {
+		return callErr
+	}
+	ok, _, callErr = advapi.NewProc("SetKernelObjectSecurity").Call(uintptr(token), 4 /* DACL_SECURITY_INFORMATION */, descriptor)
+	if ok == 0 {
+		return callErr
+	}
+	return nil
+}
 
 // Typed pointer arguments keep pointer lifetimes visible to Go across the
 // injectable boundary. Convert to uintptr only at the annotated syscall call.
@@ -85,6 +132,10 @@ func configureWindows(cmd *exec.Cmd, id *Identity, calls windowsCalls) (func(), 
 	ok, callErr := calls.restrict(original, denied, &token)
 	if ok == 0 {
 		return nil, fmt.Errorf("create restricted token: %w", callErr)
+	}
+	if err := calls.secure(token); err != nil {
+		token.Close()
+		return nil, fmt.Errorf("secure restricted token: %w", err)
 	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{Token: token, CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP, HideWindow: true}
 	return func() { _ = token.Close() }, nil
