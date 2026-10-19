@@ -3,7 +3,9 @@
 This is a historical record of the migration. Each entry describes the state at
 that milestone; later reviews supersede earlier pending checks and design notes.
 For current setup and published releases, use the [README](../README.md) and
-[release guide](releases.md).
+[release guide](releases.md). Early missing-library and host ICU notes describe
+older bundles; the stable release uses corrected PostgreSQL 15–18 distributions.
+See the current [platform guide](non-root.md) for runtime requirements.
 
 One implementation branch and one final PR. Each milestone has its own commit,
 validation, and diff review. PostgreSQL 14 and older are excluded. CircleCI is

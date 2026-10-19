@@ -74,6 +74,16 @@ The Go executable is built with CGO_ENABLED=0; PostgreSQL remains a native binar
 Native CI tests both ordinary callers and a root test runner launching PostgreSQL
 as a separate user.
 
+## Arch Linux
+
+The corrected PostgreSQL 15–18 pins include `libxml2.so.2`; installing
+`libxml2-legacy` or setting `LD_LIBRARY_PATH` is not required. The published Go
+module and CLI passed a clean Arch x64 container check with system libxml2 2.15,
+including XML, `xml2`, `pgcrypto`, offline reuse, persistence and cleanup.
+See the [results and reproduction steps](https://github.com/fergusstrange/embedded-postgres/issues/181#issuecomment-6259458842)
+for the image pin and emulation scope. Explicitly selecting an old distribution
+can still reproduce the missing-library error.
+
 ## Alpine / musl
 
 The corrected musl bundles include ICU and the other third-party libraries;
