@@ -22,6 +22,13 @@ Explicit IDs must fit Go's native `int`: at most 2147483647 on 32-bit hosts.
 Windows uses restricted security tokens plus a kill-on-close Job Object; UID/GID
 selection is a Unix feature.
 
+On Windows, supplied cache and workspace directories must grant access to the
+actual user account. An ACL that grants access only through Administrators or
+administrator ownership will not work after that group is disabled. The library
+does not rewrite caller-owned directory permissions. Restricted child tokens and
+the objects they create grant access to that user and SYSTEM, so tools can reopen
+their own tokens without restoring administrator or power-user membership.
+
 The library creates a private workspace, assigns its ownership, and copies the
 immutable binary installation and supervisor there when RunAs is used. This avoids
 requiring access through `/root` or changing permissions on a caller's home/cache.
@@ -66,6 +73,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 The Go executable is built with CGO_ENABLED=0; PostgreSQL remains a native binary.
 Native CI tests both ordinary callers and a root test runner launching PostgreSQL
 as a separate user.
+
+## Arch Linux
+
+The corrected PostgreSQL 15–18 pins include `libxml2.so.2`; installing
+`libxml2-legacy` or setting `LD_LIBRARY_PATH` is not required. The published Go
+module and CLI passed a clean Arch x64 container check with system libxml2 2.15,
+including XML, `xml2`, `pgcrypto`, offline reuse, persistence and cleanup.
+See the [results and reproduction steps](https://github.com/fergusstrange/embedded-postgres/issues/181#issuecomment-6259458842)
+for the image pin and emulation scope. Explicitly selecting an old distribution
+can still reproduce the missing-library error.
 
 ## Alpine / musl
 

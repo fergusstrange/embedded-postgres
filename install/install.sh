@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Usage: curl -fsSL https://raw.githubusercontent.com/fergusstrange/embedded-postgres/master/install/install.sh | bash
-# Pin with EP_VERSION=v2.0.0-alpha.1; choose location with EP_INSTALL_DIR.
+# Pin with EP_VERSION=v2.0.0; choose location with EP_INSTALL_DIR.
 set -euo pipefail
 repo=fergusstrange/embedded-postgres
 version=${EP_VERSION:-}

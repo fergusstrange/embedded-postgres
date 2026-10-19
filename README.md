@@ -6,7 +6,7 @@ Run real PostgreSQL in your tests. Each test gets its own database, an available
 port, and automatic cleanup. A CLI provides the same lifecycle for other languages.
 The production Go packages have **zero third-party dependencies**.
 
-**v2 is available as an alpha release.** Requires Go 1.26 or newer. Upgrading from
+**v2 is stable.** Requires Go 1.26 or newer. Upgrading from
 v1? Start with the [migration guide](docs/migration-v2.md).
 
 ## A database scoped to a test
@@ -33,7 +33,8 @@ func TestRepository(t *testing.T) {
 ```
 
 The first start downloads PostgreSQL and the matching supervisor; later starts
-reuse the cache. PostgreSQL needs the [native runtime requirements for your OS](docs/non-root.md).
+reuse the cache. The pinned PostgreSQL bundles include third-party runtime libraries;
+the [OS and loader requirements](docs/non-root.md) still apply.
 Choose your own SQL driver, and close connection pools before test cleanup.
 
 For configuration, import `github.com/fergusstrange/embedded-postgres/v2` as `postgres`
@@ -132,8 +133,9 @@ not a separate LTS edition. Binary checksums are pinned in the reviewed manifest
 automatic library releases do not silently change those pins.
 
 Native CI covers Linux and macOS AMD64/ARM64, Windows AMD64, and Windows ARM64
-with x64 PostgreSQL emulation. Alpine 3.21 AMD64 has a separate musl integration job (the upstream bundle
-requires ICU 74; see the platform guide).
+with x64 PostgreSQL emulation. Alpine 3.21 AMD64 has a separate musl integration job,
+and published consumers cover native x64/ARM64 musl. The corrected bundles include
+ICU; no host ICU 74 package is needed. See the [platform guide](docs/non-root.md).
 Other Linux architectures can use a source-built companion when a pinned bundle
 exists. FreeBSD needs a custom distribution and companion; it is not in the
 supported release matrix.
