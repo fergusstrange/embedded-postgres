@@ -43,7 +43,7 @@ var nativeWindows = windowsCalls{syscall.OpenProcessToken, syscall.StringToSid, 
 func nativeUserDACL(token syscall.Token) error {
 	user, err := token.GetTokenUser()
 	if err != nil {
-		return err
+		return fmt.Errorf("query token user: %w", err)
 	}
 	sid, err := user.User.Sid.String()
 	if err != nil {
@@ -57,14 +57,14 @@ func nativeUserDACL(token syscall.Token) error {
 	ok, _, callErr := advapi.NewProc("ConvertStringSecurityDescriptorToSecurityDescriptorW").Call(uintptr(unsafe.Pointer(sddl)), 1, uintptr(unsafe.Pointer(&descriptor)), 0)
 	runtime.KeepAlive(sddl)
 	if ok == 0 {
-		return callErr
+		return fmt.Errorf("convert user security descriptor: %w", callErr)
 	}
 	defer syscall.LocalFree(syscall.Handle(descriptor))
 	var present, defaulted uint32
 	var dacl unsafe.Pointer
 	ok, _, callErr = advapi.NewProc("GetSecurityDescriptorDacl").Call(descriptor, uintptr(unsafe.Pointer(&present)), uintptr(unsafe.Pointer(&dacl)), uintptr(unsafe.Pointer(&defaulted)))
 	if ok == 0 {
-		return callErr
+		return fmt.Errorf("read user DACL: %w", callErr)
 	}
 	if present == 0 || dacl == nil {
 		return errors.New("restricted token requires a non-null user DACL")
@@ -72,11 +72,11 @@ func nativeUserDACL(token syscall.Token) error {
 	// TOKEN_DEFAULT_DACL consists of one ACL pointer.
 	ok, _, callErr = advapi.NewProc("SetTokenInformation").Call(uintptr(token), syscall.TokenDefaultDacl, uintptr(unsafe.Pointer(&dacl)), unsafe.Sizeof(dacl))
 	if ok == 0 {
-		return callErr
+		return fmt.Errorf("set token default DACL: %w", callErr)
 	}
 	ok, _, callErr = advapi.NewProc("SetKernelObjectSecurity").Call(uintptr(token), 4 /* DACL_SECURITY_INFORMATION */, descriptor)
 	if ok == 0 {
-		return callErr
+		return fmt.Errorf("set token object DACL: %w", callErr)
 	}
 	return nil
 }
@@ -115,7 +115,10 @@ func configureWindows(cmd *exec.Cmd, id *Identity, calls windowsCalls) (func(), 
 	current, _ := syscall.GetCurrentProcess() // Go returns the constant current-process pseudo-handle.
 	var err error
 	var original syscall.Token
-	if err = calls.openToken(current, syscall.TOKEN_DUPLICATE|syscall.TOKEN_ASSIGN_PRIMARY|syscall.TOKEN_QUERY, &original); err != nil {
+	// CreateRestrictedToken preserves the original handle's access mask. Request
+	// the rights needed to secure the new token; the original is never modified.
+	const writeDACL = 0x00040000 // WRITE_DAC
+	if err = calls.openToken(current, syscall.TOKEN_DUPLICATE|syscall.TOKEN_ASSIGN_PRIMARY|syscall.TOKEN_QUERY|syscall.TOKEN_ADJUST_DEFAULT|writeDACL, &original); err != nil {
 		return nil, err
 	}
 	defer original.Close()
