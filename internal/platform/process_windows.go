@@ -28,12 +28,13 @@ type windowsCalls struct {
 	sid       func(string) (*syscall.SID, error)
 	restrict  func(syscall.Token, []syscall.SIDAndAttributes, *syscall.Token) (uintptr, error)
 	secure    func(syscall.Token) error
+	close     func(syscall.Handle) error
 	create    func() (uintptr, error)
 	limit     func(uintptr, *extendedLimits) (uintptr, error)
 	assign    func(uintptr, syscall.Handle) (uintptr, error)
 }
 
-var nativeWindows = windowsCalls{syscall.OpenProcessToken, syscall.StringToSid, nativeRestrict, nativeUserDACL, nativeCreate, nativeLimit, nativeAssign}
+var nativeWindows = windowsCalls{syscall.OpenProcessToken, syscall.StringToSid, nativeRestrict, nativeUserDACL, syscall.CloseHandle, nativeCreate, nativeLimit, nativeAssign}
 
 // A token created by an elevated PowerShell process can inherit an
 // administrators-only DACL. Once that SID is disabled, the child cannot reopen
@@ -121,7 +122,7 @@ func configureWindows(cmd *exec.Cmd, id *Identity, calls windowsCalls) (func(), 
 	if err = calls.openToken(current, syscall.TOKEN_DUPLICATE|syscall.TOKEN_ASSIGN_PRIMARY|syscall.TOKEN_QUERY|syscall.TOKEN_ADJUST_DEFAULT|writeDACL, &original); err != nil {
 		return nil, err
 	}
-	defer original.Close()
+	defer calls.close(syscall.Handle(original))
 	admin, err := calls.sid("S-1-5-32-544")
 	if err != nil {
 		return nil, err
@@ -137,11 +138,11 @@ func configureWindows(cmd *exec.Cmd, id *Identity, calls windowsCalls) (func(), 
 		return nil, fmt.Errorf("create restricted token: %w", callErr)
 	}
 	if err := calls.secure(token); err != nil {
-		token.Close()
+		calls.close(syscall.Handle(token))
 		return nil, fmt.Errorf("secure restricted token: %w", err)
 	}
 	cmd.SysProcAttr = &syscall.SysProcAttr{Token: token, CreationFlags: syscall.CREATE_NEW_PROCESS_GROUP, HideWindow: true}
-	return func() { _ = token.Close() }, nil
+	return func() { _ = calls.close(syscall.Handle(token)) }, nil
 }
 
 func Kill(p *os.Process) error {
@@ -180,13 +181,13 @@ func guardWindows(calls windowsCalls) error {
 	limits.Basic.LimitFlags = 0x2000
 	ok, err := calls.limit(job, &limits)
 	if ok == 0 {
-		syscall.CloseHandle(syscall.Handle(job))
+		calls.close(syscall.Handle(job))
 		return fmt.Errorf("configure job: %w", err)
 	}
 	current, _ := syscall.GetCurrentProcess()
 	ok, err = calls.assign(job, current)
 	if ok == 0 {
-		syscall.CloseHandle(syscall.Handle(job))
+		calls.close(syscall.Handle(job))
 		return fmt.Errorf("assign job: %w", err)
 	}
 	return nil

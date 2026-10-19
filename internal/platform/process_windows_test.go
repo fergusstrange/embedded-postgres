@@ -56,19 +56,64 @@ func TestWindowsUserDACLRejectsInvalidToken(t *testing.T) {
 func TestWindowsNativeFailuresReleaseHandles(t *testing.T) {
 	failure := syscall.ERROR_ACCESS_DENIED
 
-	handleCount := func() uint32 {
-		t.Helper()
-		current, _ := syscall.GetCurrentProcess()
-		var count uint32
-		ok, _, e := kernel.NewProc("GetProcessHandleCount").Call(uintptr(current), uintptr(unsafe.Pointer(&count)))
-		if ok == 0 {
-			t.Fatal(e)
+	// Process-wide handle counts include runtime threads and unrelated activity.
+	// Audit the exact resources acquired by this call instead, and require each
+	// native CloseHandle to succeed. No unrelated-handle allowance is needed.
+	audit := func(calls windowsCalls) (windowsCalls, func()) {
+		live := make(map[syscall.Handle]bool)
+		track := func(handle syscall.Handle) {
+			t.Helper()
+			if live[handle] {
+				t.Fatal("handle acquired twice without closing", handle)
+			}
+			live[handle] = true
 		}
-		return count
+		open := calls.openToken
+		calls.openToken = func(process syscall.Handle, access uint32, token *syscall.Token) error {
+			err := open(process, access, token)
+			if err == nil {
+				track(syscall.Handle(*token))
+			}
+			return err
+		}
+		restrict := calls.restrict
+		calls.restrict = func(original syscall.Token, denied []syscall.SIDAndAttributes, token *syscall.Token) (uintptr, error) {
+			ok, err := restrict(original, denied, token)
+			if ok != 0 {
+				track(syscall.Handle(*token))
+			}
+			return ok, err
+		}
+		create := calls.create
+		calls.create = func() (uintptr, error) {
+			handle, err := create()
+			if handle != 0 {
+				track(syscall.Handle(handle))
+			}
+			return handle, err
+		}
+		closeHandle := calls.close
+		calls.close = func(handle syscall.Handle) error {
+			t.Helper()
+			if !live[handle] {
+				t.Fatal("closing unowned or already closed handle", handle)
+			}
+			if err := closeHandle(handle); err != nil {
+				t.Fatal("native handle close failed", handle, err)
+			}
+			delete(live, handle)
+			return nil
+		}
+		return calls, func() {
+			t.Helper()
+			if len(live) != 0 {
+				t.Fatal("native handles left open", live)
+			}
+		}
 	}
-	before := handleCount()
+
 	for range 3 {
-		for _, kind := range []string{"open", "admin-sid", "power-sid", "restrict", "secure"} {
+		for _, kind := range []string{"open", "admin-sid", "power-sid", "restrict", "secure", "success"} {
 			calls := nativeWindows
 			switch kind {
 			case "open":
@@ -85,11 +130,21 @@ func TestWindowsNativeFailuresReleaseHandles(t *testing.T) {
 			case "secure":
 				calls.secure = func(syscall.Token) error { return failure }
 			}
+			calls, assertClosed := audit(calls)
 			release, e := configureWindows(exec.Command("unused"), nil, calls)
+			if kind == "success" {
+				if e != nil {
+					t.Fatal("native token creation failed", e)
+				}
+				release()
+				assertClosed()
+				continue
+			}
 			if e == nil {
 				release()
 				t.Fatal("native token failure ignored", kind)
 			}
+			assertClosed()
 			if !errors.Is(e, failure) {
 				t.Fatal("native failure cause lost", kind, e)
 			}
@@ -104,13 +159,12 @@ func TestWindowsNativeFailuresReleaseHandles(t *testing.T) {
 			case "assign":
 				calls.assign = func(uintptr, syscall.Handle) (uintptr, error) { return 0, failure }
 			}
+			calls, assertClosed := audit(calls)
 			// Every case fails before any process can be assigned to the job.
 			if e := guardWindows(calls); !errors.Is(e, failure) {
 				t.Fatal("job failure cause lost", kind, e)
 			}
+			assertClosed()
 		}
-	}
-	if after := handleCount(); after > before+2 {
-		t.Fatalf("native failure paths leaked handles: before=%d after=%d", before, after)
 	}
 }
