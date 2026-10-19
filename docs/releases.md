@@ -65,6 +65,25 @@ same commit resumes its draft or leaves an already published release unchanged.
 PR, manual and scheduled workflows do not publish. Alpha releases do not replace
 v1 as GitHub's latest stable release.
 
+After publication, the public **Published consumers** workflow installs the exact
+Go module from the public proxy, verifies its source revision and checksum,
+downloads the automatic matching CLI, and checks the CLI's checksum and build
+attestation. Fresh-cache SQL, offline reuse and cleanup run on all six native
+hosts with both supported Go versions, plus native x64/ARM64 Alpine. Windows
+checks start outside Git Bash. Logs and pinned identities remain public workflow
+artifacts; this validation does not depend on a private repository.
+
+To reproduce one host locally with Go, Python and an authenticated GitHub CLI:
+
+```bash
+python scripts/check-published.py RELEASE_TAG FULL_SOURCE_COMMIT
+```
+
+The command writes `published-evidence/`, requires an unused evidence directory,
+and uses temporary caches. It changes permissions only on its own new Windows
+test directory so the actual user retains access after administrator groups are
+disabled. It never changes an existing consumer directory's ACL.
+
 Release settings live in [`.github/release.json`](../.github/release.json):
 
 - `base: "2.0.0"`, `prerelease: "alpha"` produces `v2.0.0-alpha.1`, `.2`, and so on.

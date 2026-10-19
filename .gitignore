@@ -130,3 +130,5 @@ main
 /dist/
 /embedded-postgres
 /scripts/__pycache__/
+/scripts/testdata/published/__pycache__/
+/published-evidence/
