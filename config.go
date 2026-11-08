@@ -39,7 +39,7 @@ type Config struct {
 	provider                                    BinaryProvider
 	binariesPath, repositoryURL, supervisorPath string
 	locale, encoding, socketDir                 string
-	startParameters                             map[string]string
+	startParameters, initParameters             map[string]string
 	startTimeout, stopTimeout                   time.Duration
 	logger                                      io.Writer
 	identity                                    *User
@@ -64,6 +64,17 @@ func (c Config) StopTimeout(v time.Duration) Config  { c.stopTimeout = v; return
 func (c Config) Logger(v io.Writer) Config           { c.logger = v; return c }
 func (c Config) StartParameters(v map[string]string) Config {
 	c.startParameters = maps.Clone(v)
+	return c
+}
+
+// InitParameters passes settings to initdb as -c name=value when a fresh
+// cluster is created. initdb writes them to postgresql.conf, so they also apply
+// to later starts of that cluster. Use it for settings that must be in effect
+// during bootstrap, such as dynamic_shared_memory_type. Existing data
+// directories are not reinitialised, so the settings are ignored for them.
+// initdb accepts -c from PostgreSQL 16; a nonempty map is rejected for V15.
+func (c Config) InitParameters(v map[string]string) Config {
+	c.initParameters = maps.Clone(v)
 	return c
 }
 func (c Config) Storage(v Storage) Config         { c.storage = v; return c }

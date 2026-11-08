@@ -69,6 +69,7 @@ func NewDatabase(config ...Config) *EmbeddedPostgres {
 		c = config[0]
 	}
 	c.startParameters = maps.Clone(c.startParameters)
+	c.initParameters = maps.Clone(c.initParameters)
 	c.environment = append([]string(nil), c.environment...)
 	c = c.Hooks(c.hooks)
 	return &EmbeddedPostgres{config: c}
@@ -239,7 +240,8 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 		if err = ownedFile(pw, []byte(c.password+"\n"), c.identity); err != nil {
 			return err
 		}
-		_, err = ep.command(start, s, "initdb", "-D", data, "-U", c.username, "--auth=scram-sha-256", "--pwfile="+pw, "--locale="+c.locale, "--encoding="+c.encoding)
+		args := []string{"-D", data, "-U", c.username, "--auth=scram-sha-256", "--pwfile=" + pw, "--locale=" + c.locale, "--encoding=" + c.encoding}
+		_, err = ep.command(start, s, "initdb", append(args, settingArgs(c.initParameters)...)...)
 		removeErr := os.Remove(pw)
 		if err = errors.Join(err, removeErr); err != nil {
 			return fmt.Errorf("initialise PostgreSQL: %w", err)
@@ -296,14 +298,7 @@ func (ep *EmbeddedPostgres) StartContext(ctx context.Context) (err error) {
 			args = []string{"-D", data, "-p", fmt.Sprint(port), "-h", "", "-c", "unix_socket_directories=" + c.socketDir}
 		}
 		args = append(args, "-c", "embedded_postgres.instance_id="+s.instanceID)
-		keys := make([]string, 0, len(c.startParameters))
-		for k := range c.startParameters {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		for _, k := range keys {
-			args = append(args, "-c", k+"="+c.startParameters[k])
-		}
+		args = append(args, settingArgs(c.startParameters)...)
 		err = ep.launch(start, s, helper, args)
 		if err == nil {
 			err = ep.ready(start, s, c)
@@ -680,7 +675,22 @@ func validateConfig(c Config) error {
 			return errors.New("database, user, password, locale and encoding must be nonempty and contain no NUL or newline")
 		}
 	}
-	for k, v := range c.startParameters {
+	if err := validateSettings(c.startParameters); err != nil {
+		return err
+	}
+	if err := validateSettings(c.initParameters); err != nil {
+		return err
+	}
+	if major, _ := strconv.ParseUint(parts[0], 10, 32); len(c.initParameters) > 0 && major < 16 {
+		return errors.New("InitParameters requires PostgreSQL 16 or newer")
+	}
+	if c.provider != nil && (c.binariesPath != "" || c.repositoryURL != "") {
+		return errors.New("Provider cannot be combined with BinariesPath or BinaryRepositoryURL")
+	}
+	return nil
+}
+func validateSettings(m map[string]string) error {
+	for k, v := range m {
 		switch strings.ToLower(k) {
 		case "port", "listen_addresses", "data_directory", "unix_socket_directories", "config_file", "hba_file", "ident_file", "external_pid_file", "embedded_postgres.instance_id":
 			return fmt.Errorf("%s is managed by the lifecycle; use its dedicated setting or a hook", k)
@@ -689,10 +699,21 @@ func validateConfig(c Config) error {
 			return errors.New("invalid PostgreSQL setting")
 		}
 	}
-	if c.provider != nil && (c.binariesPath != "" || c.repositoryURL != "") {
-		return errors.New("Provider cannot be combined with BinariesPath or BinaryRepositoryURL")
-	}
 	return nil
+}
+
+// settingArgs renders settings as -c name=value pairs in a stable order.
+func settingArgs(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	args := make([]string, 0, 2*len(keys))
+	for _, k := range keys {
+		args = append(args, "-c", k+"="+m[k])
+	}
+	return args
 }
 
 // Done closes when an instance has been fully cleaned up. Before Start it is already closed.

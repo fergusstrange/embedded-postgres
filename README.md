@@ -100,6 +100,17 @@ config := postgres.DefaultConfig().Port(0).Storage(postgres.Storage{
 - `DataDir` is persistent and never automatically removed. A nonempty unrelated
   directory or a cluster from a different PostgreSQL major is rejected.
 
+`StartParameters` passes server settings to `postgres` on every start.
+`InitParameters` passes them to `initdb` when a new cluster is created, for settings
+that must already apply during bootstrap. initdb records them in `postgresql.conf`,
+so later starts of that cluster keep them. It requires PostgreSQL 16 or newer:
+
+```go
+config := postgres.DefaultConfig().Port(0).InitParameters(map[string]string{
+    "dynamic_shared_memory_type": "mmap", // Keep DSM segments out of a shared /dev/shm.
+})
+```
+
 Replace the whole acquisition policy with `BinaryProvider`, use `LocalProvider`
 for preinstalled PostgreSQL, or customize `DownloadProvider` for mirrors, HTTP
 transports and offline caches. Lifecycle hooks support preparation and migrations
