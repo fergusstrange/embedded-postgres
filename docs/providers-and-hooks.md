@@ -42,6 +42,22 @@ instance. Cleanup uses an independent, bounded context. All registered cleanups 
 if one panics. Direct Close/Stop calls propagate cleanup panics after releasing
 resources; asynchronous cleanup records them in Err instead.
 
+## Server settings
+
+`StartParameters` and `InitParameters` take PostgreSQL settings as a name/value
+map. Both are passed as `-c name=value` in name order, and both reject the
+settings the lifecycle owns (`port`, `listen_addresses`, `data_directory`,
+`unix_socket_directories`, `config_file`, `hba_file`, `ident_file`,
+`external_pid_file`). `StartParameters` applies to each `postgres` launch.
+`InitParameters` applies only to `initdb` when the data directory is new or
+empty. An existing cluster is never reinitialised, so the map has no effect on it.
+initdb writes the values to `postgresql.conf`, so they persist for later starts;
+`StartParameters` can still override them at launch. Use it for settings that
+bootstrap itself depends on, such as `dynamic_shared_memory_type=mmap` on hosts
+where `/dev/shm` is small or shared. initdb accepts `-c` from PostgreSQL 16, so
+a nonempty `InitParameters` fails validation with `V15`. Configuration files
+other than `postgresql.conf` can be prepared from a BeforeStart hook.
+
 ## Extensions and migrations
 
 For pgvector, AGE, PostGIS, or TimescaleDB, use a distribution/provider containing
