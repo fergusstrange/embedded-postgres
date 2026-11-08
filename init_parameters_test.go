@@ -43,7 +43,8 @@ func TestInitParametersCopiedAndOrdered(t *testing.T) {
 }
 
 // Settings given to initdb are written to postgresql.conf and so survive later
-// starts of the same cluster that no longer pass them.
+// starts of the same cluster that no longer pass them. work_mem is used because
+// it is valid on every platform, unlike dynamic_shared_memory_type=mmap.
 func TestInitParametersPersistInCluster(t *testing.T) {
 	c := integrationConfig(t)
 	if strings.HasPrefix(string(c.version), "15.") {
@@ -59,22 +60,22 @@ func TestInitParametersPersistInCluster(t *testing.T) {
 	}
 	data := filepath.Join(parent, "data")
 	c = c.DataPath(data)
-	for _, init := range []map[string]string{{"dynamic_shared_memory_type": "mmap"}, nil} {
+	for _, init := range []map[string]string{{"work_mem": "7MB"}, nil} {
 		pg := NewDatabase(c.InitParameters(init))
 		if err = pg.Start(); err != nil {
 			t.Fatal(err)
 		}
-		out, e := pg.command(t.Context(), pg.active, "psql", "-X", "-w", "-d", pg.ConnectionURL(), "-Atc", "SHOW dynamic_shared_memory_type")
-		if e != nil || strings.TrimSpace(string(out)) != "mmap" {
+		out, e := pg.command(t.Context(), pg.active, "psql", "-X", "-w", "-d", pg.ConnectionURL(), "-Atc", "SHOW work_mem")
+		if e != nil || strings.TrimSpace(string(out)) != "7MB" {
 			pg.Close()
-			t.Fatalf("dynamic_shared_memory_type = %q, %v", out, e)
+			t.Fatalf("work_mem = %q, %v", out, e)
 		}
 		if err = pg.Close(); err != nil {
 			t.Fatal(err)
 		}
 	}
 	conf, err := os.ReadFile(filepath.Join(data, "postgresql.conf"))
-	if err != nil || !strings.Contains(string(conf), "dynamic_shared_memory_type = mmap") {
+	if err != nil || !strings.Contains(string(conf), "work_mem = 7MB") {
 		t.Fatal("postgresql.conf lacks the init setting", err)
 	}
 }
